@@ -1,0 +1,51 @@
+<?php
+
+use App\Http\Controllers\frontend\frontendController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Session;
+use Lab404\Impersonate\Controllers\ImpersonateController;
+
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+
+Route::get('/',[frontendController::class ,'index'])->name('index');
+
+
+
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';
+require __DIR__.'/backend.php';
+// Impersonation Routes
+Route::post('/custom-impersonate-leave', function () {
+    // ১. সেশন থেকে অ্যাডমিনের আইডি নেওয়া
+    $adminId = Session::get('impersonated_by');
+
+    if (! $adminId) {
+        abort(403, 'Impersonation session not found.');
+    }
+
+    // ২. মূল অ্যাডমিন হিসেবে আবার লগইন করানো
+    Auth::loginUsingId($adminId);
+
+    // ৩. সেশন থেকে ইমপারসোনেশন ডাটা মুছে ফেলা
+    Session::forget('impersonated_by');
+
+    // ৪. অ্যাডমিন ড্যাশবোর্ডে রিডাইরেক্ট করা 
+    // (এখানে আপনার অ্যাডমিন ড্যাশবোর্ডের সঠিক URL বা রাউট নাম দিন)
+    return redirect()->route('dashboard'); 
+
+})->middleware(['web', 'auth'])->name('impersonate.leave.custom');

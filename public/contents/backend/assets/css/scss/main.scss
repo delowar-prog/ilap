@@ -1,0 +1,219 @@
+// Premium Slate Theme (df.png Inspired)
+$bg-main: #f8fafc;
+$bg-sidebar: #ffffff;
+$border-color: #e2e8f0;
+$text-main: #1e293b;
+$text-muted: #64748b;
+$brand-purple: #6366f1;
+$hover-bg: #f1f5f9;
+
+body {
+    background-color: $bg-main;
+    color: $text-main;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ==========================================
+   SIDEBAR CORE ARCHITECTURE (NO CLASS CHANGE)
+   ========================================== */
+#sidebar.sidebar {
+    width: 260px;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: $bg-sidebar;
+    border-right: 1px solid $border-color;
+    padding: 1.25rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    box-sizing: border-box;
+    z-index: 1040;
+    transition: transform 0.25s ease, width 0.25s ease;
+
+    // Normal Links (like Dashboard)
+    a {
+        color: $text-muted;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.65rem 1rem;
+        display: flex;
+        align-items: center;
+        border-radius: 0.375rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+
+        i {
+            font-size: 1.15rem;
+            margin-right: 0.75rem;
+            color: $text-muted;
+            width: 20px;
+            text-align: center;
+        }
+
+        &:hover {
+            color: $text-main;
+            background-color: $hover-bg;
+            i { color: $text-main; }
+        }
+
+        &.active {
+            color: $brand-purple;
+            background-color: rgba($brand-purple, 0.08);
+            font-weight: 600;
+            i { color: $brand-purple; }
+        }
+    }
+
+    // Dropdown Trigger Buttons (like Ecommerce)
+    .menu-btn {
+        color: $text-muted;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.65rem 1rem;
+        display: flex;
+        align-items: center;
+        border-radius: 0.375rem;
+        background: transparent;
+        border: none;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        i:first-child {
+            font-size: 1.15rem;
+            margin-right: 0.75rem;
+            color: $text-muted;
+            width: 20px;
+            text-align: center;
+        }
+
+        .bi-chevron-down {
+            font-size: 0.8rem;
+            transition: transform 0.2s ease;
+            color: #94a3b8;
+        }
+
+        &:hover {
+            color: $text-main;
+            background-color: $hover-bg;
+        }
+
+        // When Submenu is Expanded/Open (Bootstrap adds no class toggle to button natively)
+        &:not(.collapsed) {
+            color: $text-main;
+            font-weight: 600;
+            i:first-child { color: $brand-purple; }
+            .bi-chevron-down {
+                transform: rotate(180deg);
+                color: $brand-purple;
+            }
+        }
+    }
+
+    // Submenu Item Drawer
+    .collapse.submenu {
+        // Bootstrap targets display block natively, we intercept with column flex to prevent design break
+        &.show {
+            display: flex !important;
+            flex-direction: column;
+        }
+        
+        padding-left: 1.5rem;
+        margin-top: 0.1rem;
+        margin-bottom: 0.2rem;
+        gap: 0.1rem;
+
+        a {
+            font-size: 0.85rem;
+            font-weight: 400;
+            padding: 0.45rem 1rem;
+
+            &:hover {
+                color: $brand-purple;
+                background-color: transparent;
+            }
+        }
+    }
+}
+
+/* ==========================================
+   MAIN CONTENT WORKSPACE LAYOUT
+   ========================================== */
+#main-wrapper {
+    margin-left: 260px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.25s ease;
+
+    .top-header {
+        height: 64px;
+        background-color: #ffffff;
+        border-bottom: 1px solid $border-color;
+        padding: 0 1.5rem;
+    }
+
+    main.content-body {
+        padding: 2rem;
+        flex-grow: 1;
+    }
+}
+
+/* ==========================================
+   DESKTOP COLLAPSED STATES (Width 72px)
+   ========================================== */
+#sidebar.collapsed {
+    width: 72px;
+
+    // Hide text and arrows smoothly
+    .text, .bi-chevron-down, .collapse.submenu {
+        display: none !important;
+    }
+
+    .menu-btn, a {
+        justify-content: center;
+        padding: 0.65rem 0;
+        
+        i {
+            margin-right: 0 !important;
+            font-size: 1.25rem;
+        }
+    }
+}
+#main-wrapper.expanded {
+    margin-left: 72px;
+}
+
+/* ==========================================
+   MOBILE COLLAPSED STATES (Hidden Drawer)
+   ========================================== */
+@media (max-width: 991.98px) {
+    #sidebar.sidebar {
+        width: 260px;
+        transform: translateX(-100%); // Mobile-e poorapoorishwob hidden thakbe
+        
+        &.show-mobile {
+            transform: translateX(0); // Toggle e click korle left theke show hobe
+        }
+    }
+
+    #main-wrapper {
+        margin-left: 0 !important; // Mobile mode e mian section full width hobe
+    }
+
+}
+
+/* Secure Submenu Display Overrides */
+.collapse.submenu {
+    display: none !important; // Default state hide
+    transition: all 0.2s ease-in-out;
+    
+    &.show {
+        display: flex !important; // Active state show
+        flex-direction: column;
+    }
+}
