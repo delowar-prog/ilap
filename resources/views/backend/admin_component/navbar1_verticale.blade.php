@@ -204,7 +204,7 @@
                     <ul class="nav collapse" id="ilap_course">
                         
                         <li class="nav-item">
-                            <a class="nav-link" href="">
+                            <a class="nav-link" href="{{ route('courses.index') }}">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1">Course List</span>
                                 </div>

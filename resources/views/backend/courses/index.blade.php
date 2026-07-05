@@ -9,13 +9,11 @@
                     <i class="fas fa-book me-2"></i> Course Management
                 </h6>
             </div>
-            @can('course add')
             <div class="col-auto">
                 <a href="{{ route('courses.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus me-1"></i> Add Course
                 </a>
             </div>
-            @endcan
         </div>
     </div>
 
@@ -59,7 +57,7 @@
     </div>
 
     {{-- Table --}}
-    <div class="table-responsive">
+    <div class="table-responsive" style="overflow: visible;">
         <table class="table table-sm table-striped align-middle mb-0" style="font-size: 0.85rem;">
             <thead class="bg-light">
                 <tr>
