@@ -11,6 +11,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\InstituteController;
 use Illuminate\Support\Facades\Route;
 use Lab404\Impersonate\Controllers\ImpersonateController;
 
@@ -30,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('agents', AgentController::class);
     Route::resource('commissions', AgentCommissionController::class);
     Route::resource('courses', CourseController::class);
+    Route::resource('institutes', InstituteController::class);
 });
 
 

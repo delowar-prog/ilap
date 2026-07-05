@@ -216,12 +216,12 @@
                         data-bs-toggle="collapse" aria-expanded="false" aria-controls="institute">
                         <div class="d-flex align-items-center">
                             <span class="nav-link-icon"><span class="fas fa-university"></span></span>
-                            <span class="nav-link-text ps-1">Accademics & Courses</span>
+                            <span class="nav-link-text ps-1">Institute & Courses</span>
                         </div>
                     </a>
                     <ul class="nav collapse" id="institute">
                         <li class="nav-item">
-                            <a class="nav-link" href="">
+                            <a class="nav-link" href="{{ route('institutes.index') }}">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1">All Institute</span>
                                 </div>
@@ -231,27 +231,6 @@
                             <a class="nav-link" href="">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1">Courses</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Divisions</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Awarding Bodies</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Modules</span>
                                 </div>
                             </a>
                         </li>
