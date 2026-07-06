@@ -32,8 +32,8 @@ class RoleController extends Controller
         // }
 
         $allPermissions = Permission::all()->groupBy(function ($permission) {
-            // পারমিশন নাম থেকে গ্রুপ তৈরি (যেমন: 'manage users' -> 'users')
-            return explode(' ', $permission->name)[1] ?? 'general';
+            // পারমিশন নাম থেকে গ্রুপ তৈরি (যেমন: 'campus view' -> 'campus')
+            return explode(' ', $permission->name)[0] ?? 'general';
         });
 
         $rolePermissions = $role->permissions->pluck('name')->toArray();

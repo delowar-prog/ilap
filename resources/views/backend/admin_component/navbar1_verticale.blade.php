@@ -48,7 +48,8 @@
                     </ul>
                 </li>
 
-                <!-- ==================== Campus Config ==================== -->
+                 <!-- ==================== Campus Config ==================== -->
+                 @canany(['campus view', 'campus add'])
                  <li class="nav-item">
                     <a class="nav-link dropdown-indicator" href="#configuration" role="button"
                         data-bs-toggle="collapse" aria-expanded="false" aria-controls="configuration">
@@ -82,7 +83,9 @@
                         </li>
                     </ul>
                 </li>
+                @endcanany
                 <!-- ==================== Campus Config ==================== -->
+                @canany(['campus view', 'campus add'])
                 <li class="nav-item">
                     <a class="nav-link dropdown-indicator" href="#campus" role="button" data-bs-toggle="collapse"
                         aria-expanded="false" aria-controls="campus">
@@ -113,6 +116,8 @@
                      
                     </ul>
                 </li>
+                @endcanany
+                @canany(['user view', 'permission view', 'role view'])
                 <li class="nav-item">
                     <!-- ==================== User & Role ==================== -->
                     <a class="nav-link dropdown-indicator" href="#user_role" role="button" data-bs-toggle="collapse"
@@ -152,6 +157,7 @@
                             </li>
                         @endcan
 
+                        @can('user view')
                         <li class="nav-item">
                             <a class="nav-link" href="">
                                 <div class="d-flex align-items-center">
@@ -159,9 +165,12 @@
                                 </div>
                             </a>
                         </li>
+                        @endcan
                     </ul>
                 </li>
+                @endcanany
 
+                @canany(['agent view', 'commission view'])
                 <li class="nav-item">
                     <!-- ==================== Agent Management ==================== -->
                     <a class="nav-link dropdown-indicator" href="#agent" role="button" data-bs-toggle="collapse"
@@ -192,8 +201,11 @@
                         @endcan
                     </ul>
                 </li>
+                @endcanany
                 <!-- ==================== Courses & Academic ==================== -->
+                @canany(['course view', 'institute view'])
                 <li class="nav-item">
+                    @can('course view')
                     <a class="nav-link dropdown-indicator" href="#ilap_course" role="button"
                         data-bs-toggle="collapse" aria-expanded="false" aria-controls="ilap_course">
                         <div class="d-flex align-items-center">
@@ -211,7 +223,9 @@
                             </a>
                         </li>
                     </ul>
+                    @endcan
 
+                    @can('institute view')
                     <a class="nav-link dropdown-indicator" href="#institute" role="button"
                         data-bs-toggle="collapse" aria-expanded="false" aria-controls="institute">
                         <div class="d-flex align-items-center">
@@ -227,6 +241,7 @@
                                 </div>
                             </a>
                         </li>
+                        @can('course view')
                         <li class="nav-item">
                             <a class="nav-link" href="">
                                 <div class="d-flex align-items-center">
@@ -234,8 +249,11 @@
                                 </div>
                             </a>
                         </li>
+                        @endcan
                     </ul>
+                    @endcan
 
+                    @can('course view')
                     <a class="nav-link dropdown-indicator" href="#academic" role="button" data-bs-toggle="collapse"
                         aria-expanded="false" aria-controls="academic">
                         <div class="d-flex align-items-center">
@@ -266,7 +284,9 @@
                             </a>
                         </li>
                     </ul>
+                    @endcan
                 </li>
+                @endcanany
 
                 <!-- ==================== Enrolment Details ==================== -->
                 <li class="nav-item">

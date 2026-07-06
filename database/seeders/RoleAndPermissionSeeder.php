@@ -33,6 +33,8 @@ class RoleAndPermissionSeeder extends Seeder
             ...$this->getName('role'),
             ...$this->getName('agent'),
             ...$this->getName('commission'),
+            ...$this->getName('course'),
+            ...$this->getName('institute'),
         ];
 
         foreach ($permissions as $permission) {
