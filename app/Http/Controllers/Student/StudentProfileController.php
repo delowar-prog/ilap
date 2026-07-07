@@ -1,0 +1,176 @@
+<?php
+
+namespace App\Http\Controllers\Student;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Student;
+use App\Models\StudentAcademic;
+use App\Models\StudentEnglishTest;
+use App\Models\StudentReferee;
+use App\Models\StudentDocument;
+use App\Models\StudentPreAssessment;
+use Illuminate\Support\Facades\Auth;
+
+class StudentProfileController extends Controller
+{
+    public function dashboard()
+    {
+        $user = Auth::user();
+        $student = $user->student;
+        
+        if (!$student) {
+            $campus = \App\Models\Campus::first();
+            // Fallback: If user somehow doesn't have a student profile yet, create one
+            $student = Student::create([
+                'campus_id' => $campus ? $campus->id : 1,
+                'user_id' => $user->id,
+                'first_name' => $user->user_first_name ?? $user->name,
+                'surname' => $user->user_last_name ?? '',
+                'email' => $user->email,
+                'student_id' => 'STU-' . date('Ymd') . rand(1000, 9999),
+            ]);
+        }
+        
+        $preAssessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
+        $academics = StudentAcademic::where('student_id', $student->id)->get();
+        $englishTests = StudentEnglishTest::where('student_id', $student->id)->get();
+        $referees = StudentReferee::where('student_id', $student->id)->get();
+        $documents = StudentDocument::where('student_id', $student->id)->get();
+        
+        return view('backend.student.student_dashbord', compact(
+            'student', 
+            'preAssessment', 
+            'academics', 
+            'englishTests', 
+            'referees', 
+            'documents'
+        ));
+    }
+
+    public function updatePersonal(Request $request)
+    {
+        $student = Auth::user()->student;
+
+        $studentFields = [
+            'title','first_name','middle_name','surname','dob','gender','nationality',
+            'country_of_birth','native_language','email','phone','skype_id',
+            'name_in_passport','passport_number','passport_issue_location',
+            'passport_issue_date','passport_expiry_date',
+            'permanent_address','permanent_city','permanent_postcode','permanent_country',
+            'current_address','current_city','current_postcode','current_country',
+            'emergency_contact_name','emergency_contact_mobile','emergency_contact_email',
+            'emergency_contact_relationship','applied_leave_to_remain_uk','need_visa_for_uk',
+            'refused_visa_or_deported','taken_tb_test','bank_balance_info',
+        ];
+
+        $student->update($request->only($studentFields));
+        return response()->json(['success' => true, 'message' => 'Details saved successfully!']);
+    }
+
+    public function updateAcademic(Request $request)
+    {
+        $student = Auth::user()->student;
+        
+        if ($request->has('academics')) {
+            // Basic sync mechanism: delete old and recreate, or update if ID is present
+            // For simplicity in a multi-step form, if they submit the full array:
+            foreach ($request->academics as $academic) {
+                if (!empty($academic['education_level']) && !empty($academic['institution_name'])) {
+                    if (!empty($academic['id'])) {
+                        StudentAcademic::where('id', $academic['id'])->where('student_id', $student->id)->update($academic);
+                    } else {
+                        $academic['student_id'] = $student->id;
+                        StudentAcademic::create($academic);
+                    }
+                }
+            }
+        }
+        return response()->json(['success' => true, 'message' => 'Academic history updated.']);
+    }
+    
+    public function updateEnglish(Request $request)
+    {
+        $student = Auth::user()->student;
+        
+        // Save travel history to the student table
+        $travelFields = [
+            'applied_leave_to_remain_uk', 'need_visa_for_uk', 
+            'refused_visa_or_deported', 'taken_tb_test'
+        ];
+        $student->update($request->only($travelFields));
+        
+        if ($request->has('english_tests')) {
+            foreach ($request->english_tests as $test) {
+                if (!empty($test['test_name'])) {
+                    if (!empty($test['id'])) {
+                        StudentEnglishTest::where('id', $test['id'])->where('student_id', $student->id)->update($test);
+                    } else {
+                        $test['student_id'] = $student->id;
+                        StudentEnglishTest::create($test);
+                    }
+                }
+            }
+        }
+        return response()->json(['success' => true, 'message' => 'Travel & English info updated.']);
+    }
+
+    public function updatePreferences(Request $request)
+    {
+        $student = Auth::user()->student;
+        $preAssessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
+        $preAssessment->update($request->except(['_token']));
+        
+        return response()->json(['success' => true, 'message' => 'Preferences updated successfully.']);
+    }
+    
+    public function updateReferees(Request $request)
+    {
+        $student = Auth::user()->student;
+
+        // Save bank_balance_info to student table if present
+        if ($request->has('bank_balance_info')) {
+            $student->update(['bank_balance_info' => $request->bank_balance_info]);
+        }
+
+        if ($request->has('referees')) {
+            foreach ($request->referees as $referee) {
+                if (!empty($referee['full_name'])) {
+                    $data = array_filter($referee, fn($v) => $v !== null && $v !== '');
+                    if (!empty($data['id'])) {
+                        $id = $data['id'];
+                        unset($data['id']);
+                        StudentReferee::where('id', $id)->where('student_id', $student->id)->update($data);
+                    } else {
+                        unset($data['id']);
+                        $data['student_id'] = $student->id;
+                        StudentReferee::create($data);
+                    }
+                }
+            }
+        }
+        return response()->json(['success' => true, 'message' => 'Referee details saved!']);
+    }
+
+    public function uploadDocument(Request $request)
+    {
+        $student = Auth::user()->student;
+        $request->validate([
+            'document' => 'required|file|max:5120',
+            'document_type' => 'required|string'
+        ]);
+
+        if ($request->hasFile('document')) {
+            $path = $request->file('document')->store('student_documents/' . $student->id, 'public');
+            
+            StudentDocument::create([
+                'student_id' => $student->id,
+                'document_type' => $request->document_type,
+                'file_path' => $path
+            ]);
+            
+            return response()->json(['success' => true, 'message' => 'Document uploaded successfully.', 'path' => $path]);
+        }
+        return response()->json(['success' => false, 'message' => 'Upload failed.'], 400);
+    }
+}

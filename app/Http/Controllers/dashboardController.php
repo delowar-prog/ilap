@@ -14,6 +14,13 @@ class dashboardController extends Controller
      */
 
     public function dashboard(){
+        $user = auth()->user();
+
+        // Students go to their own profile dashboard
+        if ($user->hasRole('Student')) {
+            return redirect()->route('student.dashboard');
+        }
+
         return view('backend.dashboard');
     }
 }

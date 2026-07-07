@@ -32,6 +32,23 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Virtual "name" attribute — combines first + last name.
+     * Allows ->name to work everywhere in views/controllers.
+     */
+    public function getNameAttribute(): string
+    {
+        return trim(($this->user_first_name ?? '') . ' ' . ($this->user_last_name ?? ''));
+    }
+
+    /**
+     * One-to-one: User -> Student profile
+     */
+    public function student()
+    {
+        return $this->hasOne(Student::class);
+    }
+
     public function campus()
     {
         return $this->belongsTo(Campus::class);

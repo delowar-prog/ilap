@@ -12,6 +12,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\InstituteController;
+use App\Http\Controllers\Student\StudentProfileController;
 use Illuminate\Support\Facades\Route;
 use Lab404\Impersonate\Controllers\ImpersonateController;
 
@@ -32,6 +33,17 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('commissions', AgentCommissionController::class);
     Route::resource('courses', CourseController::class);
     Route::resource('institutes', InstituteController::class);
+});
+
+// ==================== Student Profile Routes ====================
+Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
+    Route::get('/dashboard', [StudentProfileController::class, 'dashboard'])->name('dashboard');
+    Route::post('/profile/personal', [StudentProfileController::class, 'updatePersonal'])->name('profile.personal');
+    Route::post('/profile/academic', [StudentProfileController::class, 'updateAcademic'])->name('profile.academic');
+    Route::post('/profile/english', [StudentProfileController::class, 'updateEnglish'])->name('profile.english');
+    Route::post('/profile/preferences', [StudentProfileController::class, 'updatePreferences'])->name('profile.preferences');
+    Route::post('/profile/referees', [StudentProfileController::class, 'updateReferees'])->name('profile.referees');
+    Route::post('/profile/upload', [StudentProfileController::class, 'uploadDocument'])->name('profile.upload');
 });
 
 

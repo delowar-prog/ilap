@@ -13,6 +13,20 @@ use Lab404\Impersonate\Controllers\ImpersonateController;
 
 Route::get('/',[frontendController::class ,'index'])->name('index');
 
+// AJAX: Verify agent promo code during registration
+Route::get('/verify-promo', function (\Illuminate\Http\Request $request) {
+    $code  = strtoupper(trim($request->query('code', '')));
+    $agent = \App\Models\Agent::where('agent_code', $code)->first();
+
+    if ($agent) {
+        return response()->json([
+            'found'      => true,
+            'agent_name' => $agent->full_name ?? $agent->name,
+        ]);
+    }
+    return response()->json(['found' => false]);
+})->name('verify.promo');
+
 
 
 // Route::get('/dashboard', function () {

@@ -309,7 +309,8 @@
                     </div>
                 </li>
                 <li class="nav-item dropdown">
-                    <a class="nav-link pe-0 ps-2" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <a class="nav-link pe-0 ps-2 d-flex align-items-center gap-2" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="d-none d-md-block fw-bold text-700">{{ auth()->user()->name }} <i class="fas fa-angle-down ms-1"></i></span>
                         <div class="avatar avatar-xl">
                             <img class="rounded-circle" src="{{asset('contents/backend/assets')}}/assets/img/team/3-thumb.png" alt="" />
                         </div>

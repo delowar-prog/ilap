@@ -22,31 +22,77 @@
             <ul class="navbar-nav flex-column mb-3" id="navbarVerticalNav">
 
                 <!-- ==================== Dashboard ==================== -->
-                <li class="nav-item mb-4">
-                    <a class="nav-link dropdown-indicator" href="#dashboard" role="button" data-bs-toggle="collapse"
-                        aria-expanded="true" aria-controls="dashboard">
+                <li class="nav-item mb-1">
+                    <a class="nav-link" href="{{ route('dashboard') }}" role="button">
                         <div class="d-flex align-items-center">
                             <span class="nav-link-icon"><span class="fas fa-chart-pie"></span></span>
                             <span class="nav-link-text ps-1">Dashboard</span>
                         </div>
                     </a>
-                    <ul class="nav collapse show" id="dashboard">
+                </li>
+
+                @hasanyrole('Student|Super Admin|Admin')
+                <!-- ==================== Student Profile ==================== -->
+                <li class="nav-item mb-4">
+                    <a class="nav-link dropdown-indicator" href="#student-profile" role="button" data-bs-toggle="collapse" aria-expanded="true" aria-controls="student-profile">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-user-circle"></span></span>
+                            <span class="nav-link-text ps-1">Student Info</span>
+                        </div>
+                    </a>
+                    <ul class="nav collapse show" id="student-profile">
                         <li class="nav-item">
-                            <a class="nav-link active" href="">
+                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="0" onclick="handleStudentTabClick(event, 0)">
                                 <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1 d-flex align-items-center flex-wrap">
-                                        {{ auth()->user()->name }}
-                                        <span class="badge bg-success bg-opacity-10 text-success ms-2"
-                                            style="font-size: 0.7rem;">
-                                            <i class="fas fa-circle me-1"
-                                                style="font-size: 0.4rem; vertical-align: middle;"></i> Active
-                                        </span>
-                                    </span>
+                                    <span class="nav-link-text ps-1"><i class="fas fa-user fa-xs me-1 text-muted"></i> Personal Info</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="1" onclick="handleStudentTabClick(event, 1)">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1"><i class="fas fa-map-marker-alt fa-xs me-1 text-muted"></i> Address & Contacts</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="2" onclick="handleStudentTabClick(event, 2)">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1"><i class="fas fa-plane fa-xs me-1 text-muted"></i> Travel & English</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="3" onclick="handleStudentTabClick(event, 3)">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1"><i class="fas fa-graduation-cap fa-xs me-1 text-muted"></i> Academic History</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="4" onclick="handleStudentTabClick(event, 4)">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1"><i class="fas fa-book-open fa-xs me-1 text-muted"></i> Course Preferences</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="5" onclick="handleStudentTabClick(event, 5)">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1"><i class="fas fa-users fa-xs me-1 text-muted"></i> Referees</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="6" onclick="handleStudentTabClick(event, 6)">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1"><i class="fas fa-folder-open fa-xs me-1 text-muted"></i> Documents</span>
                                 </div>
                             </a>
                         </li>
                     </ul>
                 </li>
+                @endhasanyrole
 
                  <!-- ==================== Campus Config ==================== -->
                  @canany(['campus view', 'campus add'])
