@@ -92,8 +92,8 @@ class RegisteredUserController extends Controller
             Auth::login($user);
         });
 
-        // Redirect to student dashboard after registration
-        return redirect(route('dashboard', absolute: false))
-            ->with('success', 'Registration successful! Please complete your profile.');
+        // Redirect to pre-assessment form after registration
+        return redirect()->route('pre.assessment.show')
+            ->with('success', 'Registration successful! Please complete the pre-assessment form.');
     }
 }

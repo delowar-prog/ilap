@@ -12,7 +12,7 @@ class UserRegisterSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-            // একাধিক ইউজারের ডাটা অ্যারে আকারে সাজানো হলো
+         
              public function run(): void
     {
         $user = User::create([

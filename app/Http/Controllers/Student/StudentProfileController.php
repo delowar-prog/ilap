@@ -37,6 +37,37 @@ class StudentProfileController extends Controller
         $englishTests = StudentEnglishTest::where('student_id', $student->id)->get();
         $referees = StudentReferee::where('student_id', $student->id)->get();
         $documents = StudentDocument::where('student_id', $student->id)->get();
+        // Calculate Completion Percentage
+        $completionPercent = 10; // Base percentage
+        
+        // Personal Info Check
+        if ($student->phone && $student->current_address && $student->dob && $student->nationality) {
+            $completionPercent += 30;
+        } elseif ($student->phone || $student->current_address) {
+            $completionPercent += 15;
+        }
+
+        // Academic Check
+        if ($academics->count() > 0) {
+            $completionPercent += 20;
+        }
+
+        // English Test Check
+        if ($englishTests->count() > 0 || $student->native_language) {
+            $completionPercent += 20;
+        }
+
+        // Referees Check
+        if ($referees->count() > 0) {
+            $completionPercent += 10;
+        }
+
+        // Documents Check
+        if ($documents->count() > 0) {
+            $completionPercent += 10;
+        }
+
+        $completionPercent = min($completionPercent, 100);
         
         return view('backend.student.student_dashbord', compact(
             'student', 
@@ -44,7 +75,44 @@ class StudentProfileController extends Controller
             'academics', 
             'englishTests', 
             'referees', 
-            'documents'
+            'documents',
+            'completionPercent'
+        ));
+    }
+
+    public function profile()
+    {
+        $user = Auth::user();
+        $student = $user->student;
+        
+        if (!$student) {
+            return redirect()->route('student.dashboard')->withErrors(['Profile not found.']);
+        }
+        
+        $preAssessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
+        $academics = StudentAcademic::where('student_id', $student->id)->get();
+        $englishTests = StudentEnglishTest::where('student_id', $student->id)->get();
+        $referees = StudentReferee::where('student_id', $student->id)->get();
+        $documents = StudentDocument::where('student_id', $student->id)->get();
+        
+        // Calculate Completion Percentage
+        $completionPercent = 10;
+        if ($student->phone && $student->current_address && $student->dob && $student->nationality) { $completionPercent += 30; }
+        elseif ($student->phone || $student->current_address) { $completionPercent += 15; }
+        if ($academics->count() > 0) { $completionPercent += 20; }
+        if ($englishTests->count() > 0 || $student->native_language) { $completionPercent += 20; }
+        if ($referees->count() > 0) { $completionPercent += 10; }
+        if ($documents->count() > 0) { $completionPercent += 10; }
+        $completionPercent = min($completionPercent, 100);
+
+        return view('backend.student.student_profile', compact(
+            'student', 
+            'preAssessment', 
+            'academics', 
+            'englishTests', 
+            'referees', 
+            'documents',
+            'completionPercent'
         ));
     }
 

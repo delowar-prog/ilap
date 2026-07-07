@@ -21,7 +21,20 @@
         <div class="navbar-vertical-content scrollbar">
             <ul class="navbar-nav flex-column mb-3" id="navbarVerticalNav">
 
+                @php
+                    $isApprovedStudent = true;
+                    $isStudent = false;
+                    if(Auth::check() && Auth::user()->hasRole('Student')) {
+                        $isStudent = true;
+                        $student = Auth::user()->student;
+                        if(!$student || !$student->preAssessment || $student->preAssessment->assessment_status !== 'approved') {
+                            $isApprovedStudent = false;
+                        }
+                    }
+                @endphp
+
                 <!-- ==================== Dashboard ==================== -->
+                @if(!$isStudent || $isApprovedStudent)
                 <li class="nav-item mb-1">
                     <a class="nav-link" href="{{ route('dashboard') }}" role="button">
                         <div class="d-flex align-items-center">
@@ -30,7 +43,44 @@
                         </div>
                     </a>
                 </li>
+                @endif
 
+                @hasanyrole('Super Admin|Admin|Student')
+                <!-- ==================== Student Space ==================== -->
+                <li class="nav-item">
+                    <!-- label-->
+                    <div class="row navbar-vertical-label-wrapper mt-3 mb-2">
+                        <div class="col-auto navbar-vertical-label">Student Space</div>
+                        <div class="col ps-0"><hr class="mb-0 navbar-vertical-divider" /></div>
+                    </div>
+                    
+                    <!-- Dashboard -->
+                    <a class="nav-link" href="{{ route('student.dashboard') }}" role="button">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-home"></span></span>
+                            <span class="nav-link-text ps-1">Dashboard</span>
+                        </div>
+                    </a>
+
+                    <!-- Profile -->
+                    <a class="nav-link" href="{{ route('student.profile') }}" role="button">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-user-edit"></span></span>
+                            <span class="nav-link-text ps-1">My Profile</span>
+                        </div>
+                    </a>
+
+                    <!-- Pre Assessment -->
+                    <a class="nav-link" href="{{ Auth::user()->hasRole('Student') ? route('pre.assessment.index') : route('admin.pre.assessments.index') }}" role="button">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-clipboard-list"></span></span>
+                            <span class="nav-link-text ps-1">My Pre-Assessment</span>
+                        </div>
+                    </a>
+                </li>
+                @endhasanyrole
+
+                @if(!$isStudent || $isApprovedStudent)
                 @hasanyrole('Student|Super Admin|Admin')
                 <!-- ==================== Student Profile ==================== -->
                 <li class="nav-item mb-4">
@@ -93,6 +143,7 @@
                     </ul>
                 </li>
                 @endhasanyrole
+                @endif
 
                  <!-- ==================== Campus Config ==================== -->
                  @canany(['campus view', 'campus add'])

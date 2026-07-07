@@ -35,15 +35,40 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('institutes', InstituteController::class);
 });
 
+// ==================== Pre-Assessment Routes (Student) ====================
+Route::middleware(['auth'])->group(function () {
+    Route::get('/pre-assessment', [\App\Http\Controllers\Student\PreAssessmentController::class, 'index'])
+        ->name('pre.assessment.index');
+    Route::get('/pre-assessment/form', [\App\Http\Controllers\Student\PreAssessmentController::class, 'show'])
+        ->name('pre.assessment.show');
+    Route::post('/pre-assessment', [\App\Http\Controllers\Student\PreAssessmentController::class, 'store'])
+        ->name('pre.assessment.store');
+    Route::put('/pre-assessment', [\App\Http\Controllers\Student\PreAssessmentController::class, 'update'])
+        ->name('pre.assessment.update');
+});
+
 // ==================== Student Profile Routes ====================
-Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
+Route::middleware(['auth', 'pre.assessment'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [StudentProfileController::class, 'dashboard'])->name('dashboard');
+    Route::get('/profile', [StudentProfileController::class, 'profile'])->name('profile');
     Route::post('/profile/personal', [StudentProfileController::class, 'updatePersonal'])->name('profile.personal');
     Route::post('/profile/academic', [StudentProfileController::class, 'updateAcademic'])->name('profile.academic');
     Route::post('/profile/english', [StudentProfileController::class, 'updateEnglish'])->name('profile.english');
     Route::post('/profile/preferences', [StudentProfileController::class, 'updatePreferences'])->name('profile.preferences');
     Route::post('/profile/referees', [StudentProfileController::class, 'updateReferees'])->name('profile.referees');
     Route::post('/profile/upload', [StudentProfileController::class, 'uploadDocument'])->name('profile.upload');
+});
+
+// ==================== Pre-Assessment Admin Routes ====================
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/pre-assessments', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'index'])
+        ->name('pre.assessments.index');
+    Route::get('/pre-assessments/{id}', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'show'])
+        ->name('pre.assessments.show');
+    Route::post('/pre-assessments/{id}/approve', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'approve'])
+        ->name('pre.assessments.approve');
+    Route::post('/pre-assessments/{id}/reject', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'reject'])
+        ->name('pre.assessments.reject');
 });
 
 
