@@ -15,7 +15,7 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, $role = null): Response
     {
-        if (! auth()->check() || auth()->user()->role !== $role) {
+        if (! auth()->check() || ! auth()->user()->hasRole($role)) {
             abort(403);
         }
 

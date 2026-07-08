@@ -12,9 +12,9 @@ class Student extends Model
     protected $fillable = [
         'campus_id', 'user_id', 'agent_id', 'student_id', 'promo_code', 'title',
         'first_name', 'middle_name', 'surname', 'dob', 'nationality', 'country_id', 'email',
-        'phone', 'password', 'status',
+        'phone', 'password', 'status', 'institute_id',
         // New profile fields
-        'skype_id', 'gender', 'country_of_birth', 'native_language',
+        'profile_picture', 'skype_id', 'gender', 'country_of_birth', 'native_language',
         'name_in_passport', 'passport_number', 'passport_issue_location', 'passport_issue_date', 'passport_expiry_date',
         'permanent_address', 'permanent_city', 'permanent_postcode', 'permanent_country',
         'current_address', 'current_city', 'current_postcode', 'current_country',
@@ -40,6 +40,7 @@ class Student extends Model
     public function user()         { return $this->belongsTo(User::class); }
     public function agent()        { return $this->belongsTo(Agent::class); }
     public function country()      { return $this->belongsTo(Country::class); }
+    public function institute()    { return $this->belongsTo(Institute::class); }
 
     public function preAssessment()  { return $this->hasOne(StudentPreAssessment::class); }
     public function applications()   { return $this->hasMany(StudentApplication::class); }

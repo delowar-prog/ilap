@@ -10,6 +10,7 @@ use App\Models\StudentEnglishTest;
 use App\Models\StudentReferee;
 use App\Models\StudentDocument;
 use App\Models\StudentPreAssessment;
+use App\Models\Institute;
 use Illuminate\Support\Facades\Auth;
 
 class StudentProfileController extends Controller
@@ -105,6 +106,43 @@ class StudentProfileController extends Controller
         if ($documents->count() > 0) { $completionPercent += 10; }
         $completionPercent = min($completionPercent, 100);
 
+        return view('backend.student.student_view_profile', compact(
+            'student', 
+            'preAssessment', 
+            'academics', 
+            'englishTests', 
+            'referees', 
+            'documents',
+            'completionPercent'
+        ));
+    }
+
+    public function editProfile()
+    {
+        $user = Auth::user();
+        $student = $user->student;
+        
+        if (!$student) {
+            return redirect()->route('student.dashboard')->withErrors(['Profile not found.']);
+        }
+        
+        $preAssessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
+        $academics = StudentAcademic::where('student_id', $student->id)->get();
+        $englishTests = StudentEnglishTest::where('student_id', $student->id)->get();
+        $referees = StudentReferee::where('student_id', $student->id)->get();
+        $documents = StudentDocument::where('student_id', $student->id)->get();
+        $institutes = Institute::where('status', 'active')->orderBy('name')->get();
+        
+        // Calculate Completion Percentage
+        $completionPercent = 10;
+        if ($student->phone && $student->current_address && $student->dob && $student->nationality) { $completionPercent += 30; }
+        elseif ($student->phone || $student->current_address) { $completionPercent += 15; }
+        if ($academics->count() > 0) { $completionPercent += 20; }
+        if ($englishTests->count() > 0 || $student->native_language) { $completionPercent += 20; }
+        if ($referees->count() > 0) { $completionPercent += 10; }
+        if ($documents->count() > 0) { $completionPercent += 10; }
+        $completionPercent = min($completionPercent, 100);
+
         return view('backend.student.student_profile', compact(
             'student', 
             'preAssessment', 
@@ -112,6 +150,7 @@ class StudentProfileController extends Controller
             'englishTests', 
             'referees', 
             'documents',
+            'institutes',
             'completionPercent'
         ));
     }
@@ -132,7 +171,16 @@ class StudentProfileController extends Controller
             'refused_visa_or_deported','taken_tb_test','bank_balance_info',
         ];
 
-        $student->update($request->only($studentFields));
+        $data = $request->only($studentFields);
+
+        if ($request->hasFile('profile_picture')) {
+            $file = $request->file('profile_picture');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('public/profile_pictures', $filename);
+            $data['profile_picture'] = 'storage/profile_pictures/' . $filename;
+        }
+
+        $student->update($data);
         return response()->json(['success' => true, 'message' => 'Details saved successfully!']);
     }
 
@@ -187,7 +235,13 @@ class StudentProfileController extends Controller
     {
         $student = Auth::user()->student;
         $preAssessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
-        $preAssessment->update($request->except(['_token']));
+        
+        // Save the institute_id in student table
+        if ($request->has('institute_id')) {
+            $student->update(['institute_id' => $request->institute_id]);
+        }
+
+        $preAssessment->update($request->except(['_token', 'institute_id']));
         
         return response()->json(['success' => true, 'message' => 'Preferences updated successfully.']);
     }

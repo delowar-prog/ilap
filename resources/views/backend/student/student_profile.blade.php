@@ -128,19 +128,8 @@
       <span id="nav-6" class="d-none"></span>
 
       <div class="row g-0">
-        <!-- ─── Sidebar Nav ─── -->
-        <div class="col-md-3 border-end bg-light">
-            <div class="step-nav">
-                <button type="button" class="step-nav-item active" onclick="switchTab(0)"><div class="step-icon"><i class="fas fa-user"></i></div> Personal Info</button>
-                <button type="button" class="step-nav-item" onclick="switchTab(1)"><div class="step-icon"><i class="fas fa-school"></i></div> Academics</button>
-                <button type="button" class="step-nav-item" onclick="switchTab(2)"><div class="step-icon"><i class="fas fa-language"></i></div> English Test</button>
-                <button type="button" class="step-nav-item" onclick="switchTab(3)"><div class="step-icon"><i class="fas fa-book"></i></div> Preferences</button>
-                <button type="button" class="step-nav-item" onclick="switchTab(4)"><div class="step-icon"><i class="fas fa-users"></i></div> References</button>
-                <button type="button" class="step-nav-item" onclick="switchTab(5)"><div class="step-icon"><i class="fas fa-file-upload"></i></div> Documents</button>
-            </div>
-        </div>
         <!-- ─── Tab Content ─── -->
-        <div class="col-md-9">
+        <div class="col-md-12">
           <div class="p-4" id="tab-content-area">
 
             <!-- ═══════════ TAB 0: Personal Info ═══════════ -->
@@ -203,9 +192,16 @@
                     <label class="form-label">Phone Number</label>
                     <input class="form-control" type="text" name="phone" value="{{ $student->phone }}">
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <label class="form-label">Skype ID</label>
                     <input class="form-control" type="text" name="skype_id" value="{{ $student->skype_id }}">
+                  </div>
+                  <div class="col-md-8">
+                    <label class="form-label">Profile Picture</label>
+                    <input class="form-control" type="file" name="profile_picture" accept="image/*">
+                    @if($student->profile_picture)
+                      <div class="mt-2 text-muted small">Current: <a href="{{ asset($student->profile_picture) }}" target="_blank">View Picture</a></div>
+                    @endif
                   </div>
 
                   <div class="col-12 mt-2"><div class="section-title"><i class="fas fa-passport text-primary"></i> Passport Details</div></div>
@@ -505,7 +501,12 @@
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Preferred University 1</label>
-                    <input class="form-control" type="text" name="institute_name" value="{{ $preAssessment->institute_name }}">
+                    <select class="form-select" name="institute_id" required>
+                      <option value="">Select University/College...</option>
+                      @foreach($institutes as $institute)
+                        <option value="{{ $institute->id }}" {{ ($student->institute_id == $institute->id) ? 'selected' : '' }}>{{ $institute->name }}</option>
+                      @endforeach
+                    </select>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Preferred University 2</label>

@@ -45,7 +45,7 @@
                 </li>
                 @endif
 
-                @hasanyrole('Super Admin|Admin|Student')
+                @hasrole('Student')
                 <!-- ==================== Student Space ==================== -->
                 <li class="nav-item">
                     <!-- label-->
@@ -62,26 +62,19 @@
                         </div>
                     </a>
 
-                    <!-- Profile -->
-                    <a class="nav-link" href="{{ route('student.profile') }}" role="button">
-                        <div class="d-flex align-items-center">
-                            <span class="nav-link-icon"><span class="fas fa-user-edit"></span></span>
-                            <span class="nav-link-text ps-1">My Profile</span>
-                        </div>
-                    </a>
 
                     <!-- Pre Assessment -->
-                    <a class="nav-link" href="{{ Auth::user()->hasRole('Student') ? route('pre.assessment.index') : route('admin.pre.assessments.index') }}" role="button">
+                    <a class="nav-link" href="{{ route('pre.assessment.index') }}" role="button">
                         <div class="d-flex align-items-center">
                             <span class="nav-link-icon"><span class="fas fa-clipboard-list"></span></span>
                             <span class="nav-link-text ps-1">My Pre-Assessment</span>
                         </div>
                     </a>
                 </li>
-                @endhasanyrole
+                @endhasrole
 
-                @if(!$isStudent || $isApprovedStudent)
-                @hasanyrole('Student|Super Admin|Admin')
+                @hasrole('Student')
+                @if($isApprovedStudent)
                 <!-- ==================== Student Profile ==================== -->
                 <li class="nav-item mb-4">
                     <a class="nav-link dropdown-indicator" href="#student-profile" role="button" data-bs-toggle="collapse" aria-expanded="true" aria-controls="student-profile">
@@ -92,49 +85,59 @@
                     </a>
                     <ul class="nav collapse show" id="student-profile">
                         <li class="nav-item">
-                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="0" onclick="handleStudentTabClick(event, 0)">
+                            <a class="nav-link" href="{{ route('student.profile') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1"><i class="fas fa-id-card fa-xs me-1 text-muted"></i> View My Profile</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item mt-2 mb-1">
+                            <div class="nav-link-text ps-3 text-uppercase text-muted" style="font-size: 0.75rem; font-weight: 600;">Update Information</div>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-0" data-tab="0" onclick="handleStudentTabClick(event, 0)">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1"><i class="fas fa-user fa-xs me-1 text-muted"></i> Personal Info</span>
                                 </div>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="1" onclick="handleStudentTabClick(event, 1)">
+                            <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-1" data-tab="1" onclick="handleStudentTabClick(event, 1)">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1"><i class="fas fa-map-marker-alt fa-xs me-1 text-muted"></i> Address & Contacts</span>
                                 </div>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="2" onclick="handleStudentTabClick(event, 2)">
+                            <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-2" data-tab="2" onclick="handleStudentTabClick(event, 2)">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1"><i class="fas fa-plane fa-xs me-1 text-muted"></i> Travel & English</span>
                                 </div>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="3" onclick="handleStudentTabClick(event, 3)">
+                            <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-3" data-tab="3" onclick="handleStudentTabClick(event, 3)">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1"><i class="fas fa-graduation-cap fa-xs me-1 text-muted"></i> Academic History</span>
                                 </div>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="4" onclick="handleStudentTabClick(event, 4)">
+                            <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-4" data-tab="4" onclick="handleStudentTabClick(event, 4)">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1"><i class="fas fa-book-open fa-xs me-1 text-muted"></i> Course Preferences</span>
                                 </div>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="5" onclick="handleStudentTabClick(event, 5)">
+                            <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-5" data-tab="5" onclick="handleStudentTabClick(event, 5)">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1"><i class="fas fa-users fa-xs me-1 text-muted"></i> Referees</span>
                                 </div>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link student-tab-link" href="{{ route('student.dashboard') }}" data-tab="6" onclick="handleStudentTabClick(event, 6)">
+                            <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-6" data-tab="6" onclick="handleStudentTabClick(event, 6)">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1"><i class="fas fa-folder-open fa-xs me-1 text-muted"></i> Documents</span>
                                 </div>
@@ -142,8 +145,8 @@
                         </li>
                     </ul>
                 </li>
-                @endhasanyrole
                 @endif
+                @endhasrole
 
                  <!-- ==================== Campus Config ==================== -->
                  @canany(['campus view', 'campus add'])
@@ -385,6 +388,7 @@
                 </li>
                 @endcanany
 
+                @if(!$isStudent)
                 <!-- ==================== Enrolment Details ==================== -->
                 <li class="nav-item">
                     <a class="nav-link dropdown-indicator" href="#students" role="button" data-bs-toggle="collapse"
@@ -395,10 +399,19 @@
                         </div>
                     </a>
                     <ul class="nav collapse" id="students">
+                        @can('student view')
                         <li class="nav-item">
-                            <a class="nav-link" href="">
+                            <a class="nav-link" href="{{ route('admin.students.index') }}">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1">All Students</span>
+                                </div>
+                            </a>
+                        </li>
+                        @endcan
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.pre.assessments.index') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Pre-Assessments</span>
                                 </div>
                             </a>
                         </li>
@@ -719,6 +732,7 @@
                         </li>
                     </ul>
                 </li>
+                @endif
             </ul>
         </div>
     </div>

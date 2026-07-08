@@ -36,7 +36,7 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ==================== Pre-Assessment Routes (Student) ====================
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'role:Student'])->group(function () {
     Route::get('/pre-assessment', [\App\Http\Controllers\Student\PreAssessmentController::class, 'index'])
         ->name('pre.assessment.index');
     Route::get('/pre-assessment/form', [\App\Http\Controllers\Student\PreAssessmentController::class, 'show'])
@@ -48,9 +48,10 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ==================== Student Profile Routes ====================
-Route::middleware(['auth', 'pre.assessment'])->prefix('student')->name('student.')->group(function () {
+Route::middleware(['auth', 'role:Student', 'pre.assessment'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [StudentProfileController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [StudentProfileController::class, 'profile'])->name('profile');
+    Route::get('/profile/edit', [StudentProfileController::class, 'editProfile'])->name('profile.edit');
     Route::post('/profile/personal', [StudentProfileController::class, 'updatePersonal'])->name('profile.personal');
     Route::post('/profile/academic', [StudentProfileController::class, 'updateAcademic'])->name('profile.academic');
     Route::post('/profile/english', [StudentProfileController::class, 'updateEnglish'])->name('profile.english');
@@ -69,6 +70,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->name('pre.assessments.approve');
     Route::post('/pre-assessments/{id}/reject', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'reject'])
         ->name('pre.assessments.reject');
+        
+    Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)->only(['index', 'show']);
 });
 
 
