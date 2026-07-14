@@ -395,7 +395,7 @@
                         aria-expanded="false" aria-controls="students">
                         <div class="d-flex align-items-center">
                             <span class="nav-link-icon"><span class="fas fa-user-graduate"></span></span>
-                            <span class="nav-link-text ps-1">Enrolment Details</span>
+                            <span class="nav-link-text ps-1">Students</span>
                         </div>
                     </a>
                     <ul class="nav collapse" id="students">
@@ -403,7 +403,7 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.students.index') }}">
                                 <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">All Students</span>
+                                    <span class="nav-link-text ps-1">Pre-Enrolment</span>
                                 </div>
                             </a>
                         </li>

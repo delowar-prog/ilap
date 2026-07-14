@@ -71,6 +71,10 @@ class PreAssessmentController extends Controller
             'full_name'            => 'required|string|max:255',
             'contact_number'       => 'required|string|max:30',
             'contact_address'      => 'required|string',
+            'city'                 => 'required|string|max:100',
+            'state'                => 'required|string|max:100',
+            'postal_code'          => 'required|string|max:50',
+            'country'              => 'required|string|max:100',
             'dob'                  => 'required|date',
             'gender'               => 'required|string',
             'nationality'          => 'required|string',
@@ -95,7 +99,7 @@ class PreAssessmentController extends Controller
 
         $assessment->update(array_merge(
             $request->only([
-                'full_name', 'contact_number', 'contact_address', 'dob', 'passport_number', 'gender', 'nationality',
+                'full_name', 'contact_number', 'contact_address', 'city', 'state', 'postal_code', 'country', 'dob', 'passport_number', 'gender', 'nationality',
                 'highest_qualification', 'grades_gpa', 'field_of_study',
                 'name_of_institution', 'year_of_passing',
                 'second_qualification', 'second_qual_grade', 'second_institution', 'second_year_of_passing',

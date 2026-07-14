@@ -27,6 +27,20 @@ Route::get('/verify-promo', function (\Illuminate\Http\Request $request) {
     return response()->json(['found' => false]);
 })->name('verify.promo');
 
+// AJAX: Verify campus code during registration
+Route::get('/verify-campus', function (\Illuminate\Http\Request $request) {
+    $code   = strtoupper(trim($request->query('code', '')));
+    $campus = \App\Models\Campus::where('campus_code', $code)->first();
+
+    if ($campus) {
+        return response()->json([
+            'found'       => true,
+            'campus_name' => $campus->name,
+        ]);
+    }
+    return response()->json(['found' => false]);
+})->name('verify.campus');
+
 
 
 // Route::get('/dashboard', function () {

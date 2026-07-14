@@ -22,14 +22,25 @@ class StudentProfileController extends Controller
         
         if (!$student) {
             $campus = \App\Models\Campus::first();
+            $campusId = $campus ? $campus->id : 1;
+            $campusCodeStr = $campus ? $campus->campus_code : 'CMP1';
+            
+            $firstName = $user->user_first_name ?? $user->name ?? 'X';
+            $surname = $user->user_last_name ?? 'X';
+            
+            $randomDigits = str_pad(mt_rand(0, 99999), 5, '0', STR_PAD_LEFT);
+            $initialFirstName = strtoupper(substr($firstName, 0, 1));
+            $initialLastName  = strtoupper(substr($surname, 0, 1));
+            $studentId = $campusCodeStr . 'ST' . $randomDigits . $initialFirstName . $initialLastName;
+
             // Fallback: If user somehow doesn't have a student profile yet, create one
             $student = Student::create([
-                'campus_id' => $campus ? $campus->id : 1,
+                'campus_id' => $campusId,
                 'user_id' => $user->id,
-                'first_name' => $user->user_first_name ?? $user->name,
-                'surname' => $user->user_last_name ?? '',
+                'first_name' => $firstName,
+                'surname' => $surname,
                 'email' => $user->email,
-                'student_id' => 'STU-' . date('Ymd') . rand(1000, 9999),
+                'student_id' => $studentId,
             ]);
         }
         
@@ -279,7 +290,8 @@ class StudentProfileController extends Controller
         $student = Auth::user()->student;
         $request->validate([
             'document' => 'required|file|max:5120',
-            'document_type' => 'required|string'
+            'document_type' => 'required|string',
+            'title' => 'nullable|string|max:255'
         ]);
 
         if ($request->hasFile('document')) {
@@ -288,6 +300,7 @@ class StudentProfileController extends Controller
             StudentDocument::create([
                 'student_id' => $student->id,
                 'document_type' => $request->document_type,
+                'title' => $request->title,
                 'file_path' => $path
             ]);
             

@@ -105,8 +105,24 @@
                                 </div>
                                 
                                 <div class="col-md-12 mb-3">
-                                    <label for="contact_address" class="form-label">Contact Address <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" name="contact_address" id="contact_address" rows="3" placeholder="Your current full address" required>{{ old('contact_address', $assessment->contact_address) }}</textarea>
+                                    <label class="form-label mb-2">Full Contact Address <span class="text-danger">*</span></label>
+                                    <div class="row g-3">
+                                        <div class="col-md-12">
+                                            <input type="text" class="form-control" name="contact_address" id="contact_address" value="{{ old('contact_address', $assessment->contact_address) }}" placeholder="Street Address (e.g. 123 Main St, Apt 4B)" required />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" name="city" id="city" value="{{ old('city', $assessment->city) }}" placeholder="City" required />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" name="state" id="state" value="{{ old('state', $assessment->state) }}" placeholder="State / Province" required />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" name="postal_code" id="postal_code" value="{{ old('postal_code', $assessment->postal_code) }}" placeholder="Postal / Zip Code" required />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="text" class="form-control" name="country" id="country" value="{{ old('country', $assessment->country) }}" placeholder="Country" required />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             

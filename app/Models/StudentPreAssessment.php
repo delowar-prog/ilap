@@ -12,7 +12,7 @@ class StudentPreAssessment extends Model
     protected $fillable = [
         'student_id',
         // Page 1: Personal Info
-        'full_name', 'contact_number', 'contact_address', 'dob', 'passport_number',
+        'full_name', 'contact_number', 'contact_address', 'city', 'state', 'postal_code', 'country', 'dob', 'passport_number',
         'gender', 'nationality',
         // Page 2: Academic
         'highest_qualification', 'grades_gpa', 'field_of_study',

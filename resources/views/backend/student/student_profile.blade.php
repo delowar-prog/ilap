@@ -625,7 +625,7 @@
               <p class="text-muted fs--1 mb-3">Accepted formats: PDF, JPG, PNG, DOC. Max 5MB per file.</p>
               
               <div class="row g-3 mb-4">
-                <div class="col-md-5">
+                <div class="col-md-4">
                   <label class="form-label">Document Type</label>
                   <select class="form-select" id="doc_type">
                     <option value="CV">CV / Resume</option>
@@ -638,12 +638,16 @@
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-4">
+                  <label class="form-label">Document Title</label>
+                  <input class="form-control" type="text" id="doc_title" placeholder="e.g. IELTS Report 2023">
+                </div>
+                <div class="col-md-3">
                   <label class="form-label">Select File</label>
                   <input class="form-control" type="file" id="doc_file">
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                  <button type="button" class="btn btn-save w-100" onclick="uploadDoc()"><i class="fas fa-upload me-1"></i> Upload</button>
+                <div class="col-md-1 d-flex align-items-end">
+                  <button type="button" class="btn btn-save w-100 px-2" onclick="uploadDoc()" title="Upload"><i class="fas fa-upload"></i></button>
                 </div>
               </div>
 
@@ -654,7 +658,7 @@
                     <div class="d-flex align-items-center gap-3">
                       <i class="fas fa-file-pdf text-danger fs-5"></i>
                       <div>
-                        <div class="fw-600 fs--1">{{ $doc->document_type }}</div>
+                        <div class="fw-600 fs--1">{{ $doc->document_type }} @if($doc->title) - {{ $doc->title }} @endif</div>
                         <div class="text-500 fs--2">{{ $doc->created_at->format('d M Y') }}</div>
                       </div>
                     </div>
@@ -859,11 +863,13 @@ function removeAcademicRow(idx) {
 function uploadDoc() {
     const fileInput = document.getElementById('doc_file');
     const docType   = document.getElementById('doc_type').value;
+    const docTitle  = document.getElementById('doc_title') ? document.getElementById('doc_title').value : '';
     if (!fileInput.files.length) { showToast('Please select a file first.', false); return; }
 
     const fd = new FormData();
     fd.append('document', fileInput.files[0]);
     fd.append('document_type', docType);
+    fd.append('title', docTitle);
     fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
 
     fetch('{{ route('student.profile.upload') }}', {

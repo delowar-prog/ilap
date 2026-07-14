@@ -55,7 +55,7 @@
             type="button"
             class="flex-1 inline-flex justify-center items-center px-5 py-3 border border-gray-200 text-sm font-semibold rounded-xl text-slate-700 bg-white hover:bg-slate-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
           >
-           Register Now
+           Student Registration
           </button>
           </a>
         </div>

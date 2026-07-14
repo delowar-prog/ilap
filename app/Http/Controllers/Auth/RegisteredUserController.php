@@ -45,7 +45,7 @@ class RegisteredUserController extends Controller
             'email'       => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'phone'       => ['required', 'string', 'max:20'],
             'password'    => ['required', 'confirmed', Rules\Password::defaults()],
-            'campus_id'   => ['required', 'exists:campuses,id'],
+            'campus_code' => ['required', 'string', 'exists:campuses,campus_code'],
             'country_id'  => ['required', 'exists:countries,id'],
             'promo_code'  => ['nullable', 'string', 'max:50'],
         ]);
@@ -58,7 +58,12 @@ class RegisteredUserController extends Controller
             $agentId = $agent?->id;
         }
 
-        DB::transaction(function () use ($request, $agentId) {
+        // Resolve campus via campus_code
+        $campus = Campus::where('campus_code', strtoupper($request->campus_code))->firstOrFail();
+        $campusId = $campus->id;
+        $campusCodeStr = $campus->campus_code;
+
+        DB::transaction(function () use ($request, $agentId, $campusId, $campusCodeStr) {
             // 1. Create the User account (users table uses user_first_name, user_last_name)
             $user = User::create([
                 'user_first_name' => $request->first_name,
@@ -69,13 +74,16 @@ class RegisteredUserController extends Controller
             ]);
             $user->assignRole('Student');
 
-            // 2. Generate unique student_id e.g. STU-20250706-XXXX
-            $studentId = 'STU-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4));
+            // 2. Generate unique student_id
+            $randomDigits = str_pad(mt_rand(0, 99999), 5, '0', STR_PAD_LEFT);
+            $initialFirstName = strtoupper(substr($request->first_name, 0, 1));
+            $initialLastName  = strtoupper(substr($request->surname, 0, 1));
+            $studentId = $campusCodeStr . 'ST' . $randomDigits . $initialFirstName . $initialLastName;
 
             // 3. Create the Student profile linked to this user
             $student = Student::create([
                 'user_id'     => $user->id,
-                'campus_id'   => $request->campus_id,
+                'campus_id'   => $campusId,
                 'country_id'  => $request->country_id,
                 'agent_id'    => $agentId,
                 'student_id'  => $studentId,

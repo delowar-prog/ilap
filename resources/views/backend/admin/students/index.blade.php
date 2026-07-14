@@ -19,7 +19,7 @@
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th>Phone</th>
-                                <th>Pre-Assessment</th>
+                                <th>Status</th>
                                 <th class="text-center">Action</th>
                             </tr>
                         </thead>
@@ -39,14 +39,14 @@
                                 <td>
                                     @if($student->preAssessment)
                                         @if($student->preAssessment->assessment_status === 'approved')
-                                            <span class="badge bg-success">Approved</span>
+                                            <span class="badge bg-success">PA Approved</span>
                                         @elseif($student->preAssessment->assessment_status === 'rejected')
-                                            <span class="badge bg-danger">Rejected</span>
+                                            <span class="badge bg-danger">PA Rejected</span>
                                         @else
-                                            <span class="badge bg-warning text-dark">Pending</span>
+                                            <span class="badge bg-warning text-dark">PA Pending</span>
                                         @endif
                                     @else
-                                        <span class="badge bg-light text-muted">Not Submitted</span>
+                                        <span class="badge bg-light text-muted">PA Not Submitted</span>
                                     @endif
                                 </td>
                                 <td class="text-center">

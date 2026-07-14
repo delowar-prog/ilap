@@ -18,15 +18,15 @@
             --accent:        #06b6d4;
             --success:       #10b981;
             --danger:        #ef4444;
-            --bg:            #0f172a;
-            --bg2:           #1e293b;
-            --card:          #1e293b;
-            --border:        rgba(255,255,255,0.08);
-            --text:          #f1f5f9;
-            --muted:         #94a3b8;
-            --input-bg:      rgba(255,255,255,0.05);
-            --input-border:  rgba(255,255,255,0.12);
-            --input-focus:   rgba(99,102,241,0.5);
+            --bg:            #ffffff;
+            --bg2:           #f1f5f9;
+            --card:          #ffffff;
+            --border:        #e2e8f0;
+            --text:          #0f172a;
+            --muted:         #64748b;
+            --input-bg:      #ffffff;
+            --input-border:  #cbd5e1;
+            --input-focus:   rgba(99,102,241,0.2);
         }
 
         body {
@@ -48,7 +48,7 @@
             position: fixed;
             border-radius: 50%;
             filter: blur(120px);
-            opacity: 0.18;
+            opacity: 0.1;
             pointer-events: none;
             z-index: 0;
         }
@@ -93,12 +93,13 @@
             border: 1px solid var(--border);
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.45);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
 
         .card-header {
             background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, var(--accent) 100%);
             padding: 2rem 2.5rem;
+            color: #ffffff;
         }
         .card-header h1 {
             font-size: 1.5rem;
@@ -121,8 +122,9 @@
             gap: .5rem;
             font-size: .78rem;
             font-weight: 500;
-            opacity: .6;
+            opacity: .8;
             transition: opacity .3s;
+            color: #ffffff;
         }
         .step-item.active { opacity: 1; }
         .step-item .num {
@@ -134,13 +136,14 @@
             font-weight: 700;
             flex-shrink: 0;
             border: 2px solid rgba(255,255,255,0.4);
+            color: #ffffff;
         }
         .step-item.active .num {
             background: white;
             color: var(--primary-dark);
             border-color: white;
         }
-        .step-sep { flex: 1; height: 1px; background: rgba(255,255,255,0.2); margin: 0 .4rem; }
+        .step-sep { flex: 1; height: 1px; background: rgba(255,255,255,0.3); margin: 0 .4rem; }
 
         /* Body */
         .card-body { padding: 2.5rem; }
@@ -210,7 +213,7 @@
         .form-control:focus {
             border-color: var(--primary-light);
             box-shadow: 0 0 0 3px var(--input-focus);
-            background: rgba(255,255,255,0.08);
+            background: #ffffff;
         }
         .form-control.is-invalid {
             border-color: var(--danger);
@@ -483,19 +486,16 @@
 
                 <div class="grid-2">
                     <div class="form-group">
-                        <label for="campus_id">Select Campus <span class="req">*</span></label>
-                        <div class="input-wrap">
+                        <label for="campus_code">Campus Code <span class="req">*</span></label>
+                        <div class="input-wrap promo-wrap">
                             <i class="fas fa-school icon"></i>
-                            <select name="campus_id" id="campus_id" class="form-control @error('campus_id') is-invalid @enderror" required>
-                                <option value="">— Choose a campus —</option>
-                                @foreach($campuses as $campus)
-                                    <option value="{{ $campus->id }}" {{ old('campus_id') == $campus->id ? 'selected' : '' }}>
-                                        {{ $campus->name }} ({{ $campus->campus_code }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <input type="text" name="campus_code" id="campus_code" class="form-control @error('campus_code') is-invalid @enderror"
+                                   placeholder="e.g. CMP-001" value="{{ old('campus_code') }}" required
+                                   oninput="this.value = this.value.toUpperCase(); resetCampusStatus()" />
+                            <button type="button" class="verify-btn" onclick="verifyCampus()">Verify</button>
                         </div>
-                        @error('campus_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="promo-status" id="campusStatus"></div>
+                        @error('campus_code') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="form-group">
@@ -593,6 +593,37 @@
     function resetPromoStatus() {
         document.getElementById('promoStatus').textContent = '';
         document.getElementById('promoStatus').className = 'promo-status';
+    }
+
+    // Verify campus code via AJAX
+    function verifyCampus() {
+        const code   = document.getElementById('campus_code').value.trim();
+        const status = document.getElementById('campusStatus');
+        if (!code) { status.textContent = ''; return; }
+
+        status.textContent = 'Checking…';
+        status.className   = 'promo-status';
+
+        fetch(`/verify-campus?code=${encodeURIComponent(code)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.found) {
+                    status.textContent = `✔ Valid campus: ${data.campus_name}`;
+                    status.className   = 'promo-status found';
+                } else {
+                    status.textContent = '✘ Campus code not found.';
+                    status.className   = 'promo-status notfound';
+                }
+            })
+            .catch(() => {
+                status.textContent = 'Could not verify. Please continue anyway.';
+                status.className   = 'promo-status notfound';
+            });
+    }
+
+    function resetCampusStatus() {
+        document.getElementById('campusStatus').textContent = '';
+        document.getElementById('campusStatus').className = 'promo-status';
     }
 
     // Show loading state on submit
