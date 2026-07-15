@@ -31,6 +31,7 @@ class StudentPreAssessment extends Model
         // Extra
         'preferred_course_2', 'preferred_course_3',
         'preferred_university_2', 'preferred_university_3',
+        'course_link_2', 'course_link_3',
         // Approval Workflow
         'assessment_status', 'approved_by', 'approved_at', 'rejection_note',
     ];

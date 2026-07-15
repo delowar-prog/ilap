@@ -126,7 +126,7 @@
                         <h5 class="m-0 font-14">{{ $assessment->financial_source }}</h5>
                     </div>
                     <div class="col-12 mb-3">
-                        <p class="text-muted mb-1 font-13">Course Link</p>
+                        <p class="text-muted mb-1 font-13">Course Link 1</p>
                         <h5 class="m-0 font-14">
                             @if($assessment->course_link)
                                 <a href="{{ $assessment->course_link }}" target="_blank">{{ $assessment->course_link }}</a>
@@ -135,6 +135,48 @@
                             @endif
                         </h5>
                     </div>
+
+                    @if($assessment->preferred_course_2 || $assessment->preferred_university_2 || $assessment->course_link_2)
+                    <div class="col-md-4 mb-3">
+                        <p class="text-muted mb-1 font-13">Preferred Course 2</p>
+                        <h5 class="m-0 font-14">{{ $assessment->preferred_course_2 ?? 'N/A' }}</h5>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <p class="text-muted mb-1 font-13">Preferred University 2</p>
+                        <h5 class="m-0 font-14">{{ $assessment->preferred_university_2 ?? 'N/A' }}</h5>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <p class="text-muted mb-1 font-13">Course Link 2</p>
+                        <h5 class="m-0 font-14">
+                            @if($assessment->course_link_2)
+                                <a href="{{ $assessment->course_link_2 }}" target="_blank">Link</a>
+                            @else
+                                N/A
+                            @endif
+                        </h5>
+                    </div>
+                    @endif
+
+                    @if($assessment->preferred_course_3 || $assessment->preferred_university_3 || $assessment->course_link_3)
+                    <div class="col-md-4 mb-3">
+                        <p class="text-muted mb-1 font-13">Preferred Course 3</p>
+                        <h5 class="m-0 font-14">{{ $assessment->preferred_course_3 ?? 'N/A' }}</h5>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <p class="text-muted mb-1 font-13">Preferred University 3</p>
+                        <h5 class="m-0 font-14">{{ $assessment->preferred_university_3 ?? 'N/A' }}</h5>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <p class="text-muted mb-1 font-13">Course Link 3</p>
+                        <h5 class="m-0 font-14">
+                            @if($assessment->course_link_3)
+                                <a href="{{ $assessment->course_link_3 }}" target="_blank">Link</a>
+                            @else
+                                N/A
+                            @endif
+                        </h5>
+                    </div>
+                    @endif
                     <div class="col-6 mb-3">
                         <p class="text-muted mb-1 font-13">Visa Refusal History</p>
                         <h5 class="m-0 font-14">{{ $assessment->visa_refusal_history ?? 'N/A' }}</h5>
@@ -170,6 +212,14 @@
                                 Date: {{ $assessment->approved_at->format('d M Y, h:i A') }}
                             </p>
                         </div>
+                        @if(!$assessment->student || !$assessment->student->enrolment_status)
+                        <form action="{{ route('admin.pre.assessments.send_to_pre_enrolment', $assessment->id) }}" method="POST" class="mt-3">
+                            @csrf
+                            <button type="submit" class="btn btn-primary w-100" onclick="return confirm('Send this student to Pre-Enrolment?');">
+                                <i class="mdi mdi-send"></i> Send to Pre-Enrolment
+                            </button>
+                        </form>
+                        @endif
                     @elseif($assessment->isRejected())
                         <div class="alert alert-danger border-0 rounded-0">
                             <strong>Status:</strong> Rejected

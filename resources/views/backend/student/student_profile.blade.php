@@ -421,10 +421,6 @@
                         </select>
                       </div>
                       <div class="col-md-4">
-                        <label class="form-label">Country</label>
-                        <input class="form-control" type="text" name="academics[{{ $idx }}][country]" value="{{ $aca->country }}">
-                      </div>
-                      <div class="col-md-4">
                         <label class="form-label">Institution Name</label>
                         <input class="form-control" type="text" name="academics[{{ $idx }}][institution_name]" value="{{ $aca->institution_name }}">
                       </div>
@@ -434,11 +430,11 @@
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">Start Date</label>
-                        <input class="form-control" type="date" name="academics[{{ $idx }}][start_date]" value="{{ $aca->start_date ? $aca->start_date->format('Y-m-d') : '' }}">
+                        <input class="form-control" type="month" name="academics[{{ $idx }}][start_date]" value="{{ $aca->start_date ? $aca->start_date->format('Y-m') : '' }}">
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">End Date</label>
-                        <input class="form-control" type="date" name="academics[{{ $idx }}][end_date]" value="{{ $aca->end_date ? $aca->end_date->format('Y-m-d') : '' }}">
+                        <input class="form-control" type="month" name="academics[{{ $idx }}][end_date]" value="{{ $aca->end_date ? $aca->end_date->format('Y-m') : '' }}">
                       </div>
                       <div class="col-md-2">
                         <label class="form-label">Award Date</label>
@@ -447,6 +443,22 @@
                       <div class="col-md-2">
                         <label class="form-label">Result / %</label>
                         <input class="form-control" type="text" name="academics[{{ $idx }}][result_percentage]" value="{{ $aca->result_percentage }}" placeholder="e.g. 85%">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Country</label>
+                        <input class="form-control" type="text" name="academics[{{ $idx }}][country]" value="{{ $aca->country }}">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">City</label>
+                        <input class="form-control" type="text" name="academics[{{ $idx }}][city]" value="{{ $aca->city }}">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Zip Code</label>
+                        <input class="form-control" type="text" name="academics[{{ $idx }}][zip_code]" value="{{ $aca->zip_code }}">
+                      </div>
+                      <div class="col-md-12">
+                        <label class="form-label">Address</label>
+                        <input class="form-control" type="text" name="academics[{{ $idx }}][institution_address]" value="{{ $aca->institution_address }}">
                       </div>
                     </div>
                   </div>
@@ -475,6 +487,23 @@
                 @csrf
                 <div class="section-title"><i class="fas fa-book-open text-primary"></i> Academic Interest</div>
                 <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Country of Choice</label>
+                    <input class="form-control" type="text" name="country_of_choice" value="{{ $preAssessment->country_of_choice }}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Intake Date</label>
+                    <input class="form-control" type="date" name="intake_date" value="{{ $preAssessment->intake_date ?? '' }}">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Study Method</label>
+                    <select class="form-select" name="study_method">
+                      <option value="">Select...</option>
+                      <option value="on_campus" {{ $preAssessment->study_method=='on_campus'?'selected':'' }}>On Campus</option>
+                      <option value="online" {{ $preAssessment->study_method=='online'?'selected':'' }}>Online</option>
+                      <option value="blended" {{ $preAssessment->study_method=='blended'?'selected':'' }}>Blended</option>
+                    </select>
+                  </div>
                   <div class="col-md-6">
                     <label class="form-label">Discipline / Field of Study</label>
                     <input class="form-control" type="text" name="field_of_study" value="{{ $preAssessment->field_of_study }}">
@@ -517,6 +546,10 @@
                         @endif
                     </select>
                   </div>
+                  <div class="col-md-12">
+                    <label class="form-label">Course Link 1</label>
+                    <input class="form-control" type="url" name="course_link" value="{{ $preAssessment->course_link }}" placeholder="https://...">
+                  </div>
                   <div class="col-md-6">
                     <label class="form-label">Preferred Course 2</label>
                     <select class="form-control select2-tags" name="preferred_course_2">
@@ -544,6 +577,10 @@
                             @endforeach
                         @endif
                     </select>
+                  </div>
+                  <div class="col-md-12">
+                    <label class="form-label">Course Link 2</label>
+                    <input class="form-control" type="url" name="course_link_2" value="{{ $preAssessment->course_link_2 }}" placeholder="https://...">
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Preferred Course 3</label>
@@ -573,22 +610,9 @@
                         @endif
                     </select>
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Country of Choice</label>
-                    <input class="form-control" type="text" name="country_of_choice" value="{{ $preAssessment->country_of_choice }}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Intake Date</label>
-                    <input class="form-control" type="date" name="intake_date" value="{{ $preAssessment->intake_date ?? '' }}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Study Method</label>
-                    <select class="form-select" name="study_method">
-                      <option value="">Select...</option>
-                      <option value="on_campus" {{ $preAssessment->study_method=='on_campus'?'selected':'' }}>On Campus</option>
-                      <option value="online" {{ $preAssessment->study_method=='online'?'selected':'' }}>Online</option>
-                      <option value="blended" {{ $preAssessment->study_method=='blended'?'selected':'' }}>Blended</option>
-                    </select>
+                  <div class="col-md-12">
+                    <label class="form-label">Course Link 3</label>
+                    <input class="form-control" type="url" name="course_link_3" value="{{ $preAssessment->course_link_3 }}" placeholder="https://...">
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Source of Funding</label>
@@ -632,6 +656,15 @@
                       </div>
                       <div class="p-3 row g-2">
                         <input type="hidden" name="referees[{{ $i }}][id]" value="{{ $ref->id }}">
+                        <div class="col-md-4">
+                          <label class="form-label">Reference Type</label>
+                          <select class="form-select" name="referees[{{ $i }}][reference_type]">
+                              <option value="" disabled {{ !$ref->reference_type ? 'selected' : '' }}>Select Type</option>
+                              <option value="Academic" {{ $ref->reference_type == 'Academic' ? 'selected' : '' }}>Academic</option>
+                              <option value="Personal" {{ $ref->reference_type == 'Personal' ? 'selected' : '' }}>Personal</option>
+                              <option value="Professional" {{ $ref->reference_type == 'Professional' ? 'selected' : '' }}>Professional</option>
+                          </select>
+                        </div>
                         <div class="col-md-4">
                           <label class="form-label">Full Name</label>
                           <input class="form-control" type="text" name="referees[{{ $i }}][full_name]" value="{{ $ref->full_name }}">
@@ -961,10 +994,6 @@ function addAcademicRow() {
                 </select>
             </div>
             <div class="col-md-4">
-                <label class="form-label">Country</label>
-                <input class="form-control" type="text" name="academics[${idx}][country]" placeholder="Country of institution">
-            </div>
-            <div class="col-md-4">
                 <label class="form-label">Institution Name</label>
                 <input class="form-control" type="text" name="academics[${idx}][institution_name]" placeholder="University / School name">
             </div>
@@ -974,11 +1003,11 @@ function addAcademicRow() {
             </div>
             <div class="col-md-2">
                 <label class="form-label">Start Date</label>
-                <input class="form-control" type="date" name="academics[${idx}][start_date]">
+                <input class="form-control" type="month" name="academics[${idx}][start_date]">
             </div>
             <div class="col-md-2">
                 <label class="form-label">End Date</label>
-                <input class="form-control" type="date" name="academics[${idx}][end_date]">
+                <input class="form-control" type="month" name="academics[${idx}][end_date]">
             </div>
             <div class="col-md-2">
                 <label class="form-label">Award Date</label>
@@ -987,6 +1016,22 @@ function addAcademicRow() {
             <div class="col-md-2">
                 <label class="form-label">Result / %</label>
                 <input class="form-control" type="text" name="academics[${idx}][result_percentage]" placeholder="e.g. 85%">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Country</label>
+                <input class="form-control" type="text" name="academics[${idx}][country]" placeholder="Country of institution">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">City</label>
+                <input class="form-control" type="text" name="academics[${idx}][city]">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Zip Code</label>
+                <input class="form-control" type="text" name="academics[${idx}][zip_code]">
+            </div>
+            <div class="col-md-12">
+                <label class="form-label">Address</label>
+                <input class="form-control" type="text" name="academics[${idx}][institution_address]">
             </div>
         </div>
     </div>`;
@@ -1012,6 +1057,15 @@ function addRefereeRow() {
       </div>
       <div class="p-3 row g-2">
         <input type="hidden" name="referees[${idx}][id]" value="">
+        <div class="col-md-4">
+          <label class="form-label">Reference Type</label>
+          <select class="form-select" name="referees[${idx}][reference_type]">
+              <option value="" disabled selected>Select Type</option>
+              <option value="Academic">Academic</option>
+              <option value="Personal">Personal</option>
+              <option value="Professional">Professional</option>
+          </select>
+        </div>
         <div class="col-md-4">
           <label class="form-label">Full Name</label>
           <input class="form-control" type="text" name="referees[${idx}][full_name]" value="">

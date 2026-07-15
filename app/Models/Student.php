@@ -20,7 +20,7 @@ class Student extends Model
         'current_address', 'current_city', 'current_postcode', 'current_country',
         'emergency_contact_name', 'emergency_contact_mobile', 'emergency_contact_email', 'emergency_contact_relationship',
         'applied_leave_to_remain_uk', 'need_visa_for_uk', 'refused_visa_or_deported',
-        'taken_tb_test', 'bank_balance_info',
+        'taken_tb_test', 'bank_balance_info', 'enrolment_status',
     ];
 
     protected $hidden = [

@@ -15,15 +15,22 @@ class PreAssessmentAdminController extends Controller
         abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
 
         $status      = $request->get('status', 'pending');
-        $assessments = StudentPreAssessment::with(['student.user'])
+        
+        $query = StudentPreAssessment::with(['student.user'])
             ->where('assessment_status', $status)
-            ->latest()
-            ->paginate(20);
+            ->whereHas('student', function ($q) {
+                $q->whereNull('enrolment_status');
+            });
+
+        $assessments = $query->latest()->paginate(20);
 
         $counts = [
-            'pending'  => StudentPreAssessment::where('assessment_status', 'pending')->count(),
-            'approved' => StudentPreAssessment::where('assessment_status', 'approved')->count(),
-            'rejected' => StudentPreAssessment::where('assessment_status', 'rejected')->count(),
+            'pending'  => StudentPreAssessment::where('assessment_status', 'pending')
+                            ->whereHas('student', fn($q) => $q->whereNull('enrolment_status'))->count(),
+            'approved' => StudentPreAssessment::where('assessment_status', 'approved')
+                            ->whereHas('student', fn($q) => $q->whereNull('enrolment_status'))->count(),
+            'rejected' => StudentPreAssessment::where('assessment_status', 'rejected')
+                            ->whereHas('student', fn($q) => $q->whereNull('enrolment_status'))->count(),
         ];
 
         return view('backend.pre_assessment.index', compact('assessments', 'status', 'counts'));
@@ -136,5 +143,25 @@ class PreAssessmentAdminController extends Controller
         ]);
 
         return back()->with('success', "Student '{$assessment->full_name}' application has been rejected.");
+    }
+
+    /** Send to Pre-Enrolment */
+    public function sendToPreEnrolment($id)
+    {
+        abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
+
+        $assessment = StudentPreAssessment::findOrFail($id);
+        
+        if ($assessment->assessment_status !== 'approved') {
+            return back()->with('error', "Only approved pre-assessments can be sent to pre-enrolment.");
+        }
+
+        if ($assessment->student) {
+            $assessment->student->update([
+                'enrolment_status' => 'pending'
+            ]);
+        }
+
+        return redirect()->route('admin.pre.assessments.index')->with('success', "Student '{$assessment->full_name}' has been moved to Pre-Enrolment.");
     }
 }

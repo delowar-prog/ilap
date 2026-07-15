@@ -70,7 +70,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->name('pre.assessments.approve');
     Route::post('/pre-assessments/{id}/reject', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'reject'])
         ->name('pre.assessments.reject');
+    Route::post('/pre-assessments/{id}/send-to-pre-enrolment', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'sendToPreEnrolment'])
+        ->name('pre.assessments.send_to_pre_enrolment');
         
+    Route::post('/students/{id}/approve', [\App\Http\Controllers\Admin\StudentController::class, 'approve'])->name('students.approve');
+    Route::post('/students/{id}/reject', [\App\Http\Controllers\Admin\StudentController::class, 'reject'])->name('students.reject');
     Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)->only(['index', 'show']);
 });
 

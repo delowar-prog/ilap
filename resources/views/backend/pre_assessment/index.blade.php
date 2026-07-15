@@ -68,6 +68,14 @@
                                         <a href="{{ route('admin.pre.assessments.show', $assessment->id) }}" class="btn btn-sm btn-info">
                                             <i class="mdi mdi-eye"></i> View
                                         </a>
+                                        @if($assessment->assessment_status === 'approved')
+                                            <form action="{{ route('admin.pre.assessments.send_to_pre_enrolment', $assessment->id) }}" method="POST" class="d-inline-block ms-1">
+                                                @csrf
+                                                <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Send this student to Pre-Enrolment?');">
+                                                    <i class="mdi mdi-send"></i> Send to Pre-Enrolment
+                                                </button>
+                                            </form>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty

@@ -10,7 +10,7 @@ class StudentReferee extends Model
     use HasFactory;
 
     protected $fillable = [
-        'student_id', 'full_name', 'job_title', 'email', 'mobile',
+        'student_id', 'reference_type', 'full_name', 'job_title', 'email', 'mobile',
         'organization_name', 'organization_address', 'how_long_known', 'relationship',
     ];
 

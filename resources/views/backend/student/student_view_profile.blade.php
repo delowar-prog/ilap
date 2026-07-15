@@ -198,9 +198,14 @@
                             @foreach($academics as $aca)
                             <tr>
                                 <td>{{ $aca->education_level }}</td>
-                                <td>{{ $aca->institution_name }}<br><small class="text-muted">{{ $aca->country }}</small></td>
+                                <td>
+                                    {{ $aca->institution_name }}<br>
+                                    <small class="text-muted">
+                                        {{ array_filter([$aca->institution_address, $aca->city, $aca->zip_code, $aca->country]) ? implode(', ', array_filter([$aca->institution_address, $aca->city, $aca->zip_code, $aca->country])) : 'N/A' }}
+                                    </small>
+                                </td>
                                 <td>{{ $aca->course_name }}</td>
-                                <td>{{ $aca->start_date }} to {{ $aca->end_date }}</td>
+                                <td>{{ $aca->start_date ? $aca->start_date->format('M Y') : 'N/A' }} to {{ $aca->end_date ? $aca->end_date->format('M Y') : 'N/A' }}</td>
                                 <td><span class="badge bg-success">{{ $aca->result_percentage }}</span></td>
                             </tr>
                             @endforeach

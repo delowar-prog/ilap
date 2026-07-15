@@ -14,10 +14,29 @@ use App\Models\StudentPreAssessment;
 
 class StudentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $students = Student::with(['campus', 'user', 'preAssessment'])->get();
-        return view('backend.admin.students.index', compact('students'));
+        $status = $request->get('status', 'pending');
+
+        $studentsQuery = Student::with(['campus', 'user', 'preAssessment']);
+
+        if ($status === 'pending') {
+            $studentsQuery->where('enrolment_status', 'pending');
+        } elseif ($status === 'approved') {
+            $studentsQuery->where('enrolment_status', 'approved');
+        } elseif ($status === 'rejected') {
+            $studentsQuery->where('enrolment_status', 'rejected');
+        }
+
+        $students = $studentsQuery->latest()->paginate(20);
+
+        $counts = [
+            'pending'  => Student::where('enrolment_status', 'pending')->count(),
+            'approved' => Student::where('enrolment_status', 'approved')->count(),
+            'rejected' => Student::where('enrolment_status', 'rejected')->count(),
+        ];
+
+        return view('backend.admin.students.index', compact('students', 'status', 'counts'));
     }
 
     public function show($id)
@@ -48,5 +67,19 @@ class StudentController extends Controller
             'documents',
             'completionPercent'
         ));
+    }
+
+    public function approve($id)
+    {
+        $student = Student::findOrFail($id);
+        $student->update(['enrolment_status' => 'approved']);
+        return back()->with('success', "Student '{$student->first_name}' pre-enrolment approved.");
+    }
+
+    public function reject($id)
+    {
+        $student = Student::findOrFail($id);
+        $student->update(['enrolment_status' => 'rejected']);
+        return back()->with('success', "Student '{$student->first_name}' pre-enrolment rejected.");
     }
 }
