@@ -1,6 +1,7 @@
 @extends('layouts.backend_master')
 
 @push('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     /* ─── Profile Wizard Styles ─── */
     .student-wizard-card {
@@ -487,34 +488,90 @@
                       @endforeach
                     </select>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-6">
                     <label class="form-label">Preferred Course 1</label>
-                    <input class="form-control" type="text" name="intended_course" value="{{ $preAssessment->intended_course }}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Preferred Course 2</label>
-                    <input class="form-control" type="text" name="preferred_course_2" value="{{ $preAssessment->preferred_course_2 }}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Preferred Course 3</label>
-                    <input class="form-control" type="text" name="preferred_course_3" value="{{ $preAssessment->preferred_course_3 }}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Preferred University 1</label>
-                    <select class="form-select" name="institute_id" required>
-                      <option value="">Select University/College...</option>
-                      @foreach($institutes as $institute)
-                        <option value="{{ $institute->id }}" {{ ($student->institute_id == $institute->id) ? 'selected' : '' }}>{{ $institute->name }}</option>
-                      @endforeach
+                    <select class="form-control select2-tags" name="intended_course">
+                        <option value=""></option>
+                        @if($preAssessment->intended_course && (!isset($courses) || !$courses->contains('name', $preAssessment->intended_course)))
+                            <option value="{{ $preAssessment->intended_course }}" selected>{{ $preAssessment->intended_course }}</option>
+                        @endif
+                        @if(isset($courses))
+                            @foreach($courses as $course)
+                                <option value="{{ $course->name }}" {{ $preAssessment->intended_course == $course->name ? 'selected' : '' }}>{{ $course->name }}</option>
+                            @endforeach
+                        @endif
                     </select>
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Preferred University 2</label>
-                    <input class="form-control" type="text" name="preferred_university_2" value="{{ $preAssessment->preferred_university_2 }}">
+                  <div class="col-md-6">
+                    @php $val_uni_1 = $preAssessment->institute_name ?: ($student->institute->name ?? ''); @endphp
+                    <label class="form-label">Preferred University 1</label>
+                    <select class="form-control select2-tags" name="institute_name" required>
+                        <option value=""></option>
+                        @if($val_uni_1 && (!isset($institutes) || !$institutes->contains('name', $val_uni_1)))
+                            <option value="{{ $val_uni_1 }}" selected>{{ $val_uni_1 }}</option>
+                        @endif
+                        @if(isset($institutes))
+                            @foreach($institutes as $institute)
+                                <option value="{{ $institute->name }}" {{ $val_uni_1 == $institute->name ? 'selected' : '' }}>{{ $institute->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
                   </div>
-                  <div class="col-md-4">
+                  <div class="col-md-6">
+                    <label class="form-label">Preferred Course 2</label>
+                    <select class="form-control select2-tags" name="preferred_course_2">
+                        <option value=""></option>
+                        @if($preAssessment->preferred_course_2 && (!isset($courses) || !$courses->contains('name', $preAssessment->preferred_course_2)))
+                            <option value="{{ $preAssessment->preferred_course_2 }}" selected>{{ $preAssessment->preferred_course_2 }}</option>
+                        @endif
+                        @if(isset($courses))
+                            @foreach($courses as $course)
+                                <option value="{{ $course->name }}" {{ $preAssessment->preferred_course_2 == $course->name ? 'selected' : '' }}>{{ $course->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Preferred University 2</label>
+                    <select class="form-control select2-tags" name="preferred_university_2">
+                        <option value=""></option>
+                        @if($preAssessment->preferred_university_2 && (!isset($institutes) || !$institutes->contains('name', $preAssessment->preferred_university_2)))
+                            <option value="{{ $preAssessment->preferred_university_2 }}" selected>{{ $preAssessment->preferred_university_2 }}</option>
+                        @endif
+                        @if(isset($institutes))
+                            @foreach($institutes as $institute)
+                                <option value="{{ $institute->name }}" {{ $preAssessment->preferred_university_2 == $institute->name ? 'selected' : '' }}>{{ $institute->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Preferred Course 3</label>
+                    <select class="form-control select2-tags" name="preferred_course_3">
+                        <option value=""></option>
+                        @if($preAssessment->preferred_course_3 && (!isset($courses) || !$courses->contains('name', $preAssessment->preferred_course_3)))
+                            <option value="{{ $preAssessment->preferred_course_3 }}" selected>{{ $preAssessment->preferred_course_3 }}</option>
+                        @endif
+                        @if(isset($courses))
+                            @foreach($courses as $course)
+                                <option value="{{ $course->name }}" {{ $preAssessment->preferred_course_3 == $course->name ? 'selected' : '' }}>{{ $course->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                  </div>
+                  <div class="col-md-6">
                     <label class="form-label">Preferred University 3</label>
-                    <input class="form-control" type="text" name="preferred_university_3" value="{{ $preAssessment->preferred_university_3 }}">
+                    <select class="form-control select2-tags" name="preferred_university_3">
+                        <option value=""></option>
+                        @if($preAssessment->preferred_university_3 && (!isset($institutes) || !$institutes->contains('name', $preAssessment->preferred_university_3)))
+                            <option value="{{ $preAssessment->preferred_university_3 }}" selected>{{ $preAssessment->preferred_university_3 }}</option>
+                        @endif
+                        @if(isset($institutes))
+                            @foreach($institutes as $institute)
+                                <option value="{{ $institute->name }}" {{ $preAssessment->preferred_university_3 == $institute->name ? 'selected' : '' }}>{{ $institute->name }}</option>
+                            @endforeach
+                        @endif
+                    </select>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Country of Choice</label>
@@ -543,8 +600,8 @@
                     </select>
                   </div>
                   <div class="col-12">
-                    <label class="form-label">Purpose of Study / Personal Statement</label>
-                    <textarea class="form-control" name="purpose_of_study" rows="4" placeholder="Briefly explain your motivation for studying abroad...">{{ $preAssessment->purpose_of_study }}</textarea>
+                    <label class="form-label">Bank Balance / Financial Details</label>
+                    <textarea class="form-control" name="bank_balance_info" rows="3" placeholder="Optional: Provide bank balance or sponsorship details...">{{ $student->bank_balance_info }}</textarea>
                   </div>
                 </div>
                 <div class="mt-4 d-flex gap-2">
@@ -560,57 +617,62 @@
                 @csrf
                 <div class="section-title"><i class="fas fa-users text-primary"></i> Referee Details</div>
                 <p class="text-muted fs--1 mb-4">Please provide at least 2 referees (academic or professional).</p>
-                @for($i=0; $i<2; $i++)
-                  @php $ref = $referees[$i] ?? new \App\Models\StudentReferee(); @endphp
-                  <div class="referee-card">
-                    <div class="referee-header">
-                      <i class="fas fa-user-tie text-primary"></i> Referee {{ $i+1 }} {{ $i==0?'(Academic / Work)':'(Academic / Personal)' }}
+                @php $refCount = max(2, count($referees)); @endphp
+                <div id="referees-container">
+                  @for($i=0; $i<$refCount; $i++)
+                    @php $ref = $referees[$i] ?? new \App\Models\StudentReferee(); @endphp
+                    <div class="referee-card mb-3" id="ref-card-{{ $i }}">
+                      <div class="referee-header d-flex justify-content-between align-items-center">
+                        <div>
+                          <i class="fas fa-user-tie text-primary"></i> Referee <span class="ref-num">{{ $i+1 }}</span>
+                        </div>
+                        @if($i >= 2)
+                          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRefereeRow({{ $i }})"><i class="fas fa-trash"></i></button>
+                        @endif
+                      </div>
+                      <div class="p-3 row g-2">
+                        <input type="hidden" name="referees[{{ $i }}][id]" value="{{ $ref->id }}">
+                        <div class="col-md-4">
+                          <label class="form-label">Full Name</label>
+                          <input class="form-control" type="text" name="referees[{{ $i }}][full_name]" value="{{ $ref->full_name }}">
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label">Job Title</label>
+                          <input class="form-control" type="text" name="referees[{{ $i }}][job_title]" value="{{ $ref->job_title }}">
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label">Relationship</label>
+                          <input class="form-control" type="text" name="referees[{{ $i }}][relationship]" value="{{ $ref->relationship }}" placeholder="e.g. Lecturer, Manager">
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label">Email</label>
+                          <input class="form-control" type="email" name="referees[{{ $i }}][email]" value="{{ $ref->email }}">
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label">Mobile / Phone</label>
+                          <input class="form-control" type="text" name="referees[{{ $i }}][mobile]" value="{{ $ref->mobile }}">
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label">How Long Known?</label>
+                          <input class="form-control" type="text" name="referees[{{ $i }}][how_long_known]" value="{{ $ref->how_long_known }}" placeholder="e.g. 3 years">
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Organization Name</label>
+                          <input class="form-control" type="text" name="referees[{{ $i }}][organization_name]" value="{{ $ref->organization_name }}">
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label">Organization Address</label>
+                          <input class="form-control" type="text" name="referees[{{ $i }}][organization_address]" value="{{ $ref->organization_address }}">
+                        </div>
+                      </div>
                     </div>
-                    <div class="p-3 row g-2">
-                      <input type="hidden" name="referees[{{ $i }}][id]" value="{{ $ref->id }}">
-                      <div class="col-md-4">
-                        <label class="form-label">Full Name</label>
-                        <input class="form-control" type="text" name="referees[{{ $i }}][full_name]" value="{{ $ref->full_name }}">
-                      </div>
-                      <div class="col-md-4">
-                        <label class="form-label">Job Title</label>
-                        <input class="form-control" type="text" name="referees[{{ $i }}][job_title]" value="{{ $ref->job_title }}">
-                      </div>
-                      <div class="col-md-4">
-                        <label class="form-label">Relationship</label>
-                        <input class="form-control" type="text" name="referees[{{ $i }}][relationship]" value="{{ $ref->relationship }}" placeholder="e.g. Lecturer, Manager">
-                      </div>
-                      <div class="col-md-4">
-                        <label class="form-label">Email</label>
-                        <input class="form-control" type="email" name="referees[{{ $i }}][email]" value="{{ $ref->email }}">
-                      </div>
-                      <div class="col-md-4">
-                        <label class="form-label">Mobile / Phone</label>
-                        <input class="form-control" type="text" name="referees[{{ $i }}][mobile]" value="{{ $ref->mobile }}">
-                      </div>
-                      <div class="col-md-4">
-                        <label class="form-label">How Long Known?</label>
-                        <input class="form-control" type="text" name="referees[{{ $i }}][how_long_known]" value="{{ $ref->how_long_known }}" placeholder="e.g. 3 years">
-                      </div>
-                      <div class="col-md-6">
-                        <label class="form-label">Organization Name</label>
-                        <input class="form-control" type="text" name="referees[{{ $i }}][organization_name]" value="{{ $ref->organization_name }}">
-                      </div>
-                      <div class="col-md-6">
-                        <label class="form-label">Organization Address</label>
-                        <input class="form-control" type="text" name="referees[{{ $i }}][organization_address]" value="{{ $ref->organization_address }}">
-                      </div>
-                    </div>
-                  </div>
-                @endfor
-
-                <div class="section-title mt-3"><i class="fas fa-info-circle text-primary"></i> Additional Information</div>
-                <div class="row g-3">
-                  <div class="col-12">
-                    <label class="form-label">Bank Balance / Financial Details</label>
-                    <textarea class="form-control" name="bank_balance_info" rows="3" placeholder="Optional: Provide bank balance or sponsorship details...">{{ $student->bank_balance_info }}</textarea>
-                  </div>
+                  @endfor
                 </div>
+                <div class="text-end mb-4">
+                  <button type="button" class="btn btn-sm btn-primary" onclick="addRefereeRow()"><i class="fas fa-plus me-1"></i> Add More Referee</button>
+                </div>
+
+                
 
                 <div class="mt-4 d-flex gap-2">
                   <button type="button" class="btn btn-outline-secondary" onclick="switchTab(4)"><i class="fas fa-arrow-left me-1"></i> Back</button>
@@ -624,32 +686,39 @@
               <div class="section-title"><i class="fas fa-folder-open text-primary"></i> Document Upload</div>
               <p class="text-muted fs--1 mb-3">Accepted formats: PDF, JPG, PNG, DOC. Max 5MB per file.</p>
               
-              <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                  <label class="form-label">Document Type</label>
-                  <select class="form-select" id="doc_type">
-                    <option value="CV">CV / Resume</option>
-                    <option value="Passport">Passport Copy</option>
-                    <option value="Certificate">Academic Certificates</option>
-                    <option value="Transcript">Academic Transcripts</option>
-                    <option value="EnglishResult">English Test Result</option>
-                    <option value="SOP">Statement of Purpose</option>
-                    <option value="LOR">Letter of Reference</option>
-                    <option value="Other">Other</option>
-                  </select>
+              <form id="form-documents">
+                @csrf
+                <div id="documents-upload-container">
+                  <div class="row g-3 mb-3 doc-upload-row" id="doc-row-0">
+                    <div class="col-md-4">
+                      <label class="form-label">Document Type</label>
+                      <select class="form-select" name="documents[0][type]">
+                        <option value="CV">CV / Resume</option>
+                        <option value="Passport">Passport Copy</option>
+                        <option value="Certificate">Academic Certificates</option>
+                        <option value="Transcript">Academic Transcripts</option>
+                        <option value="EnglishResult">English Test Result</option>
+                        <option value="SOP">Statement of Purpose</option>
+                        <option value="LOR">Letter of Reference</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Document Title</label>
+                      <input class="form-control" type="text" name="documents[0][title]" placeholder="e.g. IELTS Report 2023">
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Select File</label>
+                      <input class="form-control" type="file" name="documents[0][file]">
+                    </div>
+                  </div>
                 </div>
-                <div class="col-md-4">
-                  <label class="form-label">Document Title</label>
-                  <input class="form-control" type="text" id="doc_title" placeholder="e.g. IELTS Report 2023">
+                
+                <div class="mb-4">
+                  <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDocumentRow()"><i class="fas fa-plus"></i> Add More Document</button>
+                  <button type="button" class="btn btn-sm btn-save ms-2" onclick="uploadMultipleDocs()">Upload Documents</button>
                 </div>
-                <div class="col-md-3">
-                  <label class="form-label">Select File</label>
-                  <input class="form-control" type="file" id="doc_file">
-                </div>
-                <div class="col-md-1 d-flex align-items-end">
-                  <button type="button" class="btn btn-save w-100 px-2" onclick="uploadDoc()" title="Upload"><i class="fas fa-upload"></i></button>
-                </div>
-              </div>
+              </form>
 
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="mb-0">Uploaded Documents</h6>
@@ -929,33 +998,169 @@ function removeAcademicRow(idx) {
     if (row) row.remove();
 }
 
-function uploadDoc() {
-    const fileInput = document.getElementById('doc_file');
-    const docType   = document.getElementById('doc_type').value;
-    const docTitle  = document.getElementById('doc_title') ? document.getElementById('doc_title').value : '';
-    if (!fileInput.files.length) { showToast('Please select a file first.', false); return; }
+let refIdx = {{ max(2, count($referees)) }};
+function addRefereeRow() {
+    const container = document.getElementById('referees-container');
+    const idx = refIdx++;
+    const html = `
+    <div class="referee-card mb-3" id="ref-card-${idx}">
+      <div class="referee-header d-flex justify-content-between align-items-center">
+        <div>
+          <i class="fas fa-user-tie text-primary"></i> Referee <span class="ref-num">${idx + 1}</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRefereeRow(${idx})"><i class="fas fa-trash"></i></button>
+      </div>
+      <div class="p-3 row g-2">
+        <input type="hidden" name="referees[${idx}][id]" value="">
+        <div class="col-md-4">
+          <label class="form-label">Full Name</label>
+          <input class="form-control" type="text" name="referees[${idx}][full_name]" value="">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Job Title</label>
+          <input class="form-control" type="text" name="referees[${idx}][job_title]" value="">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Relationship</label>
+          <input class="form-control" type="text" name="referees[${idx}][relationship]" value="" placeholder="e.g. Lecturer, Manager">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Email</label>
+          <input class="form-control" type="email" name="referees[${idx}][email]" value="">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Mobile / Phone</label>
+          <input class="form-control" type="text" name="referees[${idx}][mobile]" value="">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">How Long Known?</label>
+          <input class="form-control" type="text" name="referees[${idx}][how_long_known]" value="" placeholder="e.g. 3 years">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Organization Name</label>
+          <input class="form-control" type="text" name="referees[${idx}][organization_name]" value="">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Organization Address</label>
+          <input class="form-control" type="text" name="referees[${idx}][organization_address]" value="">
+        </div>
+      </div>
+    </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+    updateRefereeNumbers();
+}
 
-    const fd = new FormData();
-    fd.append('document', fileInput.files[0]);
-    fd.append('document_type', docType);
-    fd.append('title', docTitle);
-    fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+function removeRefereeRow(idx) {
+    const row = document.getElementById('ref-card-' + idx);
+    if (row) row.remove();
+    updateRefereeNumbers();
+}
+
+function updateRefereeNumbers() {
+    const cards = document.querySelectorAll('#referees-container .referee-card');
+    cards.forEach((card, index) => {
+        const numSpan = card.querySelector('.ref-num');
+        if (numSpan) numSpan.textContent = index + 1;
+    });
+}
+
+let docIdx = 1;
+function addDocumentRow() {
+    const container = document.getElementById('documents-upload-container');
+    const idx = docIdx++;
+    const html = `
+    <div class="row g-3 mb-3 doc-upload-row" id="doc-row-${idx}">
+      <div class="col-md-4">
+        <label class="form-label">Document Type</label>
+        <select class="form-select" name="documents[${idx}][type]">
+          <option value="CV">CV / Resume</option>
+          <option value="Passport">Passport Copy</option>
+          <option value="Certificate">Academic Certificates</option>
+          <option value="Transcript">Academic Transcripts</option>
+          <option value="EnglishResult">English Test Result</option>
+          <option value="SOP">Statement of Purpose</option>
+          <option value="LOR">Letter of Reference</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Document Title</label>
+        <input class="form-control" type="text" name="documents[${idx}][title]" placeholder="e.g. IELTS Report 2023">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Select File</label>
+        <input class="form-control" type="file" name="documents[${idx}][file]">
+      </div>
+      <div class="col-md-1 d-flex align-items-end">
+        <button type="button" class="btn btn-outline-danger w-100 px-2" onclick="removeDocumentRow(${idx})"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+function removeDocumentRow(idx) {
+    const row = document.getElementById('doc-row-' + idx);
+    if (row) row.remove();
+}
+
+function uploadMultipleDocs() {
+    const form = document.getElementById('form-documents');
+    const formData = new FormData(form);
+    
+    // Check if at least one file is selected
+    let hasFile = false;
+    for (let [key, value] of formData.entries()) {
+        if (value instanceof File && value.name !== '') {
+            hasFile = true;
+            break;
+        }
+    }
+    
+    if (!hasFile) {
+        showToast('Please select at least one file to upload.', false);
+        return;
+    }
+
+    const btns = form.querySelectorAll('button');
+    btns.forEach(b => b.disabled = true);
 
     fetch('{{ route('student.profile.upload') }}', {
         method: 'POST',
-        body: fd,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             showToast(data.message, true);
-            setTimeout(() => location.reload(), 1500);
+            setTimeout(() => {
+                window.location.href = window.location.pathname + '?tab=6#tab-6';
+                window.location.reload();
+            }, 1000);
         } else {
             showToast(data.message, false);
         }
     })
-    .catch(() => showToast('Upload failed. Try again.', false));
+    .catch(() => showToast('Upload failed. Try again.', false))
+    .finally(() => {
+        btns.forEach(b => b.disabled = false);
+    });
 }
+</script>
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.select2-tags').select2({
+        tags: true,
+        placeholder: "Select from dropdown or type your own",
+        allowClear: true,
+        width: '100%'
+    });
+});
 </script>
 @endpush

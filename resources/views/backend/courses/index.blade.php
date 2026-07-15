@@ -10,9 +10,11 @@
                 </h6>
             </div>
             <div class="col-auto">
+                @if(!auth()->user()->hasRole(['Student', 'student']))
                 <a href="{{ route('courses.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus me-1"></i> Add Course
                 </a>
+                @endif
             </div>
         </div>
     </div>
@@ -70,7 +72,9 @@
                     <th>Fee</th>
                     <th>Intake</th>
                     <th>Status</th>
+                    @if(!auth()->user()->hasRole(['Student', 'student']))
                     <th width="120" class="text-center">Action</th>
+                    @endif
                 </tr>
             </thead>
             <tbody>
@@ -136,6 +140,7 @@
                                 {{ ucfirst($course->status) }}
                             </span>
                         </td>
+                        @if(!auth()->user()->hasRole(['Student', 'student']))
                         <td class="text-center">
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown" style="font-size: 0.75rem;">
@@ -155,6 +160,7 @@
                                 </div>
                             </div>
                         </td>
+                        @endif
                     </tr>
                 @empty
                     <tr>

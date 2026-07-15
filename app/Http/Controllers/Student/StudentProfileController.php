@@ -11,6 +11,7 @@ use App\Models\StudentReferee;
 use App\Models\StudentDocument;
 use App\Models\StudentPreAssessment;
 use App\Models\Institute;
+use App\Models\Course;
 use Illuminate\Support\Facades\Auth;
 
 class StudentProfileController extends Controller
@@ -142,6 +143,7 @@ class StudentProfileController extends Controller
         $englishTests = StudentEnglishTest::where('student_id', $student->id)->get();
         $referees = StudentReferee::where('student_id', $student->id)->get();
         $institutes = Institute::where('status', 'active')->orderBy('name')->get();
+        $courses = Course::active()->orderBy('name')->get();
         
         // Documents list with filter, latest first and pagination
         $docQuery = StudentDocument::where('student_id', $student->id)->where('uploaded_by', 'student');
@@ -184,6 +186,7 @@ class StudentProfileController extends Controller
             'documents',
             'adminDocuments',
             'institutes',
+            'courses',
             'completionPercent'
         ));
     }
@@ -269,12 +272,19 @@ class StudentProfileController extends Controller
         $student = Auth::user()->student;
         $preAssessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
         
-        // Save the institute_id in student table
-        if ($request->has('institute_id')) {
+        // Try to resolve institute_id from institute_name
+        if ($request->has('institute_name')) {
+            $inst = Institute::where('name', $request->institute_name)->first();
+            $student->update(['institute_id' => $inst ? $inst->id : null]);
+        } elseif ($request->has('institute_id')) {
             $student->update(['institute_id' => $request->institute_id]);
         }
 
-        $preAssessment->update($request->except(['_token', 'institute_id']));
+        if ($request->has('bank_balance_info')) {
+            $student->update(['bank_balance_info' => $request->bank_balance_info]);
+        }
+
+        $preAssessment->update($request->except(['_token', 'institute_id', 'bank_balance_info']));
         
         return response()->json(['success' => true, 'message' => 'Preferences updated successfully.']);
     }
@@ -310,24 +320,28 @@ class StudentProfileController extends Controller
     public function uploadDocument(Request $request)
     {
         $student = Auth::user()->student;
-        $request->validate([
-            'document' => 'required|file|max:5120',
-            'document_type' => 'required|string',
-            'title' => 'nullable|string|max:255'
-        ]);
 
-        if ($request->hasFile('document')) {
-            $path = $request->file('document')->store('student_documents/' . $student->id, 'public');
+        if ($request->has('documents') && is_array($request->documents)) {
+            $uploadedCount = 0;
+            foreach ($request->documents as $doc) {
+                if (isset($doc['file']) && $doc['file']->isValid()) {
+                    $path = $doc['file']->store('student_documents/' . $student->id, 'public');
+                    \App\Models\StudentDocument::create([
+                        'student_id' => $student->id,
+                        'document_type' => $doc['type'] ?? 'Other',
+                        'title' => $doc['title'] ?? '',
+                        'file_path' => $path,
+                        'uploaded_by' => 'student'
+                    ]);
+                    $uploadedCount++;
+                }
+            }
             
-            StudentDocument::create([
-                'student_id' => $student->id,
-                'document_type' => $request->document_type,
-                'title' => $request->title,
-                'file_path' => $path
-            ]);
-            
-            return response()->json(['success' => true, 'message' => 'Document uploaded successfully.', 'path' => $path]);
+            if ($uploadedCount > 0) {
+                return response()->json(['success' => true, 'message' => "$uploadedCount document(s) uploaded successfully."]);
+            }
         }
-        return response()->json(['success' => false, 'message' => 'Upload failed.'], 400);
+
+        return response()->json(['success' => false, 'message' => 'No valid files provided or upload failed.'], 400);
     }
 }

@@ -310,7 +310,7 @@
                 </li>
                 @endcanany
                 <!-- ==================== Courses & Academic ==================== -->
-                @canany(['course view', 'institute view'])
+                @if((Auth::check() && Auth::user()->canany(['course view', 'institute view'])) || $isStudent)
                 <li class="nav-item">
                     @can('course view')
                     <a class="nav-link dropdown-indicator" href="#ilap_course" role="button"
@@ -330,9 +330,9 @@
                             </a>
                         </li>
                     </ul>
-                    @endcan
+                    @endif
 
-                    @can('institute view')
+                    @if((Auth::check() && Auth::user()->can('institute view')) || $isStudent)
                     <a class="nav-link dropdown-indicator" href="#institute" role="button"
                         data-bs-toggle="collapse" aria-expanded="false" aria-controls="institute">
                         <div class="d-flex align-items-center">
@@ -348,17 +348,17 @@
                                 </div>
                             </a>
                         </li>
-                        @can('course view')
+                        @if((Auth::check() && Auth::user()->can('course view')) || $isStudent)
                         <li class="nav-item">
-                            <a class="nav-link" href="">
+                            <a class="nav-link" href="{{ route('courses.index') }}">
                                 <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Courses</span>
+                                    <span class="nav-link-text ps-1">All Courses</span>
                                 </div>
                             </a>
                         </li>
-                        @endcan
+                        @endif
                     </ul>
-                    @endcan
+                    @endif
 
                     @can('course view')
                     <a class="nav-link dropdown-indicator" href="#academic" role="button" data-bs-toggle="collapse"
@@ -393,7 +393,7 @@
                     </ul>
                     @endcan
                 </li>
-                @endcanany
+                @endif
 
                 @if(!$isStudent)
                 <!-- ==================== Enrolment Details ==================== -->

@@ -11,9 +11,11 @@
                     </h6>
                 </div>
                 <div class="col-auto">
+                    @if(!auth()->user()->hasRole(['Student', 'student']))
                     <a href="{{ route('institutes.create') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus me-1"></i> Add Institute
                     </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -27,7 +29,9 @@
                         <th>Code</th>
                         <th>Location</th>
                         <th>Status</th>
+                        @if(!auth()->user()->hasRole(['Student', 'student']))
                         <th width="90" class="text-center">Action</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody>
@@ -62,6 +66,7 @@
                                     <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.75rem;">Inactive</span>
                                 @endif
                             </td>
+                            @if(!auth()->user()->hasRole(['Student', 'student']))
                             <td class="text-center">
                                 <div class="dropdown">
                                     <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
@@ -81,6 +86,7 @@
                                     </div>
                                 </div>
                             </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
