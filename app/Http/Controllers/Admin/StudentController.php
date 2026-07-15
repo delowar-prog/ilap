@@ -79,7 +79,26 @@ class StudentController extends Controller
     public function reject($id)
     {
         $student = Student::findOrFail($id);
-        $student->update(['enrolment_status' => 'rejected']);
-        return back()->with('success', "Student '{$student->first_name}' pre-enrolment rejected.");
+        $student->enrolment_status = 'rejected';
+        $student->save();
+        return redirect()->back()->with('success', 'Pre-Enrolment rejected.');
+    }
+
+    public function enrolledStudents()
+    {
+        $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])->where('enrolment_status', 'enrolled');
+        $students = $studentsQuery->latest()->paginate(20);
+        return view('backend.admin.students.enrolled', compact('students'));
+    }
+
+    public function sendToStudent($id)
+    {
+        $student = Student::findOrFail($id);
+        if ($student->enrolment_status === 'approved') {
+            $student->enrolment_status = 'enrolled';
+            $student->save();
+            return redirect()->back()->with('success', 'Student data moved to Enrolled Students successfully.');
+        }
+        return redirect()->back()->with('error', 'Student must be approved in Pre-Enrolment first.');
     }
 }

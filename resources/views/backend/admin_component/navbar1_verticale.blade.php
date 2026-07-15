@@ -406,6 +406,13 @@
                         </div>
                     </a>
                     <ul class="nav collapse" id="students">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.pre.assessments.index') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Pre-Assessments</span>
+                                </div>
+                            </a>
+                        </li>
                         @can('student view')
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.students.index') }}">
@@ -414,14 +421,14 @@
                                 </div>
                             </a>
                         </li>
-                        @endcan
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.pre.assessments.index') }}">
+                            <a class="nav-link" href="{{ route('admin.students.enrolled') }}">
                                 <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Pre-Assessments</span>
+                                    <span class="nav-link-text ps-1">Enrolled Students</span>
                                 </div>
                             </a>
                         </li>
+                        @endcan
                         <li class="nav-item">
                             <a class="nav-link" href="">
                                 <div class="d-flex align-items-center">

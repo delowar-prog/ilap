@@ -75,6 +75,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         
     Route::post('/students/{id}/approve', [\App\Http\Controllers\Admin\StudentController::class, 'approve'])->name('students.approve');
     Route::post('/students/{id}/reject', [\App\Http\Controllers\Admin\StudentController::class, 'reject'])->name('students.reject');
+    Route::post('/students/{id}/send-to-student', [\App\Http\Controllers\Admin\StudentController::class, 'sendToStudent'])->name('students.send_to_student');
+    Route::get('/enrolled-students', [\App\Http\Controllers\Admin\StudentController::class, 'enrolledStudents'])->name('students.enrolled');
     Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)->only(['index', 'show']);
 });
 

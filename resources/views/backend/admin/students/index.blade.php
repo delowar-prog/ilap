@@ -34,7 +34,7 @@
                     </li>
                 </ul>
 
-                <div class="table-responsive">
+                <div class="table-responsive" style="min-height: 350px;">
                     <table class="table table-hover table-bordered mb-0 align-middle">
                         <thead class="bg-light text-muted">
                             <tr>
@@ -71,7 +71,7 @@
                                 </td>
                                 <td class="text-center">
                                     <div class="dropdown">
-                                        <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown">
+                                        <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown" data-bs-boundary="window">
                                             Action
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-end">
@@ -89,6 +89,13 @@
                                                     @csrf
                                                     <button type="submit" class="dropdown-item py-1 text-danger" onclick="return confirm('Reject Pre-Enrolment?');">
                                                         <i class="fas fa-times me-2"></i>Reject
+                                                    </button>
+                                                </form>
+                                            @elseif($student->enrolment_status === 'approved')
+                                                <form action="{{ route('admin.students.send_to_student', $student->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item py-1 text-primary" onclick="return confirm('Send to Student? All data will be moved to the Student section.');">
+                                                        <i class="fas fa-paper-plane me-2"></i>Send to Student
                                                     </button>
                                                 </form>
                                             @endif
