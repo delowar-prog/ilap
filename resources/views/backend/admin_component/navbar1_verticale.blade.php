@@ -92,7 +92,7 @@
                             </a>
                         </li>
                         <li class="nav-item mt-2 mb-1">
-                            <div class="nav-link-text ps-3 text-uppercase text-muted" style="font-size: 0.75rem; font-weight: 600;">Update Information</div>
+                            <div class="nav-link-text ps-3 text-uppercase text-muted" style="font-size: 0.75rem; font-weight: 600;"><i class="fas fa-user-edit me-1"></i>Update Information</div>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-0" data-tab="0" onclick="handleStudentTabClick(event, 0)">
@@ -136,14 +136,21 @@
                                 </div>
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link student-tab-link" href="{{ route('student.profile.edit') }}#tab-6" data-tab="6" onclick="handleStudentTabClick(event, 6)">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1"><i class="fas fa-folder-open fa-xs me-1 text-muted"></i> Documents</span>
-                                </div>
-                            </a>
-                        </li>
                     </ul>
+                    <!-- Documents -->
+                    <a class="nav-link student-tab-link mt-2" href="{{ route('student.profile.edit') }}#tab-6" data-tab="6" onclick="handleStudentTabClick(event, 6)">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-folder-open"></span></span>
+                            <span class="nav-link-text ps-1">Upload Documents</span>
+                        </div>
+                    </a>
+                    <!--Download Documents -->
+                    <a class="nav-link student-tab-link mt-2" href="{{ route('student.profile.edit') }}#tab-7" data-tab="7" onclick="handleStudentTabClick(event, 7)">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-download"></span></span>
+                            <span class="nav-link-text ps-1">DownIoad Documents</span>
+                        </div>
+                    </a>
                 </li>
                 @endif
                 @endhasrole

@@ -651,7 +651,17 @@
                 </div>
               </div>
 
-              <h6 class="mb-3">Uploaded Documents</h6>
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Uploaded Documents</h6>
+                <form action="{{ route('student.profile.edit') }}" method="GET" class="d-flex" style="max-width: 300px;">
+                  <input type="hidden" name="tab" value="6">
+                  <input type="text" name="doc_search" class="form-control form-control-sm me-2" placeholder="Search..." value="{{ request('doc_search') }}">
+                  <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search"></i></button>
+                  @if(request('doc_search'))
+                    <a href="{{ route('student.profile.edit') }}?tab=6#tab-6" class="btn btn-sm btn-outline-secondary ms-1"><i class="fas fa-times"></i></a>
+                  @endif
+                </form>
+              </div>
               <div id="docs-list">
                 @forelse($documents as $doc)
                   <div class="d-flex align-items-center justify-content-between p-3 mb-2 bg-white rounded-3 border">
@@ -668,9 +678,57 @@
                   <div class="text-center text-muted py-4"><i class="fas fa-inbox fs-3 mb-2 d-block"></i>No documents uploaded yet.</div>
                 @endforelse
               </div>
+              
+              <div class="mt-3">
+                {{ $documents->appends(request()->query())->fragment('tab-6')->links('pagination::bootstrap-5') }}
+              </div>
 
               <div class="mt-4">
                 <button type="button" class="btn btn-outline-secondary" onclick="switchTab(5)"><i class="fas fa-arrow-left me-1"></i> Back</button>
+                <button type="button" class="btn btn-primary ms-2" onclick="switchTab(7)">Next <i class="fas fa-arrow-right ms-1"></i></button>
+              </div>
+            </div>
+
+            <!-- ═══════════ TAB 7: Download Documents (Admin Uploaded) ═══════════ -->
+            <div class="tab-section d-none" id="tab-7">
+              <div class="section-title"><i class="fas fa-download text-primary"></i> Download Documents</div>
+              <p class="text-muted fs--1 mb-3">Documents uploaded by the administration for you.</p>
+
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Admin Documents</h6>
+                <form action="{{ route('student.profile.edit') }}" method="GET" class="d-flex" style="max-width: 300px;">
+                  <input type="hidden" name="tab" value="7">
+                  <input type="text" name="admin_doc_search" class="form-control form-control-sm me-2" placeholder="Search..." value="{{ request('admin_doc_search') }}">
+                  <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search"></i></button>
+                  @if(request('admin_doc_search'))
+                    <a href="{{ route('student.profile.edit') }}?tab=7#tab-7" class="btn btn-sm btn-outline-secondary ms-1"><i class="fas fa-times"></i></a>
+                  @endif
+                </form>
+              </div>
+
+              <div id="admin-docs-list">
+                @forelse($adminDocuments as $doc)
+                  <div class="d-flex align-items-center justify-content-between p-3 mb-2 bg-white rounded-3 border">
+                    <div class="d-flex align-items-center gap-3">
+                      <i class="fas fa-file-alt text-success fs-5"></i>
+                      <div>
+                        <div class="fw-600 fs--1">{{ $doc->document_type }} @if($doc->title) - {{ $doc->title }} @endif</div>
+                        <div class="text-500 fs--2">{{ $doc->created_at->format('d M Y') }}</div>
+                      </div>
+                    </div>
+                    <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill" download><i class="fas fa-download me-1"></i> Download</a>
+                  </div>
+                @empty
+                  <div class="text-center text-muted py-4"><i class="fas fa-inbox fs-3 mb-2 d-block"></i>No documents from admin yet.</div>
+                @endforelse
+              </div>
+
+              <div class="mt-3">
+                {{ $adminDocuments->appends(request()->query())->fragment('tab-7')->links('pagination::bootstrap-5') }}
+              </div>
+
+              <div class="mt-4">
+                <button type="button" class="btn btn-outline-secondary" onclick="switchTab(6)"><i class="fas fa-arrow-left me-1"></i> Back</button>
                 <a href="{{ route('dashboard') }}" class="btn btn-success ms-2"><i class="fas fa-check-circle me-1"></i> Finish & Submit</a>
               </div>
             </div>
@@ -702,10 +760,13 @@ function switchTab(index) {
     document.querySelectorAll('.step-nav-item').forEach(n => n.classList.remove('active'));
     // Show selected
     document.getElementById('tab-' + index).classList.remove('d-none');
-    document.getElementById('nav-' + index).classList.add('active');
+    
+    let navItem = document.getElementById('nav-' + index);
+    if(navItem) navItem.classList.add('active');
+    
     currentTab = index;
-    // Update progress bar (7 steps)
-    document.getElementById('mainProgressBar').style.width = (((index + 1) / 7) * 100) + '%';
+    // Update progress bar (8 steps)
+    document.getElementById('mainProgressBar').style.width = (((index + 1) / 8) * 100) + '%';
     // Update URL hash without scroll
     history.replaceState(null, '', '#tab-' + index);
 }
@@ -731,15 +792,23 @@ function handleStudentTabClick(event, index) {
     // Otherwise let the link navigate normally (hash will be read on load)
 }
 
-// ─── Auto-switch based on URL hash on page load ───
+// ─── Auto-switch based on URL hash or query param on page load ───
 document.addEventListener('DOMContentLoaded', function() {
-    const hash = window.location.hash;
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    let hash = window.location.hash;
+
+    let targetTab = null;
+
     if (hash && hash.startsWith('#tab-')) {
-        const idx = parseInt(hash.replace('#tab-', ''));
-        if (!isNaN(idx) && idx >= 0 && idx <= 6) {
-            switchTab(idx);
-            updateSidebarActiveLink(idx);
-        }
+        targetTab = parseInt(hash.replace('#tab-', ''));
+    } else if (tabParam !== null) {
+        targetTab = parseInt(tabParam);
+    }
+
+    if (targetTab !== null && !isNaN(targetTab) && targetTab >= 0 && targetTab <= 7) {
+        switchTab(targetTab);
+        updateSidebarActiveLink(targetTab);
     } else {
         updateSidebarActiveLink(0); // default: Personal Info active
     }

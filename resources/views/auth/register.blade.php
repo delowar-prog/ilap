@@ -334,7 +334,7 @@
     <div class="card">
         <!-- Header -->
         <div class="card-header">
-            <h1><i class="fas fa-user-plus me-2"></i> Student Registration</h1>
+            <h1><i class="fas fa-user-plus me-2"></i>Registration</h1>
             <p>Create your account to start your international education journey.</p>
 
             <!-- Steps -->

@@ -128,7 +128,7 @@ class StudentProfileController extends Controller
         ));
     }
 
-    public function editProfile()
+    public function editProfile(Request $request)
     {
         $user = Auth::user();
         $student = $user->student;
@@ -141,9 +141,30 @@ class StudentProfileController extends Controller
         $academics = StudentAcademic::where('student_id', $student->id)->get();
         $englishTests = StudentEnglishTest::where('student_id', $student->id)->get();
         $referees = StudentReferee::where('student_id', $student->id)->get();
-        $documents = StudentDocument::where('student_id', $student->id)->get();
         $institutes = Institute::where('status', 'active')->orderBy('name')->get();
         
+        // Documents list with filter, latest first and pagination
+        $docQuery = StudentDocument::where('student_id', $student->id)->where('uploaded_by', 'student');
+        if ($request->has('doc_search') && !empty($request->doc_search)) {
+            $search = $request->doc_search;
+            $docQuery->where(function($q) use ($search) {
+                $q->where('document_type', 'like', "%{$search}%")
+                  ->orWhere('title', 'like', "%{$search}%");
+            });
+        }
+        $documents = $docQuery->latest()->paginate(5)->withQueryString();
+
+        // Admin uploaded documents list with filter
+        $adminDocQuery = StudentDocument::where('student_id', $student->id)->where('uploaded_by', 'admin');
+        if ($request->has('admin_doc_search') && !empty($request->admin_doc_search)) {
+            $search = $request->admin_doc_search;
+            $adminDocQuery->where(function($q) use ($search) {
+                $q->where('document_type', 'like', "%{$search}%")
+                  ->orWhere('title', 'like', "%{$search}%");
+            });
+        }
+        $adminDocuments = $adminDocQuery->latest()->paginate(5, ['*'], 'admin_page')->withQueryString();
+
         // Calculate Completion Percentage
         $completionPercent = 10;
         if ($student->phone && $student->current_address && $student->dob && $student->nationality) { $completionPercent += 30; }
@@ -151,7 +172,7 @@ class StudentProfileController extends Controller
         if ($academics->count() > 0) { $completionPercent += 20; }
         if ($englishTests->count() > 0 || $student->native_language) { $completionPercent += 20; }
         if ($referees->count() > 0) { $completionPercent += 10; }
-        if ($documents->count() > 0) { $completionPercent += 10; }
+        if (StudentDocument::where('student_id', $student->id)->where('uploaded_by', 'student')->exists()) { $completionPercent += 10; }
         $completionPercent = min($completionPercent, 100);
 
         return view('backend.student.student_profile', compact(
@@ -161,6 +182,7 @@ class StudentProfileController extends Controller
             'englishTests', 
             'referees', 
             'documents',
+            'adminDocuments',
             'institutes',
             'completionPercent'
         ));

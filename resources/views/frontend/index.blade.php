@@ -45,7 +45,7 @@
             type="button"
             class="flex-1 inline-flex justify-center items-center px-5 py-3 border border-transparent text-sm font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-sm"
           >
-            Sign In to Account
+            Login
           </button>
             </a>
           
@@ -55,7 +55,7 @@
             type="button"
             class="flex-1 inline-flex justify-center items-center px-5 py-3 border border-gray-200 text-sm font-semibold rounded-xl text-slate-700 bg-white hover:bg-slate-50 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
           >
-           Student Registration
+           Registration
           </button>
           </a>
         </div>

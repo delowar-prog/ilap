@@ -10,7 +10,7 @@ class StudentDocument extends Model
     use HasFactory;
 
     protected $fillable = [
-        'student_id', 'document_type', 'file_path', 'title',
+        'student_id', 'document_type', 'file_path', 'title', 'uploaded_by'
     ];
 
     public function student() { return $this->belongsTo(Student::class); }
