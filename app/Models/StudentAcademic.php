@@ -12,7 +12,7 @@ class StudentAcademic extends Model
     protected $fillable = [
         'student_id', 'education_level', 'country', 'city', 'zip_code', 'institution_name',
         'institution_address', 'course_name', 'start_date', 'end_date',
-        'award_date', 'result_percentage', 'gpa', 'result_out_of',
+        'award_date', 'result_type', 'other_result_type', 'result_percentage', 'gpa', 'result_out_of',
     ];
 
     protected $casts = [

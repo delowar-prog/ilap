@@ -441,8 +441,26 @@
                         <input class="form-control" type="date" name="academics[{{ $idx }}][award_date]" value="{{ $aca->award_date ? $aca->award_date->format('Y-m-d') : '' }}">
                       </div>
                       <div class="col-md-2">
-                        <label class="form-label">Result / %</label>
-                        <input class="form-control" type="text" name="academics[{{ $idx }}][result_percentage]" value="{{ $aca->result_percentage }}" placeholder="e.g. 85%">
+                        <label class="form-label">Result Type</label>
+                        <select class="form-select" name="academics[{{ $idx }}][result_type]" onchange="toggleOtherResultType(this)">
+                          <option value="">Select...</option>
+                          <option value="GPA" {{ $aca->result_type=='GPA'?'selected':'' }}>GPA</option>
+                          <option value="CGPA" {{ $aca->result_type=='CGPA'?'selected':'' }}>CGPA</option>
+                          <option value="Percentage" {{ $aca->result_type=='Percentage'?'selected':'' }}>Percentage</option>
+                          <option value="Others" {{ $aca->result_type=='Others'?'selected':'' }}>Others</option>
+                        </select>
+                      </div>
+                      <div class="col-md-2 other-result-type-div" style="{{ $aca->result_type=='Others' ? '' : 'display:none;' }}">
+                        <label class="form-label">Other Type</label>
+                        <input class="form-control" type="text" name="academics[{{ $idx }}][other_result_type]" value="{{ $aca->other_result_type }}" placeholder="Type here...">
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Result</label>
+                        <input class="form-control" type="text" name="academics[{{ $idx }}][result_percentage]" value="{{ $aca->result_percentage }}" placeholder="Value">
+                      </div>
+                      <div class="col-md-2">
+                        <label class="form-label">Out of</label>
+                        <input class="form-control" type="text" name="academics[{{ $idx }}][result_out_of]" value="{{ $aca->result_out_of }}" placeholder="e.g. 100 or 4.0">
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">Country</label>
@@ -1014,8 +1032,26 @@ function addAcademicRow() {
                 <input class="form-control" type="date" name="academics[${idx}][award_date]">
             </div>
             <div class="col-md-2">
-                <label class="form-label">Result / %</label>
-                <input class="form-control" type="text" name="academics[${idx}][result_percentage]" placeholder="e.g. 85%">
+                <label class="form-label">Result Type</label>
+                <select class="form-select" name="academics[${idx}][result_type]" onchange="toggleOtherResultType(this)">
+                    <option value="">Select...</option>
+                    <option value="GPA">GPA</option>
+                    <option value="CGPA">CGPA</option>
+                    <option value="Percentage">Percentage</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
+            <div class="col-md-2 other-result-type-div" style="display:none;">
+                <label class="form-label">Other Type</label>
+                <input class="form-control" type="text" name="academics[${idx}][other_result_type]" placeholder="Type here...">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Result</label>
+                <input class="form-control" type="text" name="academics[${idx}][result_percentage]" placeholder="Value">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Out of</label>
+                <input class="form-control" type="text" name="academics[${idx}][result_out_of]" placeholder="e.g. 100 or 4.0">
             </div>
             <div class="col-md-4">
                 <label class="form-label">Country</label>
@@ -1201,6 +1237,17 @@ function uploadMultipleDocs() {
     .finally(() => {
         btns.forEach(b => b.disabled = false);
     });
+}
+
+function toggleOtherResultType(selectElement) {
+    const row = selectElement.closest('.row');
+    const otherDiv = row.querySelector('.other-result-type-div');
+    if (selectElement.value === 'Others') {
+        otherDiv.style.display = '';
+    } else {
+        otherDiv.style.display = 'none';
+        otherDiv.querySelector('input').value = '';
+    }
 }
 </script>
 @endpush

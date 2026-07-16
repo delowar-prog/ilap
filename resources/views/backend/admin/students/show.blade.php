@@ -190,7 +190,7 @@
                                 <th>Institution</th>
                                 <th>Course</th>
                                 <th>Start - End Date</th>
-                                <th>Result / %</th>
+                                <th>Result</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -205,7 +205,11 @@
                                 </td>
                                 <td>{{ $aca->course_name }}</td>
                                 <td>{{ $aca->start_date ? $aca->start_date->format('M Y') : 'N/A' }} to {{ $aca->end_date ? $aca->end_date->format('M Y') : 'N/A' }}</td>
-                                <td><span class="badge bg-success">{{ $aca->result_percentage }}</span></td>
+                                <td>
+                                    <span class="badge bg-success">
+                                        {{ $aca->result_type == 'Others' ? $aca->other_result_type : $aca->result_type }}: {{ $aca->result_percentage }}{{ $aca->result_out_of ? ' / ' . $aca->result_out_of : '' }}
+                                    </span>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
