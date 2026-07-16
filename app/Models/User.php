@@ -12,7 +12,7 @@ use Illuminate\Notifications\Notifiable;
 use Lab404\Impersonate\Models\Impersonate;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['user_first_name', 'user_middle_name', 'user_last_name', 'email', 'password', 'campus_id', 'phone', 'photo'])]
+#[Fillable(['user_first_name', 'user_middle_name', 'user_last_name', 'email', 'password', 'campus_id', 'phone', 'photo', 'referral_code'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {

@@ -312,7 +312,16 @@
                     <a class="nav-link pe-0 ps-2 d-flex align-items-center gap-2" id="navbarDropdownUser" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <span class="d-none d-md-block fw-bold text-700">{{ auth()->user()->name }} <i class="fas fa-angle-down ms-1"></i></span>
                         <div class="avatar avatar-xl">
-                            <img class="rounded-circle" src="{{asset('contents/backend/assets')}}/assets/img/team/3-thumb.png" alt="" />
+                            @php
+                                $userAvatar = asset('contents/backend/assets/assets/img/team/3-thumb.png');
+                                if (auth()->check() && auth()->user()->hasRole('Student')) {
+                                    $student = auth()->user()->student;
+                                    if ($student && $student->profile_picture) {
+                                        $userAvatar = asset($student->profile_picture);
+                                    }
+                                }
+                            @endphp
+                            <img class="rounded-circle" src="{{ $userAvatar }}" alt="Profile Picture" style="object-fit: cover; width: 100%; height: 100%;" />
                         </div>
                     </a>
                     <div class="dropdown-menu dropdown-caret dropdown-caret dropdown-menu-end py-0" aria-labelledby="navbarDropdownUser">

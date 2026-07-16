@@ -23,8 +23,8 @@
     gap: 1.5rem;
 }
 .profile-avatar {
-    width: 100px;
-    height: 100px;
+    width: 200px;
+    height: 200px;
     border-radius: 50%;
     border: 4px solid rgba(255,255,255,0.2);
     object-fit: cover;
@@ -105,26 +105,64 @@
                     <i class="fas fa-edit me-1"></i> Edit Profile
                 </a>
                 <div class="profile-avatar-container">
-                    @if($student->profile_picture)
-                        <img src="{{ asset($student->profile_picture) }}" alt="Profile" class="profile-avatar">
-                    @else
-                        <div class="profile-avatar">
-                            {{ strtoupper(substr($student->first_name,0,1)) }}{{ strtoupper(substr($student->surname,0,1)) }}
+                    <label for="header_profile_picture" style="cursor: pointer; position: relative; display: inline-block;" class="position-relative overflow-hidden shadow-sm rounded-circle">
+                        @if($student->profile_picture)
+                            <img id="header-avatar-img" src="{{ asset($student->profile_picture) }}" alt="Profile" class="profile-avatar">
+                        @else
+                            <div id="header-avatar-img" class="profile-avatar">
+                                {{ strtoupper(substr($student->first_name,0,1)) }}{{ strtoupper(substr($student->surname,0,1)) }}
+                            </div>
+                        @endif
+                        <div class="position-absolute bottom-0 w-100 text-center" style="background: rgba(0,0,0,0.5); padding: 5px 0; font-size: 0.8rem; color: #fff;">
+                            <i class="fas fa-camera"></i> Change
                         </div>
-                    @endif
+                    </label>
+                    <form id="headerProfilePicForm" style="display: none;">
+                        <input type="file" id="header_profile_picture" name="profile_picture" accept="image/*" onchange="uploadHeaderProfilePicture(this)">
+                    </form>
+                    
                     <div class="profile-header-info">
-                        <h2>{{ $student->first_name }} {{ $student->surname }}</h2>
+                        <h2>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</h2>
                         <p><i class="fas fa-id-badge me-1"></i> {{ $student->student_id }} &nbsp;|&nbsp; <i class="fas fa-envelope me-1"></i> {{ $student->email }}</p>
                         <div class="mt-2 text-white-50 small">Profile Completion: <strong class="text-white">{{ $completionPercent }}%</strong></div>
                     </div>
                 </div>
             </div>
 
+            <!-- Referral Info (Only visible to the owner and enrolled students) -->
+            @if(Auth::id() == $student->user_id && $student->enrolment_status === 'enrolled')
+            <div class="info-section bg-light" style="border-bottom: 2px solid #e1e8f1;">
+                <div class="info-section-title"><i class="fas fa-bullhorn text-primary"></i> Invite Friends</div>
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <p class="text-muted mb-2">Share this invite link for new registrations.</p>
+                        <div class="input-group mb-3 shadow-sm">
+                            <span class="input-group-text bg-white"><i class="fas fa-link text-primary"></i></span>
+                            <input type="text" class="form-control bg-white" id="inviteLinkInput" value="{{ url('/register/' . ($student->user_id ?? '')) }}" readonly>
+                            <button class="btn btn-primary" type="button" onclick="copyInviteLink()"><i class="fas fa-copy"></i> Copy</button>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div class="info-item">
+                                <label>Your Promo Code</label>
+                                <span class="badge bg-success" style="font-size: 1rem; padding: 8px 12px;">{{ $student->user->referral_code ?? 'N/A' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Your Campus Code</label>
+                                <span class="badge bg-info text-dark" style="font-size: 1rem; padding: 8px 12px;">{{ $student->campus ? $student->campus->campus_code : 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Personal Info -->
             <div class="info-section">
                 <div class="info-section-title"><i class="fas fa-user-circle"></i> Personal Information</div>
                 <div class="info-grid">
-                    <div class="info-item"><label>Full Name</label><span>{{ $student->title }} {{ $student->first_name }} {{ $student->middle_name }} {{ $student->surname }}</span></div>
+                    <div class="info-item"><label>Full Name</label><span>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</span></div>
                     <div class="info-item"><label>Preferred Institute</label><span><span class="badge bg-primary">{{ $student->institute ? $student->institute->name : 'N/A' }}</span></span></div>
                     <div class="info-item"><label>Date of Birth</label><span>{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>
@@ -299,4 +337,92 @@
         </div>
     </div>
 </div>
+@push('scripts')
+<script>
+    function uploadHeaderProfilePicture(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        let formData = new FormData();
+        formData.append('profile_picture', input.files[0]);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+        // Show a loading state or toast if you have one
+        const imgEl = document.getElementById('header-avatar-img');
+        const originalSrc = imgEl.src;
+        
+        // Optional: show a quick preview locally while uploading
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if(imgEl.tagName === 'IMG') {
+                imgEl.src = e.target.result;
+            } else {
+                imgEl.innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" />`;
+            }
+        }
+        reader.readAsDataURL(input.files[0]);
+
+        fetch('{{ route('student.profile.personal') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.profile_picture_url) {
+                // Success: The image is already updated via FileReader preview, 
+                // but we can set it to the real URL just in case
+                if(imgEl.tagName === 'IMG') {
+                    imgEl.src = data.profile_picture_url;
+                }
+                
+                // Update navbars too if they exist
+                const navAvatars = document.querySelectorAll('.avatar img');
+                navAvatars.forEach(img => {
+                    img.src = data.profile_picture_url;
+                });
+                
+                // Optionally reload to refresh all avatars perfectly
+                // location.reload();
+            } else {
+                alert('Failed to upload picture.');
+                if(imgEl.tagName === 'IMG') imgEl.src = originalSrc;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred during upload.');
+            if(imgEl.tagName === 'IMG') imgEl.src = originalSrc;
+        });
+    }
+</script>
+<script>
+    function copyInviteLink() {
+        var copyText = document.getElementById("inviteLinkInput");
+        var textToCopy = copyText.value;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                alert("link copied");
+            });
+        } else {
+            var textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            textArea.style.position = "absolute";
+            textArea.style.left = "-999999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert("link copied");
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
+        }
+    }
+</script>
+@endpush
 @endsection

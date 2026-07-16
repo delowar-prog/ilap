@@ -437,11 +437,49 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="phone">Phone / Mobile <span class="req">*</span></label>
+                        <label for="email_confirmation">Confirm Email <span class="req">*</span></label>
                         <div class="input-wrap">
-                            <i class="fas fa-phone icon"></i>
-                            <input type="text" name="phone" id="phone" class="form-control @error('phone') is-invalid @enderror"
-                                   placeholder="+880 1XXX XXXXXX" value="{{ old('phone') }}" required />
+                            <i class="fas fa-envelope icon"></i>
+                            <input type="email" name="email_confirmation" id="email_confirmation" class="form-control"
+                                   placeholder="Re-enter email address" required autocomplete="username" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="country_id">Country of Residence <span class="req">*</span></label>
+                        <div class="input-wrap" style="position: relative;">
+                            <i class="fas fa-globe icon"></i>
+                            <select name="country_id" id="country_id" class="form-control @error('country_id') is-invalid @enderror" style="padding-right: 2rem;" required onchange="updatePhoneCode()">
+                                <option value="" data-code="">— Select country —</option>
+                                @foreach($countries as $country)
+                                    <option value="{{ $country->id }}" data-code="{{ $country->phone_code }}" {{ old('country_id') == $country->id ? 'selected' : '' }}>
+                                        {{ $country->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <i class="fas fa-chevron-down" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: .8rem; color: var(--muted); pointer-events: none;"></i>
+                        </div>
+                        @error('country_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="form-group col-span-2">
+                        <label for="phone">Phone / Mobile <span class="req">*</span></label>
+                        <div style="display: flex; gap: .4rem;">
+                            <div class="input-wrap" style="width: 140px; position: relative;">
+                                <select name="phone_code" id="phone_code" class="form-control" style="padding: .7rem 1.8rem .7rem .8rem;" required>
+                                    @foreach($countries as $country)
+                                        <option value="{{ $country->phone_code }}" {{ old('phone_code') == $country->phone_code ? 'selected' : '' }}>
+                                            {{ $country->iso2 }} ({{ $country->phone_code }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <i class="fas fa-chevron-down" style="position: absolute; right: .8rem; top: 50%; transform: translateY(-50%); font-size: .8rem; color: var(--muted); pointer-events: none;"></i>
+                            </div>
+                            <div class="input-wrap" style="flex: 1;">
+                                <i class="fas fa-phone icon"></i>
+                                <input type="text" name="phone" id="phone" class="form-control @error('phone') is-invalid @enderror"
+                                       placeholder="1XXX XXXXXX" value="{{ old('phone') }}" required />
+                            </div>
                         </div>
                         @error('phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
@@ -479,9 +517,9 @@
                     </div>
                 </div>
 
-                <!-- ─── Campus & Country ─── -->
+                <!-- ─── Campus & Promo Codes ─── -->
                 <div class="section-label">
-                    <i class="fas fa-building"></i> Campus & Location
+                    <i class="fas fa-building"></i> Campus & Promo Codes
                 </div>
 
                 <div class="grid-2">
@@ -490,7 +528,7 @@
                         <div class="input-wrap promo-wrap">
                             <i class="fas fa-school icon"></i>
                             <input type="text" name="campus_code" id="campus_code" class="form-control @error('campus_code') is-invalid @enderror"
-                                   placeholder="e.g. CMP-001" value="{{ old('campus_code') }}" required
+                                   placeholder="e.g. CMP-001" value="{{ old('campus_code', $refCampusCode ?? '') }}" required {{ isset($refCampusCode) ? 'readonly' : '' }}
                                    oninput="this.value = this.value.toUpperCase(); resetCampusStatus()" />
                             <button type="button" class="verify-btn" onclick="verifyCampus()">Verify</button>
                         </div>
@@ -499,41 +537,19 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="country_id">Country of Residence <span class="req">*</span></label>
-                        <div class="input-wrap">
-                            <i class="fas fa-globe icon"></i>
-                            <select name="country_id" id="country_id" class="form-control @error('country_id') is-invalid @enderror" required>
-                                <option value="">— Select country —</option>
-                                @foreach($countries as $country)
-                                    <option value="{{ $country->id }}" {{ old('country_id') == $country->id ? 'selected' : '' }}>
-                                        {{ $country->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                        <label for="promo_code">Promo Code <span class="req">*</span></label>
+                        <div class="promo-wrap">
+                            <input type="text" name="promo_code" id="promo_code"
+                                   class="form-control @error('promo_code') is-invalid @enderror"
+                                   placeholder="e.g. PRM123456"
+                                   value="{{ old('promo_code', $refPromoCode ?? '') }}" required {{ isset($refPromoCode) ? 'readonly' : '' }}
+                                   maxlength="50"
+                                   oninput="this.value = this.value.toUpperCase(); resetPromoStatus()" />
+                            <button type="button" class="verify-btn" onclick="verifyPromo()">Verify</button>
                         </div>
-                        @error('country_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="promo-status" id="promoStatus"></div>
+                        @error('promo_code') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
-                </div>
-
-                <!-- ─── Agent Promo Code ─── -->
-                <div class="section-label">
-                    <i class="fas fa-tag"></i> Agent / Promo Code <span style="font-size:.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);margin-left:.3rem;">(Optional)</span>
-                </div>
-
-                <div class="form-group" style="max-width:380px">
-                    <label for="promo_code">Agent / Promo Code</label>
-                    <div class="promo-wrap">
-                        <input type="text" name="promo_code" id="promo_code"
-                               class="form-control @error('promo_code') is-invalid @enderror"
-                               placeholder="e.g. AGT-BD001"
-                               value="{{ old('promo_code') }}"
-                               maxlength="50"
-                               oninput="this.value = this.value.toUpperCase(); resetPromoStatus()" />
-                        <button type="button" class="verify-btn" onclick="verifyPromo()">Verify</button>
-                    </div>
-                    <div class="promo-status" id="promoStatus"></div>
-                    <div class="hint"><i class="fas fa-info-circle me-1"></i>If referred by an agent, enter their code to link your account.</div>
-                    @error('promo_code') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <!-- Submit -->
@@ -577,7 +593,7 @@
             .then(r => r.json())
             .then(data => {
                 if (data.found) {
-                    status.textContent = `✔ Valid code — Agent: ${data.agent_name}`;
+                    status.textContent = `✔ Valid code: ${data.agent_name}`;
                     status.className   = 'promo-status found';
                 } else {
                     status.textContent = '✘ Promo code not found.';
@@ -626,11 +642,31 @@
         document.getElementById('campusStatus').className = 'promo-status';
     }
 
+    // Sync country code with phone code
+    function updatePhoneCode() {
+        const countrySelect = document.getElementById('country_id');
+        const selectedOption = countrySelect.options[countrySelect.selectedIndex];
+        const code = selectedOption.getAttribute('data-code');
+        if (code) {
+            document.getElementById('phone_code').value = code;
+        }
+    }
+
     // Show loading state on submit
     document.getElementById('registerForm').addEventListener('submit', function () {
         const btn = document.getElementById('submitBtn');
         btn.disabled   = true;
         btn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i> Creating Account…';
+    });
+
+    // Auto-verify if prefilled from invite link
+    window.addEventListener('DOMContentLoaded', () => {
+        if (document.getElementById('campus_code').value.trim() !== '') {
+            verifyCampus();
+        }
+        if (document.getElementById('promo_code').value.trim() !== '') {
+            verifyPromo();
+        }
     });
 </script>
 </body>

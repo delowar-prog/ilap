@@ -98,10 +98,20 @@
 
       <!-- Header -->
       <div class="student-wizard-header d-flex align-items-center gap-3">
-        <div class="avatar avatar-3xl">
-          <div class="avatar-name rounded-circle" style="background:rgba(255,255,255,.2);color:#fff;font-size:1.4rem;">
-            {{ strtoupper(substr($student->first_name,0,1)) }}{{ strtoupper(substr($student->surname,0,1)) }}
-          </div>
+        <div class="position-relative" style="width: 200px; height: 200px; flex-shrink: 0;">
+          <label for="header_profile_picture" class="d-block h-100 w-100 rounded-circle position-relative overflow-hidden shadow-sm" style="cursor: pointer; border: 5px solid rgba(255,255,255,0.5);">
+            @if($student->profile_picture)
+              <img id="header-avatar-img" class="rounded-circle w-100 h-100" src="{{ asset($student->profile_picture) }}" alt="Profile Picture" style="object-fit: cover;">
+            @else
+              <div id="header-avatar-placeholder" class="rounded-circle w-100 h-100 d-flex align-items-center justify-content-center" style="background:rgba(255,255,255,.2);color:#fff;font-size:2rem;">
+                {{ strtoupper(substr($student->first_name,0,1)) }}{{ strtoupper(substr($student->surname,0,1)) }}
+              </div>
+            @endif
+            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center rounded-circle" style="background: rgba(0,0,0,0.4); opacity: 0; transition: opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                <i class="fas fa-camera text-white fs-4"></i>
+            </div>
+          </label>
+          <input type="file" id="header_profile_picture" class="d-none" accept="image/*" onchange="uploadHeaderProfilePicture(this)">
         </div>
         <div>
           <span class="badge-id">{{ $student->student_id }}</span>
@@ -135,7 +145,7 @@
 
             <!-- ═══════════ TAB 0: Personal Info ═══════════ -->
             <div class="tab-section show active" id="tab-0">
-              <form id="form-personal">
+              <form id="form-personal" enctype="multipart/form-data">
                 @csrf
                 <div class="section-title"><i class="fas fa-user text-primary"></i> Personal Information</div>
                 <div class="row g-3">
@@ -740,29 +750,63 @@
               <form id="form-documents">
                 @csrf
                 <div id="documents-upload-container">
-                  <div class="row g-3 mb-3 doc-upload-row" id="doc-row-0">
-                    <div class="col-md-4">
-                      <label class="form-label">Document Type</label>
-                      <select class="form-select" name="documents[0][type]">
-                        <option value="CV">CV / Resume</option>
-                        <option value="Passport">Passport Copy</option>
-                        <option value="Certificate">Academic Certificates</option>
-                        <option value="Transcript">Academic Transcripts</option>
-                        <option value="EnglishResult">English Test Result</option>
-                        <option value="SOP">Statement of Purpose</option>
-                        <option value="LOR">Letter of Reference</option>
-                        <option value="Other">Other</option>
-                      </select>
+                  @php
+                    $docOptions = [
+                      'CV' => 'CV / Resume',
+                      'Passport' => 'Passport Copy',
+                      'Certificate' => 'Academic Certificates',
+                      'Transcript' => 'Academic Transcripts',
+                      'EnglishResult' => 'English Test Result',
+                      'SOP' => 'Statement of Purpose',
+                      'LOR' => 'Letter of Reference',
+                      'Other' => 'Other'
+                    ];
+                    
+                    // Pre-populate rows for mandatory docs that haven't been uploaded yet
+                    $pendingMandatoryDocs = array_diff($mandatoryDocs, $uploadedDocTypes);
+                    $defaultRowsCount = max(1, count($pendingMandatoryDocs));
+                  @endphp
+
+                  @for($i = 0; $i < $defaultRowsCount; $i++)
+                    @php 
+                      $preselectedType = '';
+                      if (count($pendingMandatoryDocs) > $i) {
+                          $preselectedType = array_values($pendingMandatoryDocs)[$i];
+                      }
+                    @endphp
+                    <div class="row g-3 mb-3 doc-upload-row" id="doc-row-{{ $i }}">
+                      <div class="col-md-4">
+                        <label class="form-label">Document Type</label>
+                        @if($preselectedType)
+                            <div class="form-control bg-light fw-bold text-dark" style="cursor: not-allowed;">
+                                {{ $docOptions[$preselectedType] ?? $preselectedType }} <span class="text-danger">*</span>
+                            </div>
+                            <input type="hidden" name="documents[{{ $i }}][type]" value="{{ $preselectedType }}">
+                        @else
+                            <select class="form-select" name="documents[{{ $i }}][type]">
+                              @foreach($docOptions as $val => $label)
+                                <option value="{{ $val }}">
+                                  {{ $label }} 
+                                </option>
+                              @endforeach
+                            </select>
+                        @endif
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Document Title</label>
+                        <input class="form-control" type="text" name="documents[{{ $i }}][title]" placeholder="e.g. IELTS Report 2023">
+                      </div>
+                      <div class="col-md-3">
+                        <label class="form-label">Select File</label>
+                        <input class="form-control" type="file" name="documents[{{ $i }}][file]" @if($preselectedType) required @endif>
+                      </div>
+                      @if($i > 0 && !$preselectedType)
+                      <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-outline-danger w-100 px-2" onclick="removeDocumentRow({{ $i }})"><i class="fas fa-trash"></i></button>
+                      </div>
+                      @endif
                     </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Document Title</label>
-                      <input class="form-control" type="text" name="documents[0][title]" placeholder="e.g. IELTS Report 2023">
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Select File</label>
-                      <input class="form-control" type="file" name="documents[0][file]">
-                    </div>
-                  </div>
+                  @endfor
                 </div>
                 
                 <div class="mb-4">
@@ -849,7 +893,7 @@
 
               <div class="mt-4">
                 <button type="button" class="btn btn-outline-secondary" onclick="switchTab(6)"><i class="fas fa-arrow-left me-1"></i> Back</button>
-                <a href="{{ route('dashboard') }}" class="btn btn-success ms-2"><i class="fas fa-check-circle me-1"></i> Finish & Submit</a>
+                <button type="button" class="btn btn-success ms-2" onclick="validateAndSubmitProfile()"><i class="fas fa-check-circle me-1"></i> Finish & Submit</button>
               </div>
             </div>
 
@@ -1154,23 +1198,35 @@ function updateRefereeNumbers() {
     });
 }
 
-let docIdx = 1;
+let docIdx = {{ $defaultRowsCount }};
 function addDocumentRow() {
     const container = document.getElementById('documents-upload-container');
     const idx = docIdx++;
+    
+    // PHP to JS conversion for mandatory docs and options
+    const mandatoryDocs = @json($mandatoryDocs);
+    const docOptions = {
+      'CV': 'CV / Resume',
+      'Passport': 'Passport Copy',
+      'Certificate': 'Academic Certificates',
+      'Transcript': 'Academic Transcripts',
+      'EnglishResult': 'English Test Result',
+      'SOP': 'Statement of Purpose',
+      'LOR': 'Letter of Reference',
+      'Other': 'Other'
+    };
+    
+    let optionsHtml = '';
+    for (const [val, label] of Object.entries(docOptions)) {
+      optionsHtml += `<option value="${val}">${label}</option>`;
+    }
+
     const html = `
     <div class="row g-3 mb-3 doc-upload-row" id="doc-row-${idx}">
       <div class="col-md-4">
         <label class="form-label">Document Type</label>
         <select class="form-select" name="documents[${idx}][type]">
-          <option value="CV">CV / Resume</option>
-          <option value="Passport">Passport Copy</option>
-          <option value="Certificate">Academic Certificates</option>
-          <option value="Transcript">Academic Transcripts</option>
-          <option value="EnglishResult">English Test Result</option>
-          <option value="SOP">Statement of Purpose</option>
-          <option value="LOR">Letter of Reference</option>
-          <option value="Other">Other</option>
+          ${optionsHtml}
         </select>
       </div>
       <div class="col-md-4">
@@ -1248,6 +1304,71 @@ function toggleOtherResultType(selectElement) {
         otherDiv.style.display = 'none';
         otherDiv.querySelector('input').value = '';
     }
+}
+
+function uploadHeaderProfilePicture(input) {
+    if (input.files && input.files[0]) {
+        const formData = new FormData();
+        formData.append('profile_picture', input.files[0]);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+        fetch('{{ route('student.profile.personal') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Profile picture updated successfully!', true);
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.getElementById('header-avatar-img');
+                    if (img) {
+                        img.src = e.target.result;
+                    } else {
+                        const placeholder = document.getElementById('header-avatar-placeholder');
+                        if (placeholder) {
+                            placeholder.outerHTML = '<img id="header-avatar-img" class="rounded-circle w-100 h-100" src="'+e.target.result+'" alt="Profile Picture" style="object-fit: cover;">';
+                        }
+                    }
+                    setTimeout(() => window.location.reload(), 1500); 
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                showToast(data.message || 'Failed to update picture', false);
+            }
+        })
+        .catch(error => {
+            showToast('Error uploading picture', false);
+        });
+    }
+}
+function validateAndSubmitProfile() {
+    const mandatoryDocs = @json($mandatoryDocs);
+    const uploadedDocTypes = @json($uploadedDocTypes);
+    
+    // Ensure all mandatory docs are present in the uploaded docs
+    let missingDocs = [];
+    if (mandatoryDocs && mandatoryDocs.length > 0) {
+        mandatoryDocs.forEach(docType => {
+            if (!uploadedDocTypes.includes(docType)) {
+                missingDocs.push(docType);
+            }
+        });
+    }
+    
+    if (missingDocs.length > 0) {
+        showToast('You must upload the following mandatory documents before submitting: ' + missingDocs.join(', '), false);
+        switchTab(6); // Go back to documents tab
+        return;
+    }
+    
+    // If validation passes, go to dashboard
+    window.location.href = "{{ route('dashboard') }}";
 }
 </script>
 @endpush

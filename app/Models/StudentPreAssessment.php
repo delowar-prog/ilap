@@ -34,11 +34,15 @@ class StudentPreAssessment extends Model
         'course_link_2', 'course_link_3',
         // Approval Workflow
         'assessment_status', 'approved_by', 'approved_at', 'rejection_note',
+        
+        // Form Selection and Mandatory Docs
+        'selected_form', 'mandatory_documents',
     ];
 
     protected $casts = [
         'approved_at' => 'datetime',
         'intake_date'  => 'date',
+        'mandatory_documents' => 'array',
     ];
 
     // ─── Relationships ───

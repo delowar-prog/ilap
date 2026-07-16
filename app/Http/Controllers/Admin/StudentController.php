@@ -72,7 +72,10 @@ class StudentController extends Controller
     public function approve($id)
     {
         $student = Student::findOrFail($id);
-        $student->update(['enrolment_status' => 'approved']);
+        
+        $student->enrolment_status = 'approved';
+        $student->save();
+        
         return back()->with('success', "Student '{$student->first_name}' pre-enrolment approved.");
     }
 
@@ -95,9 +98,21 @@ class StudentController extends Controller
     {
         $student = Student::findOrFail($id);
         if ($student->enrolment_status === 'approved') {
+            
+            // If they still have an Applicant ID, upgrade it to a Student ID
+            if (str_starts_with($student->student_id, 'APP')) {
+                $yearMonth = date('ym');
+                $count = \App\Models\Student::where('student_id', 'like', 'ST' . $yearMonth . '%')->count() + 1;
+                $serial = str_pad($count, 2, '0', STR_PAD_LEFT);
+                $initialFirstName = strtoupper(substr($student->first_name ?? 'X', 0, 1));
+                $initialLastName  = strtoupper(substr($student->surname ?? 'X', 0, 1));
+                $newStudentId = 'ST' . $yearMonth . $serial . $initialFirstName . $initialLastName;
+                $student->student_id = $newStudentId;
+            }
+            
             $student->enrolment_status = 'enrolled';
             $student->save();
-            return redirect()->back()->with('success', 'Student data moved to Enrolled Students successfully.');
+            return redirect()->back()->with('success', 'Student data moved to Enrolled Students successfully. ID: ' . $student->student_id);
         }
         return redirect()->back()->with('error', 'Student must be approved in Pre-Enrolment first.');
     }

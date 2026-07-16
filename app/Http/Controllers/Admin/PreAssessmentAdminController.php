@@ -42,20 +42,52 @@ class PreAssessmentAdminController extends Controller
         abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
 
         $assessment = StudentPreAssessment::with(['student.user', 'approvedBy'])->findOrFail($id);
-        return view('backend.pre_assessment.show', compact('assessment'));
+        $student = $assessment->student;
+        
+        $academics = \App\Models\StudentAcademic::where('student_id', $student->id)->get();
+        $englishTests = \App\Models\StudentEnglishTest::where('student_id', $student->id)->get();
+        $referees = \App\Models\StudentReferee::where('student_id', $student->id)->get();
+        $documents = \App\Models\StudentDocument::where('student_id', $student->id)->get();
+        
+        // Calculate Completion Percentage
+        $completionPercent = 10;
+        if ($student->phone && $student->current_address && $student->dob && $student->nationality) { $completionPercent += 30; }
+        elseif ($student->phone || $student->current_address) { $completionPercent += 15; }
+        if ($academics->count() > 0) { $completionPercent += 20; }
+        if ($englishTests->count() > 0 || $student->native_language) { $completionPercent += 20; }
+        if ($referees->count() > 0) { $completionPercent += 10; }
+        if ($documents->count() > 0) { $completionPercent += 10; }
+        $completionPercent = min($completionPercent, 100);
+
+        return view('backend.pre_assessment.show', compact(
+            'assessment', 
+            'student',
+            'academics',
+            'englishTests',
+            'referees',
+            'documents',
+            'completionPercent'
+        ));
     }
 
     /** Approve an assessment */
-    public function approve($id)
+    public function approve(Request $request, $id)
     {
         abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
+        
+        $request->validate([
+            'selected_form' => 'required|string',
+            'mandatory_documents' => 'nullable|array',
+        ]);
 
         $assessment = StudentPreAssessment::findOrFail($id);
         $assessment->update([
-            'assessment_status' => 'approved',
-            'approved_by'       => Auth::id(),
-            'approved_at'       => now(),
-            'rejection_note'    => null,
+            'assessment_status'   => 'approved',
+            'approved_by'         => Auth::id(),
+            'approved_at'         => now(),
+            'rejection_note'      => null,
+            'selected_form'       => $request->selected_form,
+            'mandatory_documents' => $request->mandatory_documents,
         ]);
 
         // Auto-populate Student Profile

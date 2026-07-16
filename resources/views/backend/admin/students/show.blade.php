@@ -23,8 +23,8 @@
     gap: 1.5rem;
 }
 .profile-avatar {
-    width: 100px;
-    height: 100px;
+    width: 200px;
+    height: 200px;
     border-radius: 50%;
     border: 4px solid rgba(255,255,255,0.2);
     object-fit: cover;
@@ -113,18 +113,48 @@
                         </div>
                     @endif
                     <div class="profile-header-info">
-                        <h2>{{ $student->first_name }} {{ $student->surname }}</h2>
+                        <h2>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</h2>
                         <p><i class="fas fa-id-badge me-1"></i> {{ $student->student_id }} &nbsp;|&nbsp; <i class="fas fa-envelope me-1"></i> {{ $student->email }}</p>
                         <div class="mt-2 text-white-50 small">Profile Completion: <strong class="text-white">{{ $completionPercent }}%</strong></div>
                     </div>
                 </div>
             </div>
 
+            <!-- Referral Info (Only visible to the owner and enrolled students) -->
+            @if(Auth::id() == $student->user_id && $student->enrolment_status === 'enrolled')
+            <div class="info-section bg-light" style="border-bottom: 2px solid #e1e8f1;">
+                <div class="info-section-title"><i class="fas fa-bullhorn text-primary"></i> Invite Friends</div>
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <p class="text-muted mb-2">Share this invite link for new registrations.</p>
+                        <div class="input-group mb-3 shadow-sm">
+                            <span class="input-group-text bg-white"><i class="fas fa-link text-primary"></i></span>
+                            <input type="text" class="form-control bg-white" id="inviteLinkInput" value="{{ url('/register/' . ($student->user_id ?? '')) }}" readonly>
+                            <button class="btn btn-primary" type="button" onclick="copyInviteLink()"><i class="fas fa-copy"></i> Copy</button>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
+                            <div class="info-item">
+                                <label>Your Promo Code</label>
+                                <span class="badge bg-success" style="font-size: 1rem; padding: 8px 12px;">{{ $student->user->referral_code ?? 'N/A' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <label>Your Campus Code</label>
+                                <span class="badge bg-info text-dark" style="font-size: 1rem; padding: 8px 12px;">{{ $student->campus ? $student->campus->campus_code : 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <!-- Personal Info -->
             <div class="info-section">
                 <div class="info-section-title"><i class="fas fa-user-circle"></i> Personal Information</div>
                 <div class="info-grid">
-                    <div class="info-item"><label>Full Name</label><span>{{ $student->title }} {{ $student->first_name }} {{ $student->middle_name }} {{ $student->surname }}</span></div>
+                    <div class="info-item"><label>Full Name</label><span>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</span></div>
+                    <div class="info-item"><label>Preferred Institute</label><span><span class="badge bg-primary">{{ $student->institute ? $student->institute->name : 'N/A' }}</span></span></div>
                     <div class="info-item"><label>Date of Birth</label><span>{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Nationality</label><span>{{ $student->nationality ?? 'N/A' }}</span></div>
@@ -298,4 +328,5 @@
         </div>
     </div>
 </div>
+
 @endsection

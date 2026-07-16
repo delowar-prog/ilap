@@ -1,5 +1,5 @@
 @extends('layouts.backend_master')
-@section('title', 'Student Dashboard')
+@section('title', $student->enrolment_status === 'enrolled' ? 'Student Dashboard' : 'Applicant Dashboard')
 
 @push('css')
 <style>
@@ -58,8 +58,9 @@
     <div class="col-12">
         <div class="dashboard-header d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-                <h2 class="text-white mb-2 fw-bold">Welcome back, {{ $student->first_name }}! 👋</h2>
-                <p class="mb-0 opacity-75">Student ID: {{ $student->student_id }} &bull; {{ $student->email }}</p>
+                @php $isStudent = ($student->enrolment_status === 'enrolled'); @endphp
+                <h2 class="text-white mb-2 fw-bold">Welcome back, {{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}! 👋</h2>
+                <p class="mb-0 opacity-75">{{ $isStudent ? 'Student ID' : 'Applicant ID' }}: {{ $student->student_id }} &bull; {{ $student->email }}</p>
             </div>
             <div style="min-width: 250px;">
                 <div class="d-flex justify-content-between mb-1">

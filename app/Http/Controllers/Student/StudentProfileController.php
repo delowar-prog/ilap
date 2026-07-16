@@ -29,10 +29,12 @@ class StudentProfileController extends Controller
             $firstName = $user->user_first_name ?? $user->name ?? 'X';
             $surname = $user->user_last_name ?? 'X';
             
-            $randomDigits = str_pad(mt_rand(0, 99999), 5, '0', STR_PAD_LEFT);
+            $yearMonth = date('ym'); // e.g. 2607 for July 2026
+            $count = \App\Models\Student::whereYear('created_at', date('Y'))->whereMonth('created_at', date('m'))->count() + 1;
+            $serial = str_pad($count, 2, '0', STR_PAD_LEFT);
             $initialFirstName = strtoupper(substr($firstName, 0, 1));
             $initialLastName  = strtoupper(substr($surname, 0, 1));
-            $studentId = $campusCodeStr . 'ST' . $randomDigits . $initialFirstName . $initialLastName;
+            $studentId = 'APP' . $yearMonth . $serial . $initialFirstName . $initialLastName;
 
             // Fallback: If user somehow doesn't have a student profile yet, create one
             $student = Student::create([
@@ -177,6 +179,16 @@ class StudentProfileController extends Controller
         if (StudentDocument::where('student_id', $student->id)->where('uploaded_by', 'student')->exists()) { $completionPercent += 10; }
         $completionPercent = min($completionPercent, 100);
 
+        $mandatoryDocs = [];
+        if ($student->preAssessment && $student->preAssessment->mandatory_documents) {
+            $mandatoryDocs = $student->preAssessment->mandatory_documents;
+        }
+        
+        $uploadedDocTypes = \App\Models\StudentDocument::where('student_id', $student->id)
+            ->where('uploaded_by', 'student')
+            ->pluck('document_type')
+            ->toArray();
+
         return view('backend.student.student_profile', compact(
             'student', 
             'preAssessment', 
@@ -187,7 +199,9 @@ class StudentProfileController extends Controller
             'adminDocuments',
             'institutes',
             'courses',
-            'completionPercent'
+            'completionPercent',
+            'mandatoryDocs',
+            'uploadedDocTypes'
         ));
     }
 
@@ -212,7 +226,7 @@ class StudentProfileController extends Controller
         if ($request->hasFile('profile_picture')) {
             $file = $request->file('profile_picture');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('public/profile_pictures', $filename);
+            $path = $file->storeAs('profile_pictures', $filename, 'public');
             $data['profile_picture'] = 'storage/profile_pictures/' . $filename;
         }
 
@@ -229,6 +243,14 @@ class StudentProfileController extends Controller
             // For simplicity in a multi-step form, if they submit the full array:
             foreach ($request->academics as $academic) {
                 if (!empty($academic['education_level']) && !empty($academic['institution_name'])) {
+                    // Fix dates that come from month inputs (YYYY-MM)
+                    $dateFields = ['start_date', 'end_date', 'award_date'];
+                    foreach($dateFields as $df) {
+                        if (!empty($academic[$df]) && strlen($academic[$df]) === 7) {
+                            $academic[$df] .= '-01';
+                        }
+                    }
+
                     if (!empty($academic['id'])) {
                         StudentAcademic::where('id', $academic['id'])->where('student_id', $student->id)->update($academic);
                     } else {
