@@ -182,12 +182,21 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('cities.index') }}">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Districts/City</span>
-                                </div>
-                            </a>
-                        </li>
+                             <a class="nav-link" href="{{ route('cities.index') }}">
+                                 <div class="d-flex align-items-center">
+                                     <span class="nav-link-text ps-1">Districts/City</span>
+                                 </div>
+                             </a>
+                         </li>
+                         @hasanyrole('Super Admin|Admin')
+                         <li class="nav-item">
+                             <a class="nav-link" href="{{ route('admin.config.dropdown.index') }}">
+                                 <div class="d-flex align-items-center">
+                                     <span class="nav-link-text ps-1">Dropdown Options</span>
+                                 </div>
+                             </a>
+                         </li>
+                         @endhasanyrole
                     </ul>
                 </li>
                 @endcanany
@@ -396,6 +405,16 @@
                 @endif
 
                 @if(!$isStudent)
+                <!-- ==================== Pre-Assessment ==================== -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('admin.pre.assessments.index') }}">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-file-signature"></span></span>
+                            <span class="nav-link-text ps-1">Pre-Assessments</span>
+                        </div>
+                    </a>
+                </li>
+
                 <!-- ==================== Enrolment Details ==================== -->
                 <li class="nav-item">
                     <a class="nav-link dropdown-indicator" href="#students" role="button" data-bs-toggle="collapse"
@@ -406,13 +425,6 @@
                         </div>
                     </a>
                     <ul class="nav collapse" id="students">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.pre.assessments.index') }}">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Pre-Assessments</span>
-                                </div>
-                            </a>
-                        </li>
                         @can('student view')
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('admin.students.index') }}">
@@ -470,6 +482,8 @@
                         </li>
                     </ul>
                 </li>
+
+
                 <!-- ==================== Document ==================== -->
                 <li class="nav-item">
                     <a class="nav-link dropdown-indicator" href="#docuemnts" role="button"

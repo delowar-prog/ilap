@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
+use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -36,11 +37,11 @@ class CourseController extends Controller
 
     public function create()
     {
-        $categories = ['short', 'long', 'degree', 'diploma', 'certificate'];
-        $levels = ['undergraduate', 'postgraduate', 'phd', 'professional'];
-        $studyMethods = ['online', 'on_campus', 'blended'];
-        $currencies = ['GBP', 'USD', 'BDT', 'SHS', 'AED', 'INR', 'EUR'];
-        $intakes = ['Fall', 'Spring', 'Summer', 'Rolling', 'January', 'September'];
+        $categories   = ['short', 'long', 'degree', 'diploma', 'certificate'];
+        $levels       = ['undergraduate', 'postgraduate', 'phd', 'professional'];
+        $studyMethods = DropdownOption::active('study_method');
+        $currencies   = ['GBP', 'USD', 'BDT', 'SHS', 'AED', 'INR', 'EUR'];
+        $intakes      = ['Fall', 'Spring', 'Summer', 'Rolling', 'January', 'September'];
 
         return view('backend.courses.create', compact(
             'categories', 'levels', 'studyMethods', 'currencies', 'intakes'
@@ -75,11 +76,11 @@ class CourseController extends Controller
     {
         $course = Course::findOrFail($id);
         
-        $categories = ['short', 'long', 'degree', 'diploma', 'certificate'];
-        $levels = ['undergraduate', 'postgraduate', 'phd', 'professional'];
-        $studyMethods = ['online', 'on_campus', 'blended'];
-        $currencies = ['GBP', 'USD', 'BDT', 'SHS', 'AED', 'INR', 'EUR'];
-        $intakes = ['Fall', 'Spring', 'Summer', 'Rolling', 'January', 'September'];
+        $categories   = ['short', 'long', 'degree', 'diploma', 'certificate'];
+        $levels       = ['undergraduate', 'postgraduate', 'phd', 'professional'];
+        $studyMethods = DropdownOption::active('study_method');
+        $currencies   = ['GBP', 'USD', 'BDT', 'SHS', 'AED', 'INR', 'EUR'];
+        $intakes      = ['Fall', 'Spring', 'Summer', 'Rolling', 'January', 'September'];
 
         return view('backend.courses.edit', compact(
             'course', 'categories', 'levels', 'studyMethods', 'currencies', 'intakes'

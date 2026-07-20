@@ -13,74 +13,316 @@ class LocationSelector extends Component
     public $states = [];
     public $cities = [];
     
-    public $selectedCountry = null;
-    public $selectedState = null;
-    public $selectedCity = null;
-    
-    // Form submit হলে এই ডেটা পাঠানো হবে
-    public $countryId = null;
-    public $stateId = null;
-    public $cityId = null;
+    // Dropdown values (bound to select IDs)
+    public $selectedCountryId = null;
+    public $selectedStateId = null;
+    public $selectedCityId = null;
 
-    // Selected names for submission and ISO2 for preview
+    // Text box values (bound to input names, submitted values)
     public $selectedCountryName = null;
-    public $selectedCountryIso2 = null;
+    public $selectedStateName = null;
     public $selectedCityName = null;
 
-    public function mount()
+    // Submitted field names (optional, defaults to standard)
+    public $countryFieldName = 'country';
+    public $stateFieldName = 'state';
+    public $cityFieldName = 'city';
+
+    public function mount($initialCountry = null, $initialState = null, $initialCity = null, $countryField = 'country', $stateField = 'state', $cityField = 'city')
+    {
+        $this->countryFieldName = $countryField;
+        $this->stateFieldName = $stateField;
+        $this->cityFieldName = $cityField;
+
+        $this->selectedCountryName = $initialCountry;
+        $this->selectedStateName = $initialState;
+        $this->selectedCityName = $initialCity;
+
+        $this->loadCountries();
+        
+        if ($initialCountry) {
+            $country = Country::where('name', $initialCountry)->orWhere('id', $initialCountry)->first();
+            if ($country) {
+                $this->selectedCountryId = $country->id;
+                $this->selectedCountryName = $country->name;
+                
+                $this->states = State::where('country_id', $country->id)
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+
+                $this->cities = City::whereIn('state_id', State::where('country_id', $country->id)->pluck('id'))
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+            }
+        }
+
+        if ($initialState && $this->selectedCountryId) {
+            $state = State::where('country_id', $this->selectedCountryId)
+                ->where(function($q) use ($initialState) {
+                    $q->where('name', $initialState)->orWhere('id', $initialState);
+                })->first();
+            if ($state) {
+                $this->selectedStateId = $state->id;
+                $this->selectedStateName = $state->name;
+                
+                $this->cities = City::where('state_id', $state->id)
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+            }
+        }
+
+        if ($initialCity && $this->selectedStateId) {
+            $city = City::where('state_id', $this->selectedStateId)
+                ->where(function($q) use ($initialCity) {
+                    $q->where('name', $initialCity)->orWhere('id', $initialCity);
+                })->first();
+            if ($city) {
+                $this->selectedCityId = $city->id;
+                $this->selectedCityName = $city->name;
+            }
+        }
+    }
+
+    public function loadCountries()
     {
         $this->countries = Country::where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'name']);
     }
 
-    // Country পরিবর্তন হলে অটোমেটিক কল হবে
-    public function updatedSelectedCountry($value)
+    public function updatedSelectedCountryId($value)
     {
-        $this->reset(['selectedState', 'selectedCity', 'states', 'cities', 'selectedCountryName', 'selectedCountryIso2', 'selectedCityName']);
-        $this->countryId = $value;
-        $this->stateId = null;
-        $this->cityId = null;
+        $this->reset([
+            'selectedStateId', 'selectedCityId', 'states', 'cities',
+            'selectedCountryName', 'selectedStateName', 'selectedCityName'
+        ]);
 
         if ($value) {
             $country = Country::find($value);
             if ($country) {
                 $this->selectedCountryName = $country->name;
-                $this->selectedCountryIso2 = $country->iso2;
+                
+                $this->states = State::where('country_id', $value)
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+                
+                $this->cities = City::whereIn('state_id', State::where('country_id', $value)->pluck('id'))
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+                
                 $this->dispatch('country-selected', iso2: $country->iso2);
             }
-
-            $this->states = State::where('country_id', $value)
-                ->where('status', 'active')
-                ->orderBy('name')
-                ->get(['id', 'name']);
         }
     }
 
-    // State পরিবর্তন হলে
-    public function updatedSelectedState($value)
+    public function updatedSelectedCountryName($value)
     {
-        $this->reset(['selectedCity', 'cities', 'selectedCityName']);
-        $this->stateId = $value;
-        $this->cityId = null;
+        if (empty($value)) {
+            $this->reset([
+                'selectedCountryId', 'selectedStateId', 'selectedCityId',
+                'states', 'cities', 'selectedStateName', 'selectedCityName'
+            ]);
+            return;
+        }
+
+        $country = Country::where('name', $value)->first();
+        if ($country) {
+            $this->selectedCountryId = $country->id;
+            
+            $this->states = State::where('country_id', $country->id)
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+            
+            $this->cities = City::whereIn('state_id', State::where('country_id', $country->id)->pluck('id'))
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+            
+            $this->dispatch('country-selected', iso2: $country->iso2);
+        } else {
+            $this->selectedCountryId = null;
+            $this->states = [];
+            $this->cities = [];
+            $this->selectedStateId = null;
+            $this->selectedCityId = null;
+        }
+    }
+
+    public function updatedSelectedStateId($value)
+    {
+        $this->reset([
+            'selectedCityId', 'selectedStateName', 'selectedCityName'
+        ]);
 
         if ($value) {
-            $this->cities = City::where('state_id', $value)
-                ->where('status', 'active')
-                ->orderBy('name')
-                ->get(['id', 'name']);
+            $state = State::find($value);
+            if ($state) {
+                $this->selectedStateName = $state->name;
+                
+                // If Country is not set or is different, auto-set Country
+                if (!$this->selectedCountryId || $this->selectedCountryId != $state->country_id) {
+                    $country = Country::find($state->country_id);
+                    if ($country) {
+                        $this->selectedCountryId = $country->id;
+                        $this->selectedCountryName = $country->name;
+                        $this->dispatch('country-selected', iso2: $country->iso2);
+                        
+                        $this->states = State::where('country_id', $country->id)
+                            ->where('status', 'active')
+                            ->orderBy('name')
+                            ->get(['id', 'name']);
+                    }
+                }
+
+                $this->cities = City::where('state_id', $value)
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+            }
         }
     }
 
-    public function updatedSelectedCity($value)
+    public function updatedSelectedStateName($value)
     {
-        $this->cityId = $value;
+        if (empty($value)) {
+            $this->reset([
+                'selectedStateId', 'selectedCityId', 'selectedCityName'
+            ]);
+            // Re-load cities of country if country is selected
+            if ($this->selectedCountryId) {
+                $this->cities = City::whereIn('state_id', State::where('country_id', $this->selectedCountryId)->pluck('id'))
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+            } else {
+                $this->cities = [];
+            }
+            return;
+        }
 
+        // Try to match state
+        $stateQuery = State::where('name', $value);
+        if ($this->selectedCountryId) {
+            $stateQuery->where('country_id', $this->selectedCountryId);
+        }
+        $state = $stateQuery->first();
+
+        if ($state) {
+            $this->selectedStateId = $state->id;
+            
+            // Auto-set country if not set
+            if (!$this->selectedCountryId) {
+                $country = Country::find($state->country_id);
+                if ($country) {
+                    $this->selectedCountryId = $country->id;
+                    $this->selectedCountryName = $country->name;
+                    $this->dispatch('country-selected', iso2: $country->iso2);
+                    
+                    $this->states = State::where('country_id', $country->id)
+                        ->where('status', 'active')
+                        ->orderBy('name')
+                        ->get(['id', 'name']);
+                }
+            }
+
+            $this->cities = City::where('state_id', $state->id)
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        } else {
+            $this->selectedStateId = null;
+            $this->cities = [];
+            $this->selectedCityId = null;
+        }
+    }
+
+    public function updatedSelectedCityId($value)
+    {
         if ($value) {
             $city = City::find($value);
-            $this->selectedCityName = $city?->name;
+            if ($city) {
+                $this->selectedCityName = $city->name;
+
+                // Auto-set state and country if not set
+                $state = State::find($city->state_id);
+                if ($state && (!$this->selectedStateId || $this->selectedStateId != $state->id)) {
+                    $this->selectedStateId = $state->id;
+                    $this->selectedStateName = $state->name;
+
+                    if (!$this->selectedCountryId || $this->selectedCountryId != $state->country_id) {
+                        $country = Country::find($state->country_id);
+                        if ($country) {
+                            $this->selectedCountryId = $country->id;
+                            $this->selectedCountryName = $country->name;
+                            $this->dispatch('country-selected', iso2: $country->iso2);
+                            
+                            $this->states = State::where('country_id', $country->id)
+                                ->where('status', 'active')
+                                ->orderBy('name')
+                                ->get(['id', 'name']);
+                        }
+                    }
+
+                    $this->cities = City::where('state_id', $state->id)
+                        ->where('status', 'active')
+                        ->orderBy('name')
+                        ->get(['id', 'name']);
+                }
+            }
         } else {
             $this->selectedCityName = null;
+        }
+    }
+
+    public function updatedSelectedCityName($value)
+    {
+        if (empty($value)) {
+            $this->selectedCityId = null;
+            return;
+        }
+
+        $cityQuery = City::where('name', $value);
+        if ($this->selectedStateId) {
+            $cityQuery->where('state_id', $this->selectedStateId);
+        }
+        $city = $cityQuery->first();
+
+        if ($city) {
+            $this->selectedCityId = $city->id;
+
+            // Auto-set state and country if not set
+            $state = State::find($city->state_id);
+            if ($state && (!$this->selectedStateId || $this->selectedStateId != $state->id)) {
+                $this->selectedStateId = $state->id;
+                $this->selectedStateName = $state->name;
+
+                if (!$this->selectedCountryId || $this->selectedCountryId != $state->country_id) {
+                    $country = Country::find($state->country_id);
+                    if ($country) {
+                        $this->selectedCountryId = $country->id;
+                        $this->selectedCountryName = $country->name;
+                        $this->dispatch('country-selected', iso2: $country->iso2);
+                        
+                        $this->states = State::where('country_id', $country->id)
+                            ->where('status', 'active')
+                            ->orderBy('name')
+                            ->get(['id', 'name']);
+                    }
+                }
+
+                $this->cities = City::where('state_id', $state->id)
+                    ->where('status', 'active')
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+            }
+        } else {
+            $this->selectedCityId = null;
         }
     }
 

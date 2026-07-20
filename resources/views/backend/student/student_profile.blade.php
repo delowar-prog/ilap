@@ -249,41 +249,43 @@
                 @csrf
                 <div class="section-title"><i class="fas fa-map-marker-alt text-primary"></i> Permanent Address</div>
                 <div class="row g-3">
-                  <div class="col-12">
+                  <div class="col-md-8">
                     <label class="form-label">Full Address</label>
                     <input class="form-control" type="text" name="permanent_address" value="{{ $student->permanent_address }}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">City</label>
-                    <input class="form-control" type="text" name="permanent_city" value="{{ $student->permanent_city }}">
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Postcode</label>
                     <input class="form-control" type="text" name="permanent_postcode" value="{{ $student->permanent_postcode }}">
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Country</label>
-                    <input class="form-control" type="text" name="permanent_country" value="{{ $student->permanent_country }}">
+                  <div class="col-12">
+                    <livewire:geo.location-selector 
+                        :initialCountry="old('permanent_country', $student->permanent_country)" 
+                        :initialState="old('permanent_state', $student->permanent_state ?? '')" 
+                        :initialCity="old('permanent_city', $student->permanent_city)" 
+                        countryField="permanent_country"
+                        stateField="permanent_state"
+                        cityField="permanent_city" />
                   </div>
                 </div>
 
                 <div class="section-title mt-4"><i class="fas fa-home text-primary"></i> Current Address <small class="text-muted fw-normal text-lowercase">(if different from permanent)</small></div>
                 <div class="row g-3">
-                  <div class="col-12">
+                  <div class="col-md-8">
                     <label class="form-label">Full Address</label>
                     <input class="form-control" type="text" name="current_address" value="{{ $student->current_address }}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">City</label>
-                    <input class="form-control" type="text" name="current_city" value="{{ $student->current_city }}">
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Postcode</label>
                     <input class="form-control" type="text" name="current_postcode" value="{{ $student->current_postcode }}">
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Country</label>
-                    <input class="form-control" type="text" name="current_country" value="{{ $student->current_country }}">
+                  <div class="col-12">
+                    <livewire:geo.location-selector 
+                        :initialCountry="old('current_country', $student->current_country)" 
+                        :initialState="old('current_state', $student->current_state ?? '')" 
+                        :initialCity="old('current_city', $student->current_city)" 
+                        countryField="current_country"
+                        stateField="current_state"
+                        cityField="current_city" />
                   </div>
                 </div>
 
@@ -424,8 +426,9 @@
                     <div class="row g-2">
                       <div class="col-md-4">
                         <label class="form-label">Education Level</label>
-                        <select class="form-select" name="academics[{{ $idx }}][education_level]">
-                          @foreach(['10th Grade','12th Grade/A-Level','Diploma','Bachelor\'s Degree','Master\'s Degree','PhD/Doctorate','Other'] as $el)
+                        <select class="form-select select2-tags" name="academics[{{ $idx }}][education_level]">
+                          <option value=""></option>
+                          @foreach($qualificationOptions as $el)
                             <option value="{{ $el }}" {{ $aca->education_level==$el?'selected':'' }}>{{ $el }}</option>
                           @endforeach
                         </select>
@@ -474,11 +477,27 @@
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">Country</label>
-                        <input class="form-control" type="text" name="academics[{{ $idx }}][country]" value="{{ $aca->country }}">
+                        <select class="form-control select2-tags" name="academics[{{ $idx }}][country]">
+                          <option value=""></option>
+                          @if($aca->country && !in_array($aca->country, $countriesList))
+                            <option value="{{ $aca->country }}" selected>{{ $aca->country }}</option>
+                          @endif
+                          @foreach($countriesList as $c)
+                            <option value="{{ $c }}" {{ $aca->country == $c ? 'selected' : '' }}>{{ $c }}</option>
+                          @endforeach
+                        </select>
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">City</label>
-                        <input class="form-control" type="text" name="academics[{{ $idx }}][city]" value="{{ $aca->city }}">
+                        <select class="form-control select2-tags" name="academics[{{ $idx }}][city]">
+                          <option value=""></option>
+                          @if($aca->city && !in_array($aca->city, $citiesList))
+                            <option value="{{ $aca->city }}" selected>{{ $aca->city }}</option>
+                          @endif
+                          @foreach($citiesList as $c)
+                            <option value="{{ $c }}" {{ $aca->city == $c ? 'selected' : '' }}>{{ $c }}</option>
+                          @endforeach
+                        </select>
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">Zip Code</label>
@@ -523,13 +542,13 @@
                     <label class="form-label">Intake Date</label>
                     <input class="form-control" type="date" name="intake_date" value="{{ $preAssessment->intake_date ?? '' }}">
                   </div>
-                  <div class="col-md-4">
+                   <div class="col-md-4">
                     <label class="form-label">Study Method</label>
                     <select class="form-select" name="study_method">
                       <option value="">Select...</option>
-                      <option value="on_campus" {{ $preAssessment->study_method=='on_campus'?'selected':'' }}>On Campus</option>
-                      <option value="online" {{ $preAssessment->study_method=='online'?'selected':'' }}>Online</option>
-                      <option value="blended" {{ $preAssessment->study_method=='blended'?'selected':'' }}>Blended</option>
+                      @foreach($studyMethods ?? \App\Models\DropdownOption::active('study_method') as $opt)
+                        <option value="{{ $opt }}" {{ $preAssessment->study_method == $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                      @endforeach
                     </select>
                   </div>
                   <div class="col-md-6">
@@ -540,8 +559,8 @@
                     <label class="form-label">Level of Study</label>
                     <select class="form-select" name="level_of_study">
                       <option value="">Select...</option>
-                      @foreach(['Foundation','Undergraduate','Postgraduate Taught','Postgraduate Research','PhD','Professional'] as $ls)
-                        <option value="{{ $ls }}" {{ $preAssessment->level_of_study==$ls?'selected':'' }}>{{ $ls }}</option>
+                      @foreach($levelOfStudyOptions ?? \App\Models\DropdownOption::active('level_of_study') as $ls)
+                        <option value="{{ $ls }}" {{ $preAssessment->level_of_study == $ls ? 'selected' : '' }}>{{ $ls }}</option>
                       @endforeach
                     </select>
                   </div>
@@ -646,8 +665,8 @@
                     <label class="form-label">Source of Funding</label>
                     <select class="form-select" name="source_of_funding">
                       <option value="">Select...</option>
-                      @foreach(['Self-funded','Family Sponsor','Scholarship','Government Sponsor','Bank Loan','Other'] as $sf)
-                        <option value="{{ $sf }}" {{ $preAssessment->source_of_funding==$sf?'selected':'' }}>{{ $sf }}</option>
+                      @foreach($financialSourceOptions as $sf)
+                        <option value="{{ $sf }}" {{ $preAssessment->source_of_funding == $sf ? 'selected' : '' }}>{{ $sf }}</option>
                       @endforeach
                     </select>
                   </div>
@@ -1044,15 +1063,11 @@ function addAcademicRow() {
         <div class="row g-2">
             <div class="col-md-4">
                 <label class="form-label">Education Level</label>
-                <select class="form-select" name="academics[${idx}][education_level]">
+                <select class="form-select select2-tags" name="academics[${idx}][education_level]">
                     <option value="">Select...</option>
-                    <option value="10th Grade">10th Grade</option>
-                    <option value="12th Grade/A-Level">12th Grade / A-Level</option>
-                    <option value="Diploma">Diploma</option>
-                    <option value="Bachelor's Degree">Bachelor's Degree</option>
-                    <option value="Master's Degree">Master's Degree</option>
-                    <option value="PhD/Doctorate">PhD / Doctorate</option>
-                    <option value="Other">Other</option>
+                    @foreach($qualificationOptions as $el)
+                        <option value="{{ $el }}">{{ $el }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="col-md-4">
@@ -1099,11 +1114,21 @@ function addAcademicRow() {
             </div>
             <div class="col-md-4">
                 <label class="form-label">Country</label>
-                <input class="form-control" type="text" name="academics[${idx}][country]" placeholder="Country of institution">
+                <select class="form-control select2-tags" name="academics[${idx}][country]">
+                    <option value=""></option>
+                    @foreach($countriesList as $c)
+                        <option value="{{ $c }}">{{ $c }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label">City</label>
-                <input class="form-control" type="text" name="academics[${idx}][city]">
+                <select class="form-control select2-tags" name="academics[${idx}][city]">
+                    <option value=""></option>
+                    @foreach($citiesList as $c)
+                        <option value="{{ $c }}">{{ $c }}</option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Zip Code</label>
@@ -1116,6 +1141,14 @@ function addAcademicRow() {
         </div>
     </div>`;
     container.insertAdjacentHTML('beforeend', html);
+
+    // Initialize Select2 on the newly added row
+    $(`#aca-row-${idx} .select2-tags`).select2({
+        tags: true,
+        placeholder: "Select from dropdown or type your own",
+        allowClear: true,
+        width: '100%'
+    });
 }
 
 function removeAcademicRow(idx) {

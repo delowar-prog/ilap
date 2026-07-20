@@ -189,6 +189,14 @@ class StudentProfileController extends Controller
             ->pluck('document_type')
             ->toArray();
 
+        // Fetch dynamic dropdowns for profile edit forms
+        $studyMethods           = \App\Models\DropdownOption::active('study_method');
+        $levelOfStudyOptions    = \App\Models\DropdownOption::active('level_of_study');
+        $financialSourceOptions = \App\Models\DropdownOption::active('financial_source');
+        $qualificationOptions   = \App\Models\DropdownOption::active('highest_qualification');
+        $countriesList          = \App\Models\Country::where('status', 'active')->orderBy('name')->pluck('name')->toArray();
+        $citiesList             = \App\Models\City::where('status', 'active')->orderBy('name')->pluck('name')->toArray();
+
         return view('backend.student.student_profile', compact(
             'student', 
             'preAssessment', 
@@ -201,7 +209,13 @@ class StudentProfileController extends Controller
             'courses',
             'completionPercent',
             'mandatoryDocs',
-            'uploadedDocTypes'
+            'uploadedDocTypes',
+            'studyMethods',
+            'levelOfStudyOptions',
+            'financialSourceOptions',
+            'qualificationOptions',
+            'countriesList',
+            'citiesList'
         ));
     }
 

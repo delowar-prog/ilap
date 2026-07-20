@@ -72,12 +72,29 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->name('pre.assessments.reject');
     Route::post('/pre-assessments/{id}/send-to-pre-enrolment', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'sendToPreEnrolment'])
         ->name('pre.assessments.send_to_pre_enrolment');
+    Route::post('/pre-assessments/{id}/revert-to-pending', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'revertToPending'])
+        ->name('pre.assessments.revert_to_pending');
+    Route::delete('/pre-assessments/{id}', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'destroy'])
+        ->name('pre.assessments.destroy');
         
     Route::post('/students/{id}/approve', [\App\Http\Controllers\Admin\StudentController::class, 'approve'])->name('students.approve');
     Route::post('/students/{id}/reject', [\App\Http\Controllers\Admin\StudentController::class, 'reject'])->name('students.reject');
+    Route::post('/students/{id}/revert-to-pending', [\App\Http\Controllers\Admin\StudentController::class, 'revertToPending'])->name('students.revert_to_pending');
     Route::post('/students/{id}/send-to-student', [\App\Http\Controllers\Admin\StudentController::class, 'sendToStudent'])->name('students.send_to_student');
     Route::get('/enrolled-students', [\App\Http\Controllers\Admin\StudentController::class, 'enrolledStudents'])->name('students.enrolled');
+    Route::delete('/students/{id}', [\App\Http\Controllers\Admin\StudentController::class, 'destroy'])->name('students.destroy');
     Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)->only(['index', 'show']);
+
+    // ── Configuration: Dropdown Options ───────────────────────────────────────
+    Route::prefix('config/dropdown-options')->name('config.dropdown.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'index'])->name('index');
+        Route::get('/{category}', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'category'])->name('category');
+        Route::post('/{category}', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'store'])->name('store');
+        Route::put('/option/{dropdownOption}', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'update'])->name('update');
+        Route::patch('/option/{dropdownOption}/toggle', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'toggle'])->name('toggle');
+        Route::delete('/option/{dropdownOption}', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'destroy'])->name('destroy');
+        Route::post('/reorder', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'reorder'])->name('reorder');
+    });
 });
 
 

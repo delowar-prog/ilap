@@ -16,19 +16,31 @@ class StudentController extends Controller
 {
     public function index(Request $request)
     {
-        $status = $request->get('status', 'pending');
+        $status  = $request->get('status', 'pending');
+        $search  = $request->get('search', '');
+        $sortBy  = $request->get('sort_by', 'created_at');
+        $sortDir = $request->get('sort_dir', 'desc');
+        $perPage = (int) $request->get('per_page', 20);
+        $perPage = in_array($perPage, [10, 20, 50, 100]) ? $perPage : 20;
 
-        $studentsQuery = Student::with(['campus', 'user', 'preAssessment']);
+        $allowedSorts = ['created_at', 'first_name', 'surname', 'email', 'phone', 'student_id'];
+        if (!in_array($sortBy, $allowedSorts)) $sortBy = 'created_at';
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
 
-        if ($status === 'pending') {
-            $studentsQuery->where('enrolment_status', 'pending');
-        } elseif ($status === 'approved') {
-            $studentsQuery->where('enrolment_status', 'approved');
-        } elseif ($status === 'rejected') {
-            $studentsQuery->where('enrolment_status', 'rejected');
+        $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])
+            ->where('enrolment_status', $status);
+
+        if ($search) {
+            $studentsQuery->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('surname', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('student_id', 'like', "%{$search}%");
+            });
         }
 
-        $students = $studentsQuery->latest()->paginate(20);
+        $students = $studentsQuery->orderBy($sortBy, $sortDir)->paginate($perPage)->withQueryString();
 
         $counts = [
             'pending'  => Student::where('enrolment_status', 'pending')->count(),
@@ -36,7 +48,7 @@ class StudentController extends Controller
             'rejected' => Student::where('enrolment_status', 'rejected')->count(),
         ];
 
-        return view('backend.admin.students.index', compact('students', 'status', 'counts'));
+        return view('backend.admin.students.index', compact('students', 'status', 'counts', 'search', 'sortBy', 'sortDir', 'perPage'));
     }
 
     public function show($id)
@@ -87,11 +99,33 @@ class StudentController extends Controller
         return redirect()->back()->with('success', 'Pre-Enrolment rejected.');
     }
 
-    public function enrolledStudents()
+    public function enrolledStudents(Request $request)
     {
-        $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])->where('enrolment_status', 'enrolled');
-        $students = $studentsQuery->latest()->paginate(20);
-        return view('backend.admin.students.enrolled', compact('students'));
+        $search  = $request->get('search', '');
+        $sortBy  = $request->get('sort_by', 'created_at');
+        $sortDir = $request->get('sort_dir', 'desc');
+        $perPage = (int) $request->get('per_page', 20);
+        $perPage = in_array($perPage, [10, 20, 50, 100]) ? $perPage : 20;
+
+        $allowedSorts = ['created_at', 'first_name', 'surname', 'email', 'phone', 'student_id'];
+        if (!in_array($sortBy, $allowedSorts)) $sortBy = 'created_at';
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
+        $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])
+            ->where('enrolment_status', 'enrolled');
+
+        if ($search) {
+            $studentsQuery->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('surname', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('student_id', 'like', "%{$search}%");
+            });
+        }
+
+        $students = $studentsQuery->orderBy($sortBy, $sortDir)->paginate($perPage)->withQueryString();
+        return view('backend.admin.students.enrolled', compact('students', 'search', 'sortBy', 'sortDir', 'perPage'));
     }
 
     public function sendToStudent($id)
@@ -115,5 +149,30 @@ class StudentController extends Controller
             return redirect()->back()->with('success', 'Student data moved to Enrolled Students successfully. ID: ' . $student->student_id);
         }
         return redirect()->back()->with('error', 'Student must be approved in Pre-Enrolment first.');
+    }
+
+    public function revertToPending($id)
+    {
+        $student = Student::findOrFail($id);
+        if ($student->enrolment_status !== 'rejected') {
+            return back()->with('error', 'Only rejected pre-enrolments can be reverted.');
+        }
+        $student->enrolment_status = 'pending';
+        $student->save();
+        return back()->with('success', 'Pre-Enrolment reverted to pending.');
+    }
+
+    public function destroy($id)
+    {
+        $student = Student::findOrFail($id);
+        $user = $student->user;
+        $name = $student->first_name;
+        
+        $student->delete();
+        if ($user) {
+            $user->delete();
+        }
+
+        return back()->with('success', "Student '{$name}' has been successfully deleted.");
     }
 }

@@ -131,8 +131,11 @@
                                 @if (auth()->user()->canImpersonate() && $user->canBeImpersonated())
                                     <form action="{{ route('impersonate', $user->id) }}" method="POST" class="d-inline">
                                         @csrf
-                                        <button type="submit" class="btn btn-sm btn-warning">
-                                            Login
+                                        <button type="submit" 
+                                                class="btn btn-sm btn-warning" 
+                                                data-bs-toggle="tooltip" 
+                                                title="Login as User">
+                                            <i class="fas fa-sign-in-alt"></i>
                                         </button>
                                     </form>
                                 @else

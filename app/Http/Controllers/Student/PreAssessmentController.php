@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\DropdownOption;
 use App\Models\Student;
 use App\Models\StudentPreAssessment;
 use Illuminate\Http\Request;
@@ -39,8 +40,19 @@ class PreAssessmentController extends Controller
             return redirect()->route('pre.assessment.index')->with('success', 'Your application is already approved and locked.');
         }
 
-        // Show the form
-        return view('student.pre_assessment_form', compact('assessment', 'student'));
+        // Dynamic dropdown options from admin configuration
+        $studyDestinations     = DropdownOption::active('study_destination');
+        $studyMethods          = DropdownOption::active('study_method');
+        $levelOfStudyOptions   = DropdownOption::active('level_of_study');
+        $qualificationOptions  = DropdownOption::active('highest_qualification');
+        $financialSourceOptions = DropdownOption::active('financial_source');
+
+        return view('student.pre_assessment_form', compact(
+            'assessment', 'student',
+            'studyDestinations', 'studyMethods',
+            'levelOfStudyOptions', 'qualificationOptions',
+            'financialSourceOptions'
+        ));
     }
 
     /** Save the pre-assessment form for the first time */
@@ -68,7 +80,9 @@ class PreAssessmentController extends Controller
         }
 
         $request->validate([
-            'full_name'            => 'required|string|max:255',
+            'first_name'           => 'required|string|max:100',
+            'middle_name'          => 'nullable|string|max:100',
+            'surname'              => 'required|string|max:100',
             'contact_number'       => 'required|string|max:30',
             'contact_address'      => 'required|string',
             'city'                 => 'required|string|max:100',
@@ -80,11 +94,15 @@ class PreAssessmentController extends Controller
             'nationality'          => 'required|string',
             'passport_number'      => 'nullable|string|max:100',
             'highest_qualification'=> 'required|string',
+            'highest_qualification_other' => 'required_if:highest_qualification,Other|nullable|string|max:255',
             'name_of_institution'  => 'required|string|max:255',
             'year_of_passing'      => 'required|string|max:50',
-            'second_qualification' => 'nullable|string',
-            'second_institution'   => 'nullable|string',
-            'second_year_of_passing'=> 'nullable|string',
+            'additional_qualifications' => 'nullable|array',
+            'additional_qualifications.*.qualification' => 'required|string|max:255',
+            'additional_qualifications.*.institution' => 'required|string|max:255',
+            'additional_qualifications.*.year_of_passing' => 'required|string|max:100',
+            'additional_qualifications.*.grades_gpa' => 'required|string|max:100',
+            'additional_qualifications.*.field_of_study' => 'nullable|string|max:255',
             'english_proficiency'  => 'required|string',
             'english_score'        => 'nullable|string',
             'work_experience'      => 'nullable|string',
@@ -97,19 +115,44 @@ class PreAssessmentController extends Controller
             'previous_uk_study_history' => 'required|string',
         ]);
 
+        if ($request->highest_qualification === 'Other' && $request->filled('highest_qualification_other')) {
+            $request->merge(['highest_qualification' => $request->highest_qualification_other]);
+        }
+
+        $fullName = trim($request->first_name . ' ' . ($request->middle_name ?? '') . ' ' . $request->surname);
+
+        $additionalQuals = $request->input('additional_qualifications', []);
+        $secondQual = null;
+        $secondInst = null;
+        $secondYear = null;
+        $secondGrade = null;
+        if (!empty($additionalQuals) && count($additionalQuals) > 0) {
+            $secondQual = $additionalQuals[0]['qualification'] ?? null;
+            $secondInst = $additionalQuals[0]['institution'] ?? null;
+            $secondYear = $additionalQuals[0]['year_of_passing'] ?? null;
+            $secondGrade = $additionalQuals[0]['grades_gpa'] ?? null;
+        }
+
         $assessment->update(array_merge(
             $request->only([
-                'full_name', 'contact_number', 'contact_address', 'city', 'state', 'postal_code', 'country', 'dob', 'passport_number', 'gender', 'nationality',
+                'first_name', 'middle_name', 'surname', 'contact_number', 'contact_address', 'city', 'state', 'postal_code', 'country', 'dob', 'passport_number', 'gender', 'nationality',
                 'highest_qualification', 'grades_gpa', 'field_of_study',
                 'name_of_institution', 'year_of_passing',
-                'second_qualification', 'second_qual_grade', 'second_institution', 'second_year_of_passing',
                 'english_proficiency', 'english_test', 'english_score', 'english_test_details', 'work_experience',
                 'intended_course', 'course_link', 'level_of_study', 'preferred_intake',
                 'study_method', 'study_destination', 'country_of_choice',
                 'purpose_of_study', 'financial_source', 'source_of_funding',
                 'visa_refusal_history', 'previous_uk_study_history'
             ]),
-            ['assessment_status' => 'pending'] // Set back to pending upon edit
+            [
+                'full_name' => $fullName,
+                'second_qualification' => $secondQual,
+                'second_institution' => $secondInst,
+                'second_year_of_passing' => $secondYear,
+                'second_qual_grade' => $secondGrade,
+                'additional_qualifications' => $additionalQuals,
+                'assessment_status' => 'pending'
+            ] // Set back to pending upon edit
         ));
 
         return redirect()->route('pre.assessment.index')->with('success', 'Your pre-assessment form has been submitted and is under review.');

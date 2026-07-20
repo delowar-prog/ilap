@@ -12,6 +12,7 @@ class StudentPreAssessment extends Model
     protected $fillable = [
         'student_id',
         // Page 1: Personal Info
+        'first_name', 'middle_name', 'surname',
         'full_name', 'contact_number', 'contact_address', 'city', 'state', 'postal_code', 'country', 'dob', 'passport_number',
         'gender', 'nationality',
         // Page 2: Academic
@@ -37,12 +38,14 @@ class StudentPreAssessment extends Model
         
         // Form Selection and Mandatory Docs
         'selected_form', 'mandatory_documents',
+        'additional_qualifications',
     ];
 
     protected $casts = [
         'approved_at' => 'datetime',
         'intake_date'  => 'date',
         'mandatory_documents' => 'array',
+        'additional_qualifications' => 'array',
     ];
 
     // ─── Relationships ───

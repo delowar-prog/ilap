@@ -139,7 +139,7 @@
                         <option value="">-- Select --</option>
                         @foreach($studyMethods as $method)
                             <option value="{{ $method }}" {{ old('study_method') == $method ? 'selected' : '' }}>
-                                {{ ucfirst(str_replace('_', ' ', $method)) }}
+                                {{ $method }}
                             </option>
                         @endforeach
                     </select>

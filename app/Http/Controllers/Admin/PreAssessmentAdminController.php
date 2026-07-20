@@ -14,15 +14,39 @@ class PreAssessmentAdminController extends Controller
     {
         abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
 
-        $status      = $request->get('status', 'pending');
-        
+        $status   = $request->get('status', 'pending');
+        $search   = $request->get('search', '');
+        $sortBy   = $request->get('sort_by', 'updated_at');
+        $sortDir  = $request->get('sort_dir', 'desc');
+        $perPage  = (int) $request->get('per_page', 20);
+        $perPage  = in_array($perPage, [10, 20, 50, 100]) ? $perPage : 20;
+
+        $allowedSorts = ['updated_at', 'created_at', 'full_name', 'contact_number'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'updated_at';
+        }
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
         $query = StudentPreAssessment::with(['student.user'])
             ->where('assessment_status', $status)
             ->whereHas('student', function ($q) {
                 $q->whereNull('enrolment_status');
             });
 
-        $assessments = $query->latest()->paginate(20);
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                  ->orWhere('contact_number', 'like', "%{$search}%")
+                  ->orWhere('study_destination', 'like', "%{$search}%")
+                  ->orWhereHas('student', function ($sq) use ($search) {
+                      $sq->where('email', 'like', "%{$search}%")
+                         ->orWhere('first_name', 'like', "%{$search}%")
+                         ->orWhere('surname', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $assessments = $query->orderBy($sortBy, $sortDir)->paginate($perPage)->withQueryString();
 
         $counts = [
             'pending'  => StudentPreAssessment::where('assessment_status', 'pending')
@@ -33,7 +57,7 @@ class PreAssessmentAdminController extends Controller
                             ->whereHas('student', fn($q) => $q->whereNull('enrolment_status'))->count(),
         ];
 
-        return view('backend.pre_assessment.index', compact('assessments', 'status', 'counts'));
+        return view('backend.pre_assessment.index', compact('assessments', 'status', 'counts', 'search', 'sortBy', 'sortDir', 'perPage'));
     }
 
     /** Show full assessment details */
@@ -95,6 +119,9 @@ class PreAssessmentAdminController extends Controller
         if ($student) {
             // 1. Personal Information
             $student->update([
+                'first_name'        => $assessment->first_name ?? $student->first_name,
+                'middle_name'       => $assessment->middle_name ?? $student->middle_name,
+                'surname'           => $assessment->surname ?? $student->surname,
                 'phone'             => $assessment->contact_number,
                 'current_address'   => $assessment->contact_address,
                 'dob'               => $assessment->dob,
@@ -124,8 +151,29 @@ class PreAssessmentAdminController extends Controller
                 );
             }
 
-            // Academic Information (Second Qualification)
-            if ($assessment->second_qualification) {
+            // Academic Information (Second Qualification or Additional Qualifications)
+            if (!empty($assessment->additional_qualifications) && is_array($assessment->additional_qualifications)) {
+                foreach ($assessment->additional_qualifications as $qual) {
+                    if (!empty($qual['qualification'])) {
+                        $awardDateAdd = null;
+                        if (!empty($qual['year_of_passing']) && is_numeric($qual['year_of_passing'])) {
+                            $awardDateAdd = $qual['year_of_passing'] . '-01-01';
+                        }
+
+                        $student->academics()->updateOrCreate(
+                            [
+                                'education_level'  => $qual['qualification'],
+                                'institution_name' => $qual['institution'] ?? null,
+                            ],
+                            [
+                                'course_name'      => $qual['field_of_study'] ?? null,
+                                'gpa'              => $qual['grades_gpa'] ?? null,
+                                'award_date'       => $awardDateAdd,
+                            ]
+                        );
+                    }
+                }
+            } elseif ($assessment->second_qualification) {
                 $awardDate2 = null;
                 if ($assessment->second_year_of_passing && is_numeric($assessment->second_year_of_passing)) {
                     $awardDate2 = $assessment->second_year_of_passing . '-01-01';
@@ -195,5 +243,38 @@ class PreAssessmentAdminController extends Controller
         }
 
         return redirect()->route('admin.pre.assessments.index')->with('success', "Student '{$assessment->full_name}' has been moved to Pre-Enrolment.");
+    }
+
+    /** Revert a rejected assessment to pending */
+    public function revertToPending($id)
+    {
+        abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
+
+        $assessment = StudentPreAssessment::findOrFail($id);
+        
+        if ($assessment->assessment_status !== 'rejected') {
+            return back()->with('error', "Only rejected pre-assessments can be reverted to pending.");
+        }
+
+        $assessment->update([
+            'assessment_status' => 'pending',
+            'rejection_note'    => null,
+            'approved_by'       => null,
+            'approved_at'       => null,
+        ]);
+
+        return back()->with('success', "Pre-assessment for '{$assessment->full_name}' has been reverted to pending.");
+    }
+
+    /** Delete a pre-assessment */
+    public function destroy($id)
+    {
+        abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
+
+        $assessment = StudentPreAssessment::findOrFail($id);
+        $name = $assessment->full_name;
+        $assessment->delete();
+
+        return back()->with('success', "Pre-assessment for '{$name}' has been successfully deleted.");
     }
 }
