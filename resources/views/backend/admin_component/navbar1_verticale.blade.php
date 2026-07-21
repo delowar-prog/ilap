@@ -27,7 +27,7 @@
                     if(Auth::check() && Auth::user()->hasRole('Student')) {
                         $isStudent = true;
                         $student = Auth::user()->student;
-                        if(!$student || !$student->preAssessment || $student->preAssessment->assessment_status !== 'approved') {
+                        if(!$student || !$student->preAssessment || $student->preAssessment->assessment_status !== 'approved' || !$student->enrolment_status) {
                             $isApprovedStudent = false;
                         }
                     }
@@ -55,7 +55,7 @@
                     </div>
                     
                     <!-- Dashboard -->
-                    <a class="nav-link" href="{{ route('student.dashboard') }}" role="button">
+                    <a class="nav-link" href="{{ $isApprovedStudent ? route('student.dashboard') : route('pre.assessment.index') }}" role="button">
                         <div class="d-flex align-items-center">
                             <span class="nav-link-icon"><span class="fas fa-home"></span></span>
                             <span class="nav-link-text ps-1">Dashboard</span>

@@ -171,7 +171,7 @@
                     <input class="form-control" type="text" name="surname" value="{{ $student->surname }}" required>
                   </div>
                   <div class="col-md-3">
-                    <label class="form-label">Date of Birth</label>
+                    <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
                     <input class="form-control" type="date" name="dob" value="{{ $student->dob ? $student->dob->format('Y-m-d') : '' }}">
                   </div>
                   <div class="col-md-3">
@@ -184,7 +184,7 @@
                     </select>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Nationality</label>
+                    <label class="form-label">Nationality <span class="text-danger">*</span></label>
                     <input class="form-control" type="text" name="nationality" value="{{ $student->nationality }}">
                   </div>
                   <div class="col-md-4">
@@ -192,15 +192,20 @@
                     <input class="form-control" type="text" name="country_of_birth" value="{{ $student->country_of_birth }}">
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Native Language</label>
-                    <input class="form-control" type="text" name="native_language" value="{{ $student->native_language }}">
+                    <label class="form-label">Country of Residence</label>
+                    <select class="form-select select2-tags" name="country_id" data-placeholder="Select country" required>
+                      <option value="">Select...</option>
+                      @foreach($countries as $country)
+                        <option value="{{ $country->id }}" {{ ($student->country_id ?? '') == $country->id ? 'selected' : '' }}>{{ $country->name }}</option>
+                      @endforeach
+                    </select>
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Email Address</label>
                     <input class="form-control" type="email" name="email" value="{{ $student->email }}">
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">Phone Number</label>
+                    <label class="form-label">Phone Number <span class="text-danger">*</span></label>
                     <input class="form-control" type="text" name="phone" value="{{ $student->phone }}">
                   </div>
                   <div class="col-md-4">
@@ -250,11 +255,11 @@
                 <div class="section-title"><i class="fas fa-map-marker-alt text-primary"></i> Permanent Address</div>
                 <div class="row g-3">
                   <div class="col-md-8">
-                    <label class="form-label">Full Address</label>
+                    <label class="form-label">Full Address <span class="text-danger">*</span></label>
                     <input class="form-control" type="text" name="permanent_address" value="{{ $student->permanent_address }}">
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Postcode</label>
+                    <label class="form-label">Postcode <span class="text-danger">*</span></label>
                     <input class="form-control" type="text" name="permanent_postcode" value="{{ $student->permanent_postcode }}">
                   </div>
                   <div class="col-12">
@@ -323,27 +328,138 @@
                 <div class="section-title"><i class="fas fa-plane text-primary"></i> Travel History & Immigration</div>
                 <div class="row g-3">
                   <div class="col-12">
-                    <div class="card border-0 bg-light rounded-3 p-3">
-                      <div class="d-flex align-items-center justify-content-between mb-2">
-                        <label class="form-label mb-0">Has this student applied for leave to remain in the UK in the past 10 years?</label>
-                        <select class="form-select w-auto ms-3" name="applied_leave_to_remain_uk" style="min-width:80px;">
-                          <option value="0" {{ !$student->applied_leave_to_remain_uk ? 'selected' : '' }}>No</option>
-                          <option value="1" {{ $student->applied_leave_to_remain_uk ? 'selected' : '' }}>Yes</option>
-                        </select>
+                    @php
+                      $preAssessment = \App\Models\StudentPreAssessment::where('student_id', $student->id)->first();
+                      $studyDest = $preAssessment ? $preAssessment->study_destination : 'United Kingdom (UK)';
+                    @endphp
+
+                    {{-- Section 1: Travel History --}}
+                    <div class="card border-0 bg-light rounded-3 p-3 mb-3">
+                      <div class="mb-3">
+                        <label class="form-label fw-bold mb-2">Has this student applied for permission to remain in any of the following countries in the past ten years? <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2">
+                          <input type="radio" class="btn-check" name="travel_history[has_history]" id="student_travel_yes" value="yes" {{ (old('travel_history.has_history', $student->travel_history['has_history'] ?? '') == 'yes') ? 'checked' : '' }} onclick="toggleStudentTravelHistoryFields(true)">
+                          <label class="btn btn-outline-primary px-4 btn-sm" for="student_travel_yes">Yes</label>
+
+                          <input type="radio" class="btn-check" name="travel_history[has_history]" id="student_travel_no" value="no" {{ (old('travel_history.has_history', $student->travel_history['has_history'] ?? 'no') == 'no') ? 'checked' : '' }} onclick="toggleStudentTravelHistoryFields(false)">
+                          <label class="btn btn-outline-secondary px-4 btn-sm" for="student_travel_no">No</label>
+                        </div>
                       </div>
-                      <div class="d-flex align-items-center justify-content-between mb-2">
-                        <label class="form-label mb-0">Does this student need a visa to stay in the UK?</label>
-                        <select class="form-select w-auto ms-3" name="need_visa_for_uk" style="min-width:80px;">
-                          <option value="0" {{ !$student->need_visa_for_uk ? 'selected' : '' }}>No</option>
-                          <option value="1" {{ $student->need_visa_for_uk ? 'selected' : '' }}>Yes</option>
-                        </select>
+
+                      <div id="student_travel_history_fields" style="display: {{ (old('travel_history.has_history', $student->travel_history['has_history'] ?? '') == 'yes') ? 'block' : 'none' }};">
+                        <div class="row g-3 bg-white p-3 border rounded-3 mb-2">
+                          <div class="col-md-3">
+                            <label class="form-label font-12">Date of Arrival <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="travel_history[arrival_date]" id="student_travel_arrival_date" value="{{ old('travel_history.arrival_date', $student->travel_history['arrival_date'] ?? '') }}">
+                          </div>
+                          <div class="col-md-3">
+                            <label class="form-label font-12">Date of Departure <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="travel_history[departure_date]" id="student_travel_departure_date" value="{{ old('travel_history.departure_date', $student->travel_history['departure_date'] ?? '') }}">
+                          </div>
+                          <div class="col-md-3">
+                            <label class="form-label font-12">Visa Start Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="travel_history[visa_start_date]" id="student_travel_visa_start_date" value="{{ old('travel_history.visa_start_date', $student->travel_history['visa_start_date'] ?? '') }}">
+                          </div>
+                          <div class="col-md-3">
+                            <label class="form-label font-12">Visa Expiry Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="travel_history[visa_expiry_date]" id="student_travel_visa_expiry_date" value="{{ old('travel_history.visa_expiry_date', $student->travel_history['visa_expiry_date'] ?? '') }}">
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label font-12">Purpose of Visit <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="travel_history[purpose_of_visit]" id="student_travel_purpose_of_visit" value="{{ old('travel_history.purpose_of_visit', $student->travel_history['purpose_of_visit'] ?? '') }}" placeholder="e.g. Tourism, Study, Work">
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label font-12">Country <span class="text-danger">*</span></label>
+                            <select class="form-select select2-tags" name="travel_history[country]" id="student_travel_country" data-placeholder="Select country">
+                              <option value="">Select Country...</option>
+                              @foreach(\App\Models\Country::orderBy('name')->get() as $c)
+                                <option value="{{ $c->name }}" {{ (old('travel_history.country', $student->travel_history['country'] ?? '') == $c->name) ? 'selected' : '' }}>{{ $c->name }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label font-12">Visa Type <span class="text-danger">*</span></label>
+                            <select class="form-select" name="travel_history[visa_type]" id="student_travel_visa_type">
+                              <option value="">Select Visa Type...</option>
+                              @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
+                                <option value="{{ $vt }}" {{ (old('travel_history.visa_type', $student->travel_history['visa_type'] ?? '') == $vt) ? 'selected' : '' }}>{{ $vt }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                        </div>
                       </div>
-                      <div class="d-flex align-items-center justify-content-between">
-                        <label class="form-label mb-0">Has the student ever been refused a visa or deported?</label>
-                        <select class="form-select w-auto ms-3" name="refused_visa_or_deported" style="min-width:80px;">
-                          <option value="0" {{ !$student->refused_visa_or_deported ? 'selected' : '' }}>No</option>
-                          <option value="1" {{ $student->refused_visa_or_deported ? 'selected' : '' }}>Yes</option>
-                        </select>
+                    </div>
+
+                    {{-- Section 2: Immigration History --}}
+                    <div class="card border-0 bg-light rounded-3 p-3 mb-3">
+                      <div class="mb-0">
+                        <label class="form-label fw-bold mb-2">Does this student need a visa to stay in any of the following countries? Please tick all that apply. <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-4 mt-2">
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="immigration_history[countries][]" value="{{ $studyDest }}" id="student_imm_country_chk" onclick="toggleStudentImmigrationNone(false)" {{ (in_array($studyDest, old('immigration_history.countries', $student->immigration_history['countries'] ?? []))) ? 'checked' : '' }}>
+                            <label class="form-check-label fw-semibold font-13" for="student_imm_country_chk">
+                              {{ $studyDest }}
+                            </label>
+                          </div>
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="immigration_history[countries][]" value="None" id="student_imm_none_chk" onclick="toggleStudentImmigrationNone(true)" {{ (in_array('None', old('immigration_history.countries', $student->immigration_history['countries'] ?? ['None']))) ? 'checked' : '' }}>
+                            <label class="form-check-label fw-semibold font-13" for="student_imm_none_chk">None</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {{-- Section 3: Visa Rejections --}}
+                    <div class="card border-0 bg-light rounded-3 p-3 mb-3">
+                      <div class="mb-3">
+                        <label class="form-label fw-bold mb-2">For any country has this student ever been refused permission to stay or remain, refused asylum or deported? <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2">
+                          <input type="radio" class="btn-check" name="visa_refusals[has_refusal]" id="student_refusal_yes" value="yes" {{ (old('visa_refusals.has_refusal', $student->visa_refusals['has_refusal'] ?? '') == 'yes') ? 'checked' : '' }} onclick="toggleStudentVisaRefusalFields(true)">
+                          <label class="btn btn-outline-danger px-4 btn-sm" for="student_refusal_yes">Yes</label>
+
+                          <input type="radio" class="btn-check" name="visa_refusals[has_refusal]" id="student_refusal_no" value="no" {{ (old('visa_refusals.has_refusal', $student->visa_refusals['has_refusal'] ?? 'no') == 'no') ? 'checked' : '' }} onclick="toggleStudentVisaRefusalFields(false)">
+                          <label class="btn btn-outline-secondary px-4 btn-sm" for="student_refusal_no">No</label>
+                        </div>
+                      </div>
+
+                      <div id="student_visa_refusal_fields" style="display: {{ (old('visa_refusals.has_refusal', $student->visa_refusals['has_refusal'] ?? '') == 'yes') ? 'block' : 'none' }};">
+                        <div class="row g-3 bg-white p-3 border rounded-3 mb-2">
+                          <div class="col-md-4">
+                            <label class="form-label font-12">Refusal Type <span class="text-danger">*</span></label>
+                            <select class="form-select" name="visa_refusals[refusal_type]" id="student_refusal_type">
+                              <option value="">Select Refusal Type...</option>
+                              @foreach(['Visa Refusal','Refused Entry','Deported','Refused Leave to Remain','Refused Asylum'] as $rt)
+                                <option value="{{ $rt }}" {{ (old('visa_refusals.refusal_type', $student->visa_refusals['refusal_type'] ?? '') == $rt) ? 'selected' : '' }}>{{ $rt }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label font-12">Date of Refusal <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="visa_refusals[refusal_date]" id="student_refusal_date" value="{{ old('visa_refusals.refusal_date', $student->visa_refusals['refusal_date'] ?? '') }}">
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label font-12">Country <span class="text-danger">*</span></label>
+                            <select class="form-select select2-tags" name="visa_refusals[country]" id="student_refusal_country" data-placeholder="Select country">
+                              <option value="">Select Country...</option>
+                              @foreach(\App\Models\Country::orderBy('name')->get() as $c)
+                                <option value="{{ $c->name }}" {{ (old('visa_refusals.country', $student->visa_refusals['country'] ?? '') == $c->name) ? 'selected' : '' }}>{{ $c->name }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="col-md-4">
+                            <label class="form-label font-12">Visa Type <span class="text-danger">*</span></label>
+                            <select class="form-select" name="visa_refusals[visa_type]" id="student_refusal_visa_type">
+                              <option value="">Select Visa Type...</option>
+                              @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
+                                <option value="{{ $vt }}" {{ (old('visa_refusals.visa_type', $student->visa_refusals['visa_type'] ?? '') == $vt) ? 'selected' : '' }}>{{ $vt }}</option>
+                              @endforeach
+                            </select>
+                          </div>
+                          <div class="col-md-8">
+                            <label class="form-label font-12">Details / Reason <span class="text-danger">*</span></label>
+                            <textarea class="form-control" name="visa_refusals[details]" id="student_refusal_details" rows="2" placeholder="Provide details or reason for refusal...">{{ old('visa_refusals.details', $student->visa_refusals['details'] ?? '') }}</textarea>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -477,7 +593,7 @@
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">Country</label>
-                        <select class="form-control select2-tags" name="academics[{{ $idx }}][country]">
+                        <select class="form-control select2-tags" name="academics[{{ $idx }}][country]" data-placeholder="Select country">
                           <option value=""></option>
                           @if($aca->country && !in_array($aca->country, $countriesList))
                             <option value="{{ $aca->country }}" selected>{{ $aca->country }}</option>
@@ -489,7 +605,7 @@
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">City</label>
-                        <select class="form-control select2-tags" name="academics[{{ $idx }}][city]">
+                        <select class="form-control select2-tags" name="academics[{{ $idx }}][city]" data-placeholder="Select city">
                           <option value=""></option>
                           @if($aca->city && !in_array($aca->city, $citiesList))
                             <option value="{{ $aca->city }}" selected>{{ $aca->city }}</option>
@@ -544,7 +660,7 @@
                   </div>
                    <div class="col-md-4">
                     <label class="form-label">Study Method</label>
-                    <select class="form-select" name="study_method">
+                    <select class="form-select" name="study_method" data-current-value="{{ old('study_method', $preAssessment->study_method ?? '') }}">
                       <option value="">Select...</option>
                       @foreach($studyMethods ?? \App\Models\DropdownOption::active('study_method') as $opt)
                         <option value="{{ $opt }}" {{ $preAssessment->study_method == $opt ? 'selected' : '' }}>{{ $opt }}</option>
@@ -557,7 +673,7 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Level of Study</label>
-                    <select class="form-select" name="level_of_study">
+                    <select class="form-select" name="level_of_study" data-current-value="{{ old('level_of_study', $preAssessment->level_of_study ?? '') }}">
                       <option value="">Select...</option>
                       @foreach($levelOfStudyOptions ?? \App\Models\DropdownOption::active('level_of_study') as $ls)
                         <option value="{{ $ls }}" {{ $preAssessment->level_of_study == $ls ? 'selected' : '' }}>{{ $ls }}</option>
@@ -581,7 +697,7 @@
                   <div class="col-md-6">
                     @php $val_uni_1 = $preAssessment->institute_name ?: ($student->institute->name ?? ''); @endphp
                     <label class="form-label">Preferred University 1</label>
-                    <select class="form-control select2-tags" name="institute_name" required>
+                    <select class="form-control select2-tags" name="institute_name" data-placeholder="Select institute" required>
                         <option value=""></option>
                         @if($val_uni_1 && (!isset($institutes) || !$institutes->contains('name', $val_uni_1)))
                             <option value="{{ $val_uni_1 }}" selected>{{ $val_uni_1 }}</option>
@@ -613,7 +729,7 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Preferred University 2</label>
-                    <select class="form-control select2-tags" name="preferred_university_2">
+                    <select class="form-control select2-tags" name="preferred_university_2" data-placeholder="Select university">
                         <option value=""></option>
                         @if($preAssessment->preferred_university_2 && (!isset($institutes) || !$institutes->contains('name', $preAssessment->preferred_university_2)))
                             <option value="{{ $preAssessment->preferred_university_2 }}" selected>{{ $preAssessment->preferred_university_2 }}</option>
@@ -645,7 +761,7 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Preferred University 3</label>
-                    <select class="form-control select2-tags" name="preferred_university_3">
+                    <select class="form-control select2-tags" name="preferred_university_3" data-placeholder="Select university">
                         <option value=""></option>
                         @if($preAssessment->preferred_university_3 && (!isset($institutes) || !$institutes->contains('name', $preAssessment->preferred_university_3)))
                             <option value="{{ $preAssessment->preferred_university_3 }}" selected>{{ $preAssessment->preferred_university_3 }}</option>
@@ -663,7 +779,7 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Source of Funding</label>
-                    <select class="form-select" name="source_of_funding">
+                    <select class="form-select" name="source_of_funding" data-current-value="{{ old('source_of_funding', $preAssessment->source_of_funding ?? '') }}">
                       <option value="">Select...</option>
                       @foreach($financialSourceOptions as $sf)
                         <option value="{{ $sf }}" {{ $preAssessment->source_of_funding == $sf ? 'selected' : '' }}>{{ $sf }}</option>
@@ -770,62 +886,104 @@
                 @csrf
                 <div id="documents-upload-container">
                   @php
-                    $docOptions = [
-                      'CV' => 'CV / Resume',
-                      'Passport' => 'Passport Copy',
-                      'Certificate' => 'Academic Certificates',
-                      'Transcript' => 'Academic Transcripts',
-                      'EnglishResult' => 'English Test Result',
-                      'SOP' => 'Statement of Purpose',
-                      'LOR' => 'Letter of Reference',
-                      'Other' => 'Other'
-                    ];
+                    $mandatoryTypes = [];
+                    $optionalTypes = [];
+                    $selectedTypes = [];
+                    if (is_array($mandatoryDocs)) {
+                        foreach ($mandatoryDocs as $key => $val) {
+                            if (is_numeric($key)) {
+                                // Old style array
+                                $mandatoryTypes[] = $val;
+                                $selectedTypes[] = $val;
+                            } else {
+                                // New style associative array
+                                if ($val === 'M') {
+                                    $mandatoryTypes[] = $key;
+                                    $selectedTypes[] = $key;
+                                } elseif ($val === 'N') {
+                                    $optionalTypes[] = $key;
+                                    $selectedTypes[] = $key;
+                                }
+                            }
+                        }
+                    }
                     
-                    // Pre-populate rows for mandatory docs that haven't been uploaded yet
-                    $pendingMandatoryDocs = array_diff($mandatoryDocs, $uploadedDocTypes);
-                    $defaultRowsCount = max(1, count($pendingMandatoryDocs));
+                    // Filter out already uploaded types
+                    $pendingMandatoryDocs = array_diff($mandatoryTypes, $uploadedDocTypes);
+                    $pendingOptionalDocs = array_diff($optionalTypes, $uploadedDocTypes);
+                    
+                    // The add-more options are all docOptions EXCEPT those that were pre-populated (selected as M or N)
+                    $addMoreOptions = array_diff($docOptions, $selectedTypes);
+                    
+                    $rowIndex = 0;
                   @endphp
 
-                  @for($i = 0; $i < $defaultRowsCount; $i++)
-                    @php 
-                      $preselectedType = '';
-                      if (count($pendingMandatoryDocs) > $i) {
-                          $preselectedType = array_values($pendingMandatoryDocs)[$i];
-                      }
-                    @endphp
-                    <div class="row g-3 mb-3 doc-upload-row" id="doc-row-{{ $i }}">
+                  {{-- 1. Pending Mandatory Documents (with Red Star) --}}
+                  @foreach($pendingMandatoryDocs as $docType)
+                    <div class="row g-3 mb-3 doc-upload-row" id="doc-row-{{ $rowIndex }}">
                       <div class="col-md-4">
                         <label class="form-label">Document Type</label>
-                        @if($preselectedType)
-                            <div class="form-control bg-light fw-bold text-dark" style="cursor: not-allowed;">
-                                {{ $docOptions[$preselectedType] ?? $preselectedType }} <span class="text-danger">*</span>
-                            </div>
-                            <input type="hidden" name="documents[{{ $i }}][type]" value="{{ $preselectedType }}">
-                        @else
-                            <select class="form-select" name="documents[{{ $i }}][type]">
-                              @foreach($docOptions as $val => $label)
-                                <option value="{{ $val }}">
-                                  {{ $label }} 
-                                </option>
-                              @endforeach
-                            </select>
-                        @endif
+                        <div class="form-control bg-light fw-bold text-dark" style="cursor: not-allowed;">
+                            {{ $docType }} <span class="text-danger">*</span>
+                        </div>
+                        <input type="hidden" name="documents[{{ $rowIndex }}][type]" value="{{ $docType }}">
                       </div>
                       <div class="col-md-4">
                         <label class="form-label">Document Title</label>
-                        <input class="form-control" type="text" name="documents[{{ $i }}][title]" placeholder="e.g. IELTS Report 2023">
+                        <input class="form-control" type="text" name="documents[{{ $rowIndex }}][title]" placeholder="e.g. My {{ $docType }}">
                       </div>
-                      <div class="col-md-3">
-                        <label class="form-label">Select File</label>
-                        <input class="form-control" type="file" name="documents[{{ $i }}][file]" @if($preselectedType) required @endif>
+                      <div class="col-md-4">
+                        <label class="form-label">Select File <span class="text-danger">*</span></label>
+                        <input class="form-control" type="file" name="documents[{{ $rowIndex }}][file]" required>
                       </div>
-                      @if($i > 0 && !$preselectedType)
-                      <div class="col-md-1 d-flex align-items-end">
-                        <button type="button" class="btn btn-outline-danger w-100 px-2" onclick="removeDocumentRow({{ $i }})"><i class="fas fa-trash"></i></button>
-                      </div>
-                      @endif
                     </div>
-                  @endfor
+                    @php $rowIndex++; @endphp
+                  @endforeach
+
+                  {{-- 2. Pending Non-Mandatory/Optional Documents (without Star) --}}
+                  @foreach($pendingOptionalDocs as $docType)
+                    <div class="row g-3 mb-3 doc-upload-row" id="doc-row-{{ $rowIndex }}">
+                      <div class="col-md-4">
+                        <label class="form-label">Document Type</label>
+                        <div class="form-control bg-light text-dark" style="cursor: not-allowed;">
+                            {{ $docType }} <small class="text-muted">(Optional)</small>
+                        </div>
+                        <input type="hidden" name="documents[{{ $rowIndex }}][type]" value="{{ $docType }}">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Document Title</label>
+                        <input class="form-control" type="text" name="documents[{{ $rowIndex }}][title]" placeholder="e.g. My {{ $docType }}">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Select File</label>
+                        <input class="form-control" type="file" name="documents[{{ $rowIndex }}][file]">
+                      </div>
+                    </div>
+                    @php $rowIndex++; @endphp
+                  @endforeach
+
+                  {{-- 3. Fallback: If no pending documents remain, show at least one blank row --}}
+                  @if($rowIndex === 0)
+                    <div class="row g-3 mb-3 doc-upload-row" id="doc-row-0">
+                      <div class="col-md-4">
+                        <label class="form-label">Document Type</label>
+                        <select class="form-select" name="documents[0][type]">
+                          @foreach($addMoreOptions as $opt)
+                            <option value="{{ $opt }}">{{ $opt }}</option>
+                          @endforeach
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Document Title</label>
+                        <input class="form-control" type="text" name="documents[0][title]" placeholder="e.g. Additional Document">
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label">Select File</label>
+                        <input class="form-control" type="file" name="documents[0][file]">
+                      </div>
+                    </div>
+                    @php $rowIndex = 1; @endphp
+                  @endif
                 </div>
                 
                 <div class="mb-4">
@@ -1114,7 +1272,7 @@ function addAcademicRow() {
             </div>
             <div class="col-md-4">
                 <label class="form-label">Country</label>
-                <select class="form-control select2-tags" name="academics[${idx}][country]">
+                <select class="form-control select2-tags" name="academics[${idx}][country]" data-placeholder="Select country">
                     <option value=""></option>
                     @foreach($countriesList as $c)
                         <option value="{{ $c }}">{{ $c }}</option>
@@ -1123,7 +1281,7 @@ function addAcademicRow() {
             </div>
             <div class="col-md-4">
                 <label class="form-label">City</label>
-                <select class="form-control select2-tags" name="academics[${idx}][city]">
+                <select class="form-control select2-tags" name="academics[${idx}][city]" data-placeholder="Select city">
                     <option value=""></option>
                     @foreach($citiesList as $c)
                         <option value="{{ $c }}">{{ $c }}</option>
@@ -1231,28 +1389,18 @@ function updateRefereeNumbers() {
     });
 }
 
-let docIdx = {{ $defaultRowsCount }};
+let docIdx = {{ $rowIndex }};
 function addDocumentRow() {
     const container = document.getElementById('documents-upload-container');
     const idx = docIdx++;
     
-    // PHP to JS conversion for mandatory docs and options
-    const mandatoryDocs = @json($mandatoryDocs);
-    const docOptions = {
-      'CV': 'CV / Resume',
-      'Passport': 'Passport Copy',
-      'Certificate': 'Academic Certificates',
-      'Transcript': 'Academic Transcripts',
-      'EnglishResult': 'English Test Result',
-      'SOP': 'Statement of Purpose',
-      'LOR': 'Letter of Reference',
-      'Other': 'Other'
-    };
+    // Dynamic document options for Add More from PHP
+    const addMoreOptions = @json(array_values($addMoreOptions));
     
     let optionsHtml = '';
-    for (const [val, label] of Object.entries(docOptions)) {
-      optionsHtml += `<option value="${val}">${label}</option>`;
-    }
+    addMoreOptions.forEach(opt => {
+        optionsHtml += `<option value="${opt}">${opt}</option>`;
+    });
 
     const html = `
     <div class="row g-3 mb-3 doc-upload-row" id="doc-row-${idx}">
@@ -1264,7 +1412,7 @@ function addDocumentRow() {
       </div>
       <div class="col-md-4">
         <label class="form-label">Document Title</label>
-        <input class="form-control" type="text" name="documents[${idx}][title]" placeholder="e.g. IELTS Report 2023">
+        <input class="form-control" type="text" name="documents[${idx}][title]" placeholder="e.g. Additional Document">
       </div>
       <div class="col-md-3">
         <label class="form-label">Select File</label>
@@ -1380,19 +1528,90 @@ function uploadHeaderProfilePicture(input) {
         });
     }
 }
+
+function toggleStudentTravelHistoryFields(show) {
+    const fieldsDiv = document.getElementById('student_travel_history_fields');
+    if (!fieldsDiv) return;
+    fieldsDiv.style.display = show ? 'block' : 'none';
+    
+    const inputs = fieldsDiv.querySelectorAll('input, select');
+    inputs.forEach(input => {
+        if (show) {
+            input.setAttribute('required', 'required');
+        } else {
+            input.removeAttribute('required');
+            input.value = '';
+            input.classList.remove('is-invalid');
+        }
+    });
+}
+
+function toggleStudentVisaRefusalFields(show) {
+    const fieldsDiv = document.getElementById('student_visa_refusal_fields');
+    if (!fieldsDiv) return;
+    fieldsDiv.style.display = show ? 'block' : 'none';
+    
+    const inputs = fieldsDiv.querySelectorAll('input, select, textarea');
+    inputs.forEach(input => {
+        if (show) {
+            input.setAttribute('required', 'required');
+        } else {
+            input.removeAttribute('required');
+            input.value = '';
+            input.classList.remove('is-invalid');
+        }
+    });
+}
+
+const studentImmCountryChk = document.getElementById('student_imm_country_chk');
+function toggleStudentImmigrationNone(isNoneChecked) {
+    if (isNoneChecked) {
+        if (studentImmCountryChk) studentImmCountryChk.checked = false;
+    } else {
+        const noneChk = document.getElementById('student_imm_none_chk');
+        if (noneChk) noneChk.checked = false;
+    }
+}
+
+// Initial state checks on load
+document.addEventListener('DOMContentLoaded', function() {
+    const travelYes = document.getElementById('student_travel_yes');
+    if (travelYes) {
+        toggleStudentTravelHistoryFields(travelYes.checked);
+    }
+    const refusalYes = document.getElementById('student_refusal_yes');
+    if (refusalYes) {
+        toggleStudentVisaRefusalFields(refusalYes.checked);
+    }
+});
+
 function validateAndSubmitProfile() {
     const mandatoryDocs = @json($mandatoryDocs);
     const uploadedDocTypes = @json($uploadedDocTypes);
     
+    // Extract mandatory docs (where value is 'M' or if it is an array containing the doc)
+    let mandatoryTypes = [];
+    if (mandatoryDocs) {
+        if (Array.isArray(mandatoryDocs)) {
+            // Fallback for old style array data
+            mandatoryTypes = mandatoryDocs;
+        } else {
+            // New style associative array
+            for (const [docType, status] of Object.entries(mandatoryDocs)) {
+                if (status === 'M') {
+                    mandatoryTypes.push(docType);
+                }
+            }
+        }
+    }
+    
     // Ensure all mandatory docs are present in the uploaded docs
     let missingDocs = [];
-    if (mandatoryDocs && mandatoryDocs.length > 0) {
-        mandatoryDocs.forEach(docType => {
-            if (!uploadedDocTypes.includes(docType)) {
-                missingDocs.push(docType);
-            }
-        });
-    }
+    mandatoryTypes.forEach(docType => {
+        if (!uploadedDocTypes.includes(docType)) {
+            missingDocs.push(docType);
+        }
+    });
     
     if (missingDocs.length > 0) {
         showToast('You must upload the following mandatory documents before submitting: ' + missingDocs.join(', '), false);
@@ -1410,11 +1629,14 @@ function validateAndSubmitProfile() {
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
-    $('.select2-tags').select2({
-        tags: true,
-        placeholder: "Select from dropdown or type your own",
-        allowClear: true,
-        width: '100%'
+    $('.select2-tags').each(function() {
+        const el = $(this);
+        el.select2({
+            tags: true,
+            placeholder: el.attr('data-placeholder') || "Select from dropdown or type to add if not found...",
+            allowClear: true,
+            width: '100%'
+        });
     });
 });
 </script>

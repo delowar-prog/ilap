@@ -3,7 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\DropdownOption;
+use App\Models\StudentAcademic;
+use App\Models\StudentDocument;
+use App\Models\StudentEnglishTest;
 use App\Models\StudentPreAssessment;
+use App\Models\StudentReferee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,15 +19,15 @@ class PreAssessmentAdminController extends Controller
     {
         abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
 
-        $status   = $request->get('status', 'pending');
-        $search   = $request->get('search', '');
-        $sortBy   = $request->get('sort_by', 'updated_at');
-        $sortDir  = $request->get('sort_dir', 'desc');
-        $perPage  = (int) $request->get('per_page', 20);
-        $perPage  = in_array($perPage, [10, 20, 50, 100]) ? $perPage : 20;
+        $status = $request->get('status', 'pending');
+        $search = $request->get('search', '');
+        $sortBy = $request->get('sort_by', 'updated_at');
+        $sortDir = $request->get('sort_dir', 'desc');
+        $perPage = (int) $request->get('per_page', 20);
+        $perPage = in_array($perPage, [10, 20, 50, 100]) ? $perPage : 20;
 
         $allowedSorts = ['updated_at', 'created_at', 'full_name', 'contact_number'];
-        if (!in_array($sortBy, $allowedSorts)) {
+        if (! in_array($sortBy, $allowedSorts)) {
             $sortBy = 'updated_at';
         }
         $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
@@ -36,25 +41,25 @@ class PreAssessmentAdminController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('full_name', 'like', "%{$search}%")
-                  ->orWhere('contact_number', 'like', "%{$search}%")
-                  ->orWhere('study_destination', 'like', "%{$search}%")
-                  ->orWhereHas('student', function ($sq) use ($search) {
-                      $sq->where('email', 'like', "%{$search}%")
-                         ->orWhere('first_name', 'like', "%{$search}%")
-                         ->orWhere('surname', 'like', "%{$search}%");
-                  });
+                    ->orWhere('contact_number', 'like', "%{$search}%")
+                    ->orWhere('study_destination', 'like', "%{$search}%")
+                    ->orWhereHas('student', function ($sq) use ($search) {
+                        $sq->where('email', 'like', "%{$search}%")
+                            ->orWhere('first_name', 'like', "%{$search}%")
+                            ->orWhere('surname', 'like', "%{$search}%");
+                    });
             });
         }
 
         $assessments = $query->orderBy($sortBy, $sortDir)->paginate($perPage)->withQueryString();
 
         $counts = [
-            'pending'  => StudentPreAssessment::where('assessment_status', 'pending')
-                            ->whereHas('student', fn($q) => $q->whereNull('enrolment_status'))->count(),
+            'pending' => StudentPreAssessment::where('assessment_status', 'pending')
+                ->whereHas('student', fn ($q) => $q->whereNull('enrolment_status'))->count(),
             'approved' => StudentPreAssessment::where('assessment_status', 'approved')
-                            ->whereHas('student', fn($q) => $q->whereNull('enrolment_status'))->count(),
+                ->whereHas('student', fn ($q) => $q->whereNull('enrolment_status'))->count(),
             'rejected' => StudentPreAssessment::where('assessment_status', 'rejected')
-                            ->whereHas('student', fn($q) => $q->whereNull('enrolment_status'))->count(),
+                ->whereHas('student', fn ($q) => $q->whereNull('enrolment_status'))->count(),
         ];
 
         return view('backend.pre_assessment.index', compact('assessments', 'status', 'counts', 'search', 'sortBy', 'sortDir', 'perPage'));
@@ -67,30 +72,27 @@ class PreAssessmentAdminController extends Controller
 
         $assessment = StudentPreAssessment::with(['student.user', 'approvedBy'])->findOrFail($id);
         $student = $assessment->student;
-        
-        $academics = \App\Models\StudentAcademic::where('student_id', $student->id)->get();
-        $englishTests = \App\Models\StudentEnglishTest::where('student_id', $student->id)->get();
-        $referees = \App\Models\StudentReferee::where('student_id', $student->id)->get();
-        $documents = \App\Models\StudentDocument::where('student_id', $student->id)->get();
-        
+
+        $academics = StudentAcademic::where('student_id', $student->id)->get();
+        $englishTests = StudentEnglishTest::where('student_id', $student->id)->get();
+        $referees = StudentReferee::where('student_id', $student->id)->get();
+        $documents = StudentDocument::where('student_id', $student->id)->get();
+
         // Calculate Completion Percentage
-        $completionPercent = 10;
-        if ($student->phone && $student->current_address && $student->dob && $student->nationality) { $completionPercent += 30; }
-        elseif ($student->phone || $student->current_address) { $completionPercent += 15; }
-        if ($academics->count() > 0) { $completionPercent += 20; }
-        if ($englishTests->count() > 0 || $student->native_language) { $completionPercent += 20; }
-        if ($referees->count() > 0) { $completionPercent += 10; }
-        if ($documents->count() > 0) { $completionPercent += 10; }
-        $completionPercent = min($completionPercent, 100);
+        $completionPercent = $student->getCompletionPercentage();
+        $departments = DropdownOption::active('department');
+        $docOptions = DropdownOption::active('document_type');
 
         return view('backend.pre_assessment.show', compact(
-            'assessment', 
+            'assessment',
             'student',
             'academics',
             'englishTests',
             'referees',
             'documents',
-            'completionPercent'
+            'completionPercent',
+            'departments',
+            'docOptions'
         ));
     }
 
@@ -98,20 +100,29 @@ class PreAssessmentAdminController extends Controller
     public function approve(Request $request, $id)
     {
         abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
-        
+
         $request->validate([
             'selected_form' => 'required|string',
             'mandatory_documents' => 'nullable|array',
         ]);
 
+        // Filter mandatory_documents to only keep M and N statuses
+        $rawDocs = $request->input('mandatory_documents', []);
+        $mandatoryDocs = [];
+        foreach ($rawDocs as $docType => $status) {
+            if ($status === 'M' || $status === 'N') {
+                $mandatoryDocs[$docType] = $status;
+            }
+        }
+
         $assessment = StudentPreAssessment::findOrFail($id);
         $assessment->update([
-            'assessment_status'   => 'approved',
-            'approved_by'         => Auth::id(),
-            'approved_at'         => now(),
-            'rejection_note'      => null,
-            'selected_form'       => $request->selected_form,
-            'mandatory_documents' => $request->mandatory_documents,
+            'assessment_status' => 'approved',
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'rejection_note' => null,
+            'selected_form' => $request->selected_form,
+            'mandatory_documents' => $mandatoryDocs,
         ]);
 
         // Auto-populate Student Profile
@@ -119,15 +130,23 @@ class PreAssessmentAdminController extends Controller
         if ($student) {
             // 1. Personal Information
             $student->update([
-                'first_name'        => $assessment->first_name ?? $student->first_name,
-                'middle_name'       => $assessment->middle_name ?? $student->middle_name,
-                'surname'           => $assessment->surname ?? $student->surname,
-                'phone'             => $assessment->contact_number,
-                'current_address'   => $assessment->contact_address,
-                'dob'               => $assessment->dob,
-                'gender'            => $assessment->gender,
-                'nationality'       => $assessment->nationality,
-                'passport_number'   => $assessment->passport_number,
+                'first_name' => $assessment->first_name ?? $student->first_name,
+                'middle_name' => $assessment->middle_name ?? $student->middle_name,
+                'surname' => $assessment->surname ?? $student->surname,
+                'phone' => $assessment->contact_number,
+                'current_address' => $assessment->contact_address,
+                'dob' => $assessment->dob,
+                'gender' => $assessment->gender,
+                'nationality' => $assessment->nationality,
+                'passport_number' => $assessment->passport_number,
+
+                // Travel & Immigration
+                'travel_history' => $assessment->travel_history,
+                'immigration_history' => $assessment->immigration_history,
+                'visa_refusals' => $assessment->visa_refusals,
+                'applied_leave_to_remain_uk' => ($assessment->travel_history['has_history'] ?? 'no') === 'yes' ? 1 : 0,
+                'need_visa_for_uk' => in_array('None', $assessment->immigration_history['countries'] ?? ['None']) ? 0 : 1,
+                'refused_visa_or_deported' => ($assessment->visa_refusals['has_refusal'] ?? 'no') === 'yes' ? 1 : 0,
             ]);
 
             // 2. Academic Information (Highest Qualification)
@@ -135,40 +154,40 @@ class PreAssessmentAdminController extends Controller
                 // Determine year mapping
                 $awardDate = null;
                 if ($assessment->year_of_passing && is_numeric($assessment->year_of_passing)) {
-                    $awardDate = $assessment->year_of_passing . '-01-01';
+                    $awardDate = $assessment->year_of_passing.'-01-01';
                 }
 
                 $student->academics()->updateOrCreate(
                     [
-                        'education_level'  => $assessment->highest_qualification,
+                        'education_level' => $assessment->highest_qualification,
                         'institution_name' => $assessment->name_of_institution,
                     ],
                     [
-                        'course_name'      => $assessment->field_of_study,
-                        'award_date'       => $awardDate,
-                        'gpa'              => $assessment->grades_gpa,
+                        'course_name' => $assessment->field_of_study,
+                        'award_date' => $awardDate,
+                        'gpa' => $assessment->grades_gpa,
                     ]
                 );
             }
 
             // Academic Information (Second Qualification or Additional Qualifications)
-            if (!empty($assessment->additional_qualifications) && is_array($assessment->additional_qualifications)) {
+            if (! empty($assessment->additional_qualifications) && is_array($assessment->additional_qualifications)) {
                 foreach ($assessment->additional_qualifications as $qual) {
-                    if (!empty($qual['qualification'])) {
+                    if (! empty($qual['qualification'])) {
                         $awardDateAdd = null;
-                        if (!empty($qual['year_of_passing']) && is_numeric($qual['year_of_passing'])) {
-                            $awardDateAdd = $qual['year_of_passing'] . '-01-01';
+                        if (! empty($qual['year_of_passing']) && is_numeric($qual['year_of_passing'])) {
+                            $awardDateAdd = $qual['year_of_passing'].'-01-01';
                         }
 
                         $student->academics()->updateOrCreate(
                             [
-                                'education_level'  => $qual['qualification'],
+                                'education_level' => $qual['qualification'],
                                 'institution_name' => $qual['institution'] ?? null,
                             ],
                             [
-                                'course_name'      => $qual['field_of_study'] ?? null,
-                                'gpa'              => $qual['grades_gpa'] ?? null,
-                                'award_date'       => $awardDateAdd,
+                                'course_name' => $qual['field_of_study'] ?? null,
+                                'gpa' => $qual['grades_gpa'] ?? null,
+                                'award_date' => $awardDateAdd,
                             ]
                         );
                     }
@@ -176,17 +195,17 @@ class PreAssessmentAdminController extends Controller
             } elseif ($assessment->second_qualification) {
                 $awardDate2 = null;
                 if ($assessment->second_year_of_passing && is_numeric($assessment->second_year_of_passing)) {
-                    $awardDate2 = $assessment->second_year_of_passing . '-01-01';
+                    $awardDate2 = $assessment->second_year_of_passing.'-01-01';
                 }
 
                 $student->academics()->updateOrCreate(
                     [
-                        'education_level'  => $assessment->second_qualification,
+                        'education_level' => $assessment->second_qualification,
                         'institution_name' => $assessment->second_institution,
                     ],
                     [
-                        'award_date'       => $awardDate2,
-                        'gpa'              => $assessment->second_qual_grade ?? null,
+                        'award_date' => $awardDate2,
+                        'gpa' => $assessment->second_qual_grade ?? null,
                     ]
                 );
             }
@@ -217,9 +236,9 @@ class PreAssessmentAdminController extends Controller
         $assessment = StudentPreAssessment::findOrFail($id);
         $assessment->update([
             'assessment_status' => 'rejected',
-            'approved_by'       => Auth::id(),
-            'approved_at'       => now(),
-            'rejection_note'    => $request->rejection_note,
+            'approved_by' => Auth::id(),
+            'approved_at' => now(),
+            'rejection_note' => $request->rejection_note,
         ]);
 
         return back()->with('success', "Student '{$assessment->full_name}' application has been rejected.");
@@ -231,14 +250,15 @@ class PreAssessmentAdminController extends Controller
         abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
 
         $assessment = StudentPreAssessment::findOrFail($id);
-        
+
         if ($assessment->assessment_status !== 'approved') {
-            return back()->with('error', "Only approved pre-assessments can be sent to pre-enrolment.");
+            return back()->with('error', 'Only approved pre-assessments can be sent to pre-enrolment.');
         }
 
         if ($assessment->student) {
-            $assessment->student->update([
-                'enrolment_status' => 'pending'
+            $student = $assessment->student;
+            $student->update([
+                'enrolment_status' => 'pending',
             ]);
         }
 
@@ -251,16 +271,16 @@ class PreAssessmentAdminController extends Controller
         abort_unless(Auth::user()->hasAnyRole(['Super Admin', 'Admin']), 403, 'Unauthorized action.');
 
         $assessment = StudentPreAssessment::findOrFail($id);
-        
+
         if ($assessment->assessment_status !== 'rejected') {
-            return back()->with('error', "Only rejected pre-assessments can be reverted to pending.");
+            return back()->with('error', 'Only rejected pre-assessments can be reverted to pending.');
         }
 
         $assessment->update([
             'assessment_status' => 'pending',
-            'rejection_note'    => null,
-            'approved_by'       => null,
-            'approved_at'       => null,
+            'rejection_note' => null,
+            'approved_by' => null,
+            'approved_at' => null,
         ]);
 
         return back()->with('success', "Pre-assessment for '{$assessment->full_name}' has been reverted to pending.");

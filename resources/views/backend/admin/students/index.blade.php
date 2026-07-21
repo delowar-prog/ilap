@@ -115,52 +115,33 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    <div class="dropdown">
-                                        <button class="btn btn-sm btn-light border dropdown-toggle" data-bs-toggle="dropdown" data-bs-boundary="window">
-                                            Action
-                                        </button>
-                                        <div class="dropdown-menu dropdown-menu-end">
-                                            <a href="{{ route('admin.students.show', $student->id) }}" class="dropdown-item py-1">
-                                                <i class="fas fa-eye me-2 text-info"></i>View Profile
-                                            </a>
-                                            @if($student->enrolment_status === 'pending')
-                                                <form action="{{ route('admin.students.approve', $student->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item py-1 text-success" onclick="return confirm('Approve Pre-Enrolment?');">
-                                                        <i class="fas fa-check me-2"></i>Approve
-                                                    </button>
-                                                </form>
-                                                <form action="{{ route('admin.students.reject', $student->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item py-1 text-danger" onclick="return confirm('Reject Pre-Enrolment?');">
-                                                        <i class="fas fa-times me-2"></i>Reject
-                                                    </button>
-                                                </form>
-                                            @elseif($student->enrolment_status === 'approved')
-                                                <form action="{{ route('admin.students.send_to_student', $student->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item py-1 text-primary" onclick="return confirm('Send to Student? All data will be moved to the Student section.');">
-                                                        <i class="fas fa-paper-plane me-2"></i>Send to Student
-                                                    </button>
-                                                </form>
-                                            @elseif($student->enrolment_status === 'rejected')
-                                                <form action="{{ route('admin.students.revert_to_pending', $student->id) }}" method="POST">
-                                                    @csrf
-                                                    <button type="submit" class="dropdown-item py-1 text-warning" onclick="return confirm('Move this student back to Pending?');">
-                                                        <i class="fas fa-undo me-2"></i>Move to Pending
-                                                    </button>
-                                                </form>
-                                                <form action="{{ route('admin.students.destroy', $student->id) }}" method="POST">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="dropdown-item py-1 text-danger" onclick="return confirm('Are you sure you want to delete this student and their user record?');">
-                                                        <i class="fas fa-trash-alt me-2"></i>Delete
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </td>
+                                     <div class="d-flex align-items-center justify-content-center gap-1">
+                                         <a href="{{ route('admin.students.show', $student->id) }}" class="btn btn-xs btn-outline-info" data-bs-toggle="tooltip" title="View Profile">
+                                             <i class="fas fa-eye"></i>
+                                         </a>
+                                         
+                                         @if($student->enrolment_status === 'pending')
+                                             <button type="button" class="btn btn-xs btn-outline-success btn-approve-enrol" data-id="{{ $student->id }}" data-name="{{ $student->first_name }} {{ $student->surname }}" data-bs-toggle="tooltip" title="Approve">
+                                                 <i class="fas fa-check"></i>
+                                             </button>
+                                             <button type="button" class="btn btn-xs btn-outline-danger btn-reject-enrol" data-id="{{ $student->id }}" data-name="{{ $student->first_name }} {{ $student->surname }}" data-bs-toggle="tooltip" title="Reject">
+                                                 <i class="fas fa-times"></i>
+                                             </button>
+                                         @elseif($student->enrolment_status === 'approved')
+                                             @php $completion = $student->getCompletionPercentage(); @endphp
+                                              <button type="button" class="btn btn-xs btn-outline-primary btn-send-student" data-id="{{ $student->id }}" data-name="{{ $student->first_name }} {{ $student->surname }}" data-completion="{{ $completion }}" data-bs-toggle="tooltip" title="Send to Student (Completion: {{ $completion }}%)">
+                                                  <i class="fas fa-paper-plane"></i>
+                                              </button>
+                                         @elseif($student->enrolment_status === 'rejected')
+                                             <button type="button" class="btn btn-xs btn-outline-warning btn-revert-enrol" data-id="{{ $student->id }}" data-name="{{ $student->first_name }} {{ $student->surname }}" data-bs-toggle="tooltip" title="Move to Pending">
+                                                 <i class="fas fa-undo"></i>
+                                             </button>
+                                             <button type="button" class="btn btn-xs btn-outline-danger btn-delete-student" data-id="{{ $student->id }}" data-name="{{ $student->first_name }} {{ $student->surname }}" data-bs-toggle="tooltip" title="Delete">
+                                                 <i class="fas fa-trash-alt"></i>
+                                             </button>
+                                         @endif
+                                     </div>
+                                 </td>
                             </tr>
                             @empty
                             <tr>
@@ -184,3 +165,231 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function showToast(message, isSuccess) {
+    if (typeof toastr !== 'undefined') {
+        if (isSuccess) {
+            toastr.success(message);
+        } else {
+            toastr.error(message);
+        }
+    } else {
+        alert(message);
+    }
+}
+
+$(document).ready(function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // 1. Send to Student Action with SweetAlert & Toastr validation
+    $(document).on('click', '.btn-send-student', function(e) {
+        e.preventDefault();
+        const studentId = $(this).data('id');
+        const studentName = $(this).data('name');
+        const completion = parseInt($(this).data('completion'));
+        
+        Swal.fire({
+            title: 'Send to Student?',
+            text: `Are you sure you want to move "${studentName}" to the Enrolled Students section? (Profile Completion: ${completion}%)`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, Send',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Call AJAX
+                $.ajax({
+                    url: `/admin/students/${studentId}/send-to-student`,
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast(response.message, true);
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showToast(response.message, false);
+                        }
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON?.message || 'Something went wrong. Please try again.';
+                        showToast(errorMsg, false);
+                    }
+                });
+            }
+        });
+    });
+
+    // 2. Approve Enrolment Action
+    $(document).on('click', '.btn-approve-enrol', function(e) {
+        e.preventDefault();
+        const studentId = $(this).data('id');
+        const studentName = $(this).data('name');
+        
+        Swal.fire({
+            title: 'Approve Pre-Enrolment?',
+            text: `Are you sure you want to approve "${studentName}"?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, Approve',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/admin/students/${studentId}/approve`,
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast(response.message, true);
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showToast(response.message, false);
+                        }
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON?.message || 'Something went wrong.';
+                        showToast(errorMsg, false);
+                    }
+                });
+            }
+        });
+    });
+
+    // 3. Reject Enrolment Action
+    $(document).on('click', '.btn-reject-enrol', function(e) {
+        e.preventDefault();
+        const studentId = $(this).data('id');
+        const studentName = $(this).data('name');
+        
+        Swal.fire({
+            title: 'Reject Pre-Enrolment?',
+            text: `Are you sure you want to reject "${studentName}"?`,
+            icon: 'error',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Reject',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/admin/students/${studentId}/reject`,
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast(response.message, true);
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showToast(response.message, false);
+                        }
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON?.message || 'Something went wrong.';
+                        showToast(errorMsg, false);
+                    }
+                });
+            }
+        });
+    });
+
+    // 4. Revert Enrolment Action
+    $(document).on('click', '.btn-revert-enrol', function(e) {
+        e.preventDefault();
+        const studentId = $(this).data('id');
+        const studentName = $(this).data('name');
+        
+        Swal.fire({
+            title: 'Revert to Pending?',
+            text: `Are you sure you want to move "${studentName}" back to Pending?`,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonColor: '#ffc107',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Revert',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/admin/students/${studentId}/revert-to-pending`,
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast(response.message, true);
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showToast(response.message, false);
+                        }
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON?.message || 'Something went wrong.';
+                        showToast(errorMsg, false);
+                    }
+                });
+            }
+        });
+    });
+
+    // 5. Delete Student Action
+    $(document).on('click', '.btn-delete-student', function(e) {
+        e.preventDefault();
+        const studentId = $(this).data('id');
+        const studentName = $(this).data('name');
+        
+        Swal.fire({
+            title: 'Delete Student?',
+            text: `Are you sure you want to permanently delete student "${studentName}" and their user record? This action is irreversible!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, Delete!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/admin/students/${studentId}`,
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        _method: 'DELETE'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showToast(response.message, true);
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            showToast(response.message, false);
+                        }
+                    },
+                    error: function(xhr) {
+                        const errorMsg = xhr.responseJSON?.message || 'Something went wrong.';
+                        showToast(errorMsg, false);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+@endpush
+

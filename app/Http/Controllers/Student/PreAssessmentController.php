@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\DropdownOption;
-use App\Models\Student;
 use App\Models\StudentPreAssessment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
 
 class PreAssessmentController extends Controller
 {
@@ -16,12 +14,14 @@ class PreAssessmentController extends Controller
     public function index()
     {
         $student = Auth::user()->student;
-        if (!$student) return redirect()->route('dashboard')->withErrors(['Please complete your registration.']);
+        if (! $student) {
+            return redirect()->route('dashboard')->withErrors(['Please complete your registration.']);
+        }
 
         $assessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
 
         // Allow approved students to see their status page
-        if (!$assessment->isSubmitted()) {
+        if (! $assessment->isSubmitted()) {
             return redirect()->route('pre.assessment.show');
         }
 
@@ -31,8 +31,10 @@ class PreAssessmentController extends Controller
     /** Show the pre-assessment form (for new or editing) */
     public function show()
     {
-        $student    = Auth::user()->student;
-        if (!$student) return redirect()->route('dashboard')->withErrors(['Please complete your registration.']);
+        $student = Auth::user()->student;
+        if (! $student) {
+            return redirect()->route('dashboard')->withErrors(['Please complete your registration.']);
+        }
 
         $assessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
 
@@ -41,17 +43,18 @@ class PreAssessmentController extends Controller
         }
 
         // Dynamic dropdown options from admin configuration
-        $studyDestinations     = DropdownOption::active('study_destination');
-        $studyMethods          = DropdownOption::active('study_method');
-        $levelOfStudyOptions   = DropdownOption::active('level_of_study');
-        $qualificationOptions  = DropdownOption::active('highest_qualification');
+        $studyDestinations = DropdownOption::active('study_destination');
+        $studyMethods = DropdownOption::active('study_method');
+        $levelOfStudyOptions = DropdownOption::active('level_of_study');
+        $qualificationOptions = DropdownOption::active('highest_qualification');
         $financialSourceOptions = DropdownOption::active('financial_source');
+        $englishProficiencyOptions = DropdownOption::active('english_proficiency');
 
         return view('student.pre_assessment_form', compact(
             'assessment', 'student',
             'studyDestinations', 'studyMethods',
             'levelOfStudyOptions', 'qualificationOptions',
-            'financialSourceOptions'
+            'financialSourceOptions', 'englishProficiencyOptions'
         ));
     }
 
@@ -70,7 +73,9 @@ class PreAssessmentController extends Controller
     private function saveAssessment(Request $request)
     {
         $student = Auth::user()->student;
-        if (!$student) return redirect()->route('dashboard');
+        if (! $student) {
+            return redirect()->route('dashboard');
+        }
 
         $assessment = StudentPreAssessment::firstOrCreate(['student_id' => $student->id]);
 
@@ -80,58 +85,81 @@ class PreAssessmentController extends Controller
         }
 
         $request->validate([
-            'first_name'           => 'required|string|max:100',
-            'middle_name'          => 'nullable|string|max:100',
-            'surname'              => 'required|string|max:100',
-            'contact_number'       => 'required|string|max:30',
-            'contact_address'      => 'required|string',
-            'city'                 => 'required|string|max:100',
-            'state'                => 'required|string|max:100',
-            'postal_code'          => 'required|string|max:50',
-            'country'              => 'required|string|max:100',
-            'dob'                  => 'required|date',
-            'gender'               => 'required|string',
-            'nationality'          => 'required|string',
-            'passport_number'      => 'nullable|string|max:100',
-            'highest_qualification'=> 'required|string',
+            'first_name' => 'required|string|max:100',
+            'middle_name' => 'nullable|string|max:100',
+            'surname' => 'required|string|max:100',
+            'contact_number' => 'required|string|max:30',
+            'contact_address' => 'required|string',
+            'city' => 'required|string|max:100',
+            'state' => 'required|string|max:100',
+            'postal_code' => 'required|string|max:50',
+            'country' => 'required|string|max:100',
+            'dob' => 'required|date',
+            'gender' => 'required|string',
+            'nationality' => 'required|string',
+            'passport_number' => 'nullable|string|max:100',
+            'highest_qualification' => 'required|string',
             'highest_qualification_other' => 'required_if:highest_qualification,Other|nullable|string|max:255',
-            'name_of_institution'  => 'required|string|max:255',
-            'year_of_passing'      => 'required|string|max:50',
+            'name_of_institution' => 'required|string|max:255',
+            'year_of_passing' => 'required|string|max:50',
             'additional_qualifications' => 'nullable|array',
             'additional_qualifications.*.qualification' => 'required|string|max:255',
             'additional_qualifications.*.institution' => 'required|string|max:255',
             'additional_qualifications.*.year_of_passing' => 'required|string|max:100',
             'additional_qualifications.*.grades_gpa' => 'required|string|max:100',
             'additional_qualifications.*.field_of_study' => 'nullable|string|max:255',
-            'english_proficiency'  => 'required|string',
-            'english_score'        => 'nullable|string',
-            'work_experience'      => 'nullable|string',
-            'study_destination'    => 'required|string',
-            'level_of_study'       => 'required|string',
-            'intended_course'      => 'required|string|max:255',
-            'preferred_intake'     => 'required|string',
-            'financial_source'     => 'required|string',
-            'visa_refusal_history' => 'required|string',
-            'previous_uk_study_history' => 'required|string',
+            'english_proficiency' => 'required|string',
+            'english_score' => 'nullable|string',
+            'work_experience' => 'nullable|string',
+            'study_destination' => 'required|string',
+            'level_of_study' => 'required|string',
+            'intended_course' => 'required|string|max:255',
+            'preferred_intake' => 'required|string',
+            'financial_source' => 'required|string',
+            'travel_history' => 'required|array',
+            'travel_history.has_history' => 'required|in:yes,no',
+            'travel_history.arrival_date' => 'required_if:travel_history.has_history,yes|nullable|date',
+            'travel_history.departure_date' => 'required_if:travel_history.has_history,yes|nullable|date',
+            'travel_history.visa_start_date' => 'required_if:travel_history.has_history,yes|nullable|date',
+            'travel_history.visa_expiry_date' => 'required_if:travel_history.has_history,yes|nullable|date',
+            'travel_history.purpose_of_visit' => 'required_if:travel_history.has_history,yes|nullable|string',
+            'travel_history.country' => 'required_if:travel_history.has_history,yes|nullable|string',
+            'travel_history.visa_type' => 'required_if:travel_history.has_history,yes|nullable|string',
+            'immigration_history' => 'required|array',
+            'immigration_history.countries' => 'required|array|min:1',
+            'visa_refusals' => 'required|array',
+            'visa_refusals.has_refusal' => 'required|in:yes,no',
+            'visa_refusals.refusal_type' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
+            'visa_refusals.refusal_date' => 'required_if:visa_refusals.has_refusal,yes|nullable|date',
+            'visa_refusals.country' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
+            'visa_refusals.visa_type' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
+            'visa_refusals.details' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
         ]);
 
         if ($request->highest_qualification === 'Other' && $request->filled('highest_qualification_other')) {
             $request->merge(['highest_qualification' => $request->highest_qualification_other]);
         }
 
-        $fullName = trim($request->first_name . ' ' . ($request->middle_name ?? '') . ' ' . $request->surname);
+        $fullName = trim($request->first_name.' '.($request->middle_name ?? '').' '.$request->surname);
 
         $additionalQuals = $request->input('additional_qualifications', []);
         $secondQual = null;
         $secondInst = null;
         $secondYear = null;
         $secondGrade = null;
-        if (!empty($additionalQuals) && count($additionalQuals) > 0) {
+        if (! empty($additionalQuals) && count($additionalQuals) > 0) {
             $secondQual = $additionalQuals[0]['qualification'] ?? null;
             $secondInst = $additionalQuals[0]['institution'] ?? null;
             $secondYear = $additionalQuals[0]['year_of_passing'] ?? null;
             $secondGrade = $additionalQuals[0]['grades_gpa'] ?? null;
         }
+
+        $travelHistory = $request->input('travel_history', []);
+        $immigrationHistory = $request->input('immigration_history', []);
+        $visaRefusals = $request->input('visa_refusals', []);
+
+        $refusalText = ($visaRefusals['has_refusal'] ?? 'no') === 'yes' ? 'Yes' : 'None';
+        $previousStudyText = ($travelHistory['has_history'] ?? 'no') === 'yes' ? 'Yes' : 'None';
 
         $assessment->update(array_merge(
             $request->only([
@@ -142,7 +170,6 @@ class PreAssessmentController extends Controller
                 'intended_course', 'course_link', 'level_of_study', 'preferred_intake',
                 'study_method', 'study_destination', 'country_of_choice',
                 'purpose_of_study', 'financial_source', 'source_of_funding',
-                'visa_refusal_history', 'previous_uk_study_history'
             ]),
             [
                 'full_name' => $fullName,
@@ -151,7 +178,12 @@ class PreAssessmentController extends Controller
                 'second_year_of_passing' => $secondYear,
                 'second_qual_grade' => $secondGrade,
                 'additional_qualifications' => $additionalQuals,
-                'assessment_status' => 'pending'
+                'assessment_status' => 'pending',
+                'travel_history' => $travelHistory,
+                'immigration_history' => $immigrationHistory,
+                'visa_refusals' => $visaRefusals,
+                'visa_refusal_history' => $refusalText,
+                'previous_uk_study_history' => $previousStudyText,
             ] // Set back to pending upon edit
         ));
 

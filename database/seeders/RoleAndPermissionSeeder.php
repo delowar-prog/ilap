@@ -36,6 +36,7 @@ class RoleAndPermissionSeeder extends Seeder
             ...$this->getName('course'),
             ...$this->getName('institute'),
             ...$this->getName('preassessment'),
+            ...$this->getName('student'),
         ];
 
         foreach ($permissions as $permission) {
@@ -56,11 +57,10 @@ class RoleAndPermissionSeeder extends Seeder
         $staff->givePermissionTo(['campus view']);
 
         $student = Role::create(['name' => 'Student']);
-        $student->givePermissionTo(['campus view']);
+        // No permissions needed for Student role in the admin panel
 
         $staff = Role::create(['name' => 'Stake Holders']);
         $staff->givePermissionTo(['']);
 
-        
     }
 }

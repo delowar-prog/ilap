@@ -1,24 +1,28 @@
 <?php
 
-use App\Http\Controllers\AgentController;
+use App\Http\Controllers\Admin\DropdownOptionController;
+use App\Http\Controllers\Admin\PreAssessmentAdminController;
+use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\AgentCommissionController;
+use App\Http\Controllers\AgentController;
+use App\Http\Controllers\CampusController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\CountryController;
-use App\Http\Controllers\StateController;
-use App\Http\Controllers\dashboardController;
-use App\Http\Controllers\CampusController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\dashboardController;
+use App\Http\Controllers\InstituteController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\InstituteController;
+use App\Http\Controllers\StateController;
+use App\Http\Controllers\Student\PreAssessmentController;
 use App\Http\Controllers\Student\StudentProfileController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Lab404\Impersonate\Controllers\ImpersonateController;
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/dashboard', [DashboardController::class, 'dashboard'])
+    Route::get('/dashboard', [dashboardController::class, 'dashboard'])
         ->name('dashboard');
     Route::resource('permissions', PermissionController::class);
     Route::resource('roles', RoleController::class);
@@ -37,13 +41,13 @@ Route::middleware(['auth'])->group(function () {
 
 // ==================== Pre-Assessment Routes (Student) ====================
 Route::middleware(['auth', 'role:Student'])->group(function () {
-    Route::get('/pre-assessment', [\App\Http\Controllers\Student\PreAssessmentController::class, 'index'])
+    Route::get('/pre-assessment', [PreAssessmentController::class, 'index'])
         ->name('pre.assessment.index');
-    Route::get('/pre-assessment/form', [\App\Http\Controllers\Student\PreAssessmentController::class, 'show'])
+    Route::get('/pre-assessment/form', [PreAssessmentController::class, 'show'])
         ->name('pre.assessment.show');
-    Route::post('/pre-assessment', [\App\Http\Controllers\Student\PreAssessmentController::class, 'store'])
+    Route::post('/pre-assessment', [PreAssessmentController::class, 'store'])
         ->name('pre.assessment.store');
-    Route::put('/pre-assessment', [\App\Http\Controllers\Student\PreAssessmentController::class, 'update'])
+    Route::put('/pre-assessment', [PreAssessmentController::class, 'update'])
         ->name('pre.assessment.update');
 });
 
@@ -62,44 +66,43 @@ Route::middleware(['auth', 'role:Student', 'pre.assessment'])->prefix('student')
 
 // ==================== Pre-Assessment Admin Routes ====================
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/pre-assessments', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'index'])
+    Route::get('/pre-assessments', [PreAssessmentAdminController::class, 'index'])
         ->name('pre.assessments.index');
-    Route::get('/pre-assessments/{id}', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'show'])
+    Route::get('/pre-assessments/{id}', [PreAssessmentAdminController::class, 'show'])
         ->name('pre.assessments.show');
-    Route::post('/pre-assessments/{id}/approve', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'approve'])
+    Route::post('/pre-assessments/{id}/approve', [PreAssessmentAdminController::class, 'approve'])
         ->name('pre.assessments.approve');
-    Route::post('/pre-assessments/{id}/reject', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'reject'])
+    Route::post('/pre-assessments/{id}/reject', [PreAssessmentAdminController::class, 'reject'])
         ->name('pre.assessments.reject');
-    Route::post('/pre-assessments/{id}/send-to-pre-enrolment', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'sendToPreEnrolment'])
+    Route::post('/pre-assessments/{id}/send-to-pre-enrolment', [PreAssessmentAdminController::class, 'sendToPreEnrolment'])
         ->name('pre.assessments.send_to_pre_enrolment');
-    Route::post('/pre-assessments/{id}/revert-to-pending', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'revertToPending'])
+    Route::post('/pre-assessments/{id}/revert-to-pending', [PreAssessmentAdminController::class, 'revertToPending'])
         ->name('pre.assessments.revert_to_pending');
-    Route::delete('/pre-assessments/{id}', [\App\Http\Controllers\Admin\PreAssessmentAdminController::class, 'destroy'])
+    Route::delete('/pre-assessments/{id}', [PreAssessmentAdminController::class, 'destroy'])
         ->name('pre.assessments.destroy');
-        
-    Route::post('/students/{id}/approve', [\App\Http\Controllers\Admin\StudentController::class, 'approve'])->name('students.approve');
-    Route::post('/students/{id}/reject', [\App\Http\Controllers\Admin\StudentController::class, 'reject'])->name('students.reject');
-    Route::post('/students/{id}/revert-to-pending', [\App\Http\Controllers\Admin\StudentController::class, 'revertToPending'])->name('students.revert_to_pending');
-    Route::post('/students/{id}/send-to-student', [\App\Http\Controllers\Admin\StudentController::class, 'sendToStudent'])->name('students.send_to_student');
-    Route::get('/enrolled-students', [\App\Http\Controllers\Admin\StudentController::class, 'enrolledStudents'])->name('students.enrolled');
-    Route::delete('/students/{id}', [\App\Http\Controllers\Admin\StudentController::class, 'destroy'])->name('students.destroy');
-    Route::resource('students', \App\Http\Controllers\Admin\StudentController::class)->only(['index', 'show']);
+
+    Route::post('/students/{id}/approve', [StudentController::class, 'approve'])->name('students.approve');
+    Route::post('/students/{id}/reject', [StudentController::class, 'reject'])->name('students.reject');
+    Route::post('/students/{id}/revert-to-pending', [StudentController::class, 'revertToPending'])->name('students.revert_to_pending');
+    Route::post('/students/{id}/send-to-student', [StudentController::class, 'sendToStudent'])->name('students.send_to_student');
+    Route::get('/enrolled-students', [StudentController::class, 'enrolledStudents'])->name('students.enrolled');
+    Route::delete('/students/{id}', [StudentController::class, 'destroy'])->name('students.destroy');
+    Route::get('/students/{id}/profile-pdf', [StudentController::class, 'downloadProfilePdf'])->name('students.profile.pdf');
+    Route::resource('students', StudentController::class)->only(['index', 'show']);
 
     // ── Configuration: Dropdown Options ───────────────────────────────────────
     Route::prefix('config/dropdown-options')->name('config.dropdown.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'index'])->name('index');
-        Route::get('/{category}', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'category'])->name('category');
-        Route::post('/{category}', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'store'])->name('store');
-        Route::put('/option/{dropdownOption}', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'update'])->name('update');
-        Route::patch('/option/{dropdownOption}/toggle', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'toggle'])->name('toggle');
-        Route::delete('/option/{dropdownOption}', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'destroy'])->name('destroy');
-        Route::post('/reorder', [\App\Http\Controllers\Admin\DropdownOptionController::class, 'reorder'])->name('reorder');
+        Route::get('/', [DropdownOptionController::class, 'index'])->name('index');
+        Route::get('/{category}', [DropdownOptionController::class, 'category'])->name('category');
+        Route::post('/{category}', [DropdownOptionController::class, 'store'])->name('store');
+        Route::put('/option/{dropdownOption}', [DropdownOptionController::class, 'update'])->name('update');
+        Route::patch('/option/{dropdownOption}/toggle', [DropdownOptionController::class, 'toggle'])->name('toggle');
+        Route::delete('/option/{dropdownOption}', [DropdownOptionController::class, 'destroy'])->name('destroy');
+        Route::post('/reorder', [DropdownOptionController::class, 'reorder'])->name('reorder');
     });
 });
-
 
 // Impersonation Routes
 Route::middleware(['auth'])->group(function () {
     Route::post('/impersonate/{id}', [ImpersonateController::class, 'take'])->name('impersonate');
 });
-

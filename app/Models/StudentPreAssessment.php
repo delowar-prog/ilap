@@ -35,17 +35,23 @@ class StudentPreAssessment extends Model
         'course_link_2', 'course_link_3',
         // Approval Workflow
         'assessment_status', 'approved_by', 'approved_at', 'rejection_note',
-        
+
         // Form Selection and Mandatory Docs
         'selected_form', 'mandatory_documents',
         'additional_qualifications',
+
+        // Travel & Immigration
+        'travel_history', 'immigration_history', 'visa_refusals',
     ];
 
     protected $casts = [
         'approved_at' => 'datetime',
-        'intake_date'  => 'date',
+        'intake_date' => 'date',
         'mandatory_documents' => 'array',
         'additional_qualifications' => 'array',
+        'travel_history' => 'array',
+        'immigration_history' => 'array',
+        'visa_refusals' => 'array',
     ];
 
     // ─── Relationships ───
@@ -60,8 +66,23 @@ class StudentPreAssessment extends Model
     }
 
     // ─── Helpers ───
-    public function isPending(): bool   { return $this->assessment_status === 'pending'; }
-    public function isApproved(): bool  { return $this->assessment_status === 'approved'; }
-    public function isRejected(): bool  { return $this->assessment_status === 'rejected'; }
-    public function isSubmitted(): bool { return in_array($this->assessment_status, ['pending','approved','rejected']); }
+    public function isPending(): bool
+    {
+        return $this->assessment_status === 'pending';
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->assessment_status === 'approved';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->assessment_status === 'rejected';
+    }
+
+    public function isSubmitted(): bool
+    {
+        return in_array($this->assessment_status, ['pending', 'approved', 'rejected']);
+    }
 }

@@ -5,11 +5,7 @@
 <div class="row justify-content-center">
     <div class="col-xl-10">
         
-        @if(session('success'))
-            <div class="alert alert-success border-0 rounded-0 mt-3">
-                <i class="mdi mdi-check-circle me-1"></i> {{ session('success') }}
-            </div>
-        @endif
+
 
         <div class="page-title-box d-flex justify-content-between align-items-center mt-3">
             <h4 class="page-title">My Pre-Assessment Application</h4>
@@ -57,10 +53,17 @@
                                 <p class="mb-0 font-13 mt-2">Your application has been successfully submitted and is currently being reviewed by our admissions team.</p>
                             </div>
                         @elseif($assessment->isApproved())
-                            <div class="alert alert-success border-0 rounded-0">
-                                <h5><i class="mdi mdi-check-circle-outline me-1"></i> Approved</h5>
-                                <p class="mb-0 font-13 mt-2">Congratulations! Your pre-assessment has been approved. You now have full access to your profile.</p>
-                            </div>
+                            @if(!$student->enrolment_status)
+                                <div class="alert alert-success border-0 rounded-0">
+                                    <h5><i class="mdi mdi-check-circle-outline me-1"></i> Approved</h5>
+                                    <p class="mb-0 font-13 mt-2">Congratulations! Your pre-assessment has been approved. Please wait while the admissions team reviews and moves your application to Pre-Enrolment.</p>
+                                </div>
+                            @else
+                                <div class="alert alert-success border-0 rounded-0">
+                                    <h5><i class="mdi mdi-check-circle-outline me-1"></i> Sent to Pre-Enrolment</h5>
+                                    <p class="mb-0 font-13 mt-2">Congratulations! Your pre-assessment has been approved and moved to Pre-Enrolment. You now have full access to fill in and submit your profile.</p>
+                                </div>
+                            @endif
                         @elseif($assessment->isRejected())
                             <div class="alert alert-danger border-0 rounded-0">
                                 <h5><i class="mdi mdi-close-circle-outline me-1"></i> Revisions Required</h5>

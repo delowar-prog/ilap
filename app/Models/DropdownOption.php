@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class DropdownOption extends Model
 {
@@ -15,11 +15,14 @@ class DropdownOption extends Model
 
     // Available categories with their display names
     public static array $categories = [
-        'study_destination'      => 'Preferred Study Destination',
-        'study_method'           => 'Preferred Study Method',
-        'level_of_study'         => 'Level of Study',
-        'highest_qualification'  => 'Highest Qualification',
-        'financial_source'       => 'Funding Source',
+        'study_destination' => 'Preferred Study Destination',
+        'study_method' => 'Preferred Study Method',
+        'level_of_study' => 'Level of Study',
+        'highest_qualification' => 'Highest Qualification',
+        'financial_source' => 'Funding Source',
+        'english_proficiency' => 'English Language Proficiency',
+        'department' => 'Departments',
+        'document_type' => 'Document Types',
     ];
 
     /**

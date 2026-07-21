@@ -1,28 +1,12 @@
 <div>
     <div class="row g-3">
-        {{-- Country --}}
-        <div class="col-md-4" wire:key="country-col-{{ $selectedCountryName }}">
-            <label class="form-label">Country <span class="text-danger">*</span></label>
-            <select id="country-select-{{ $this->getId() }}" 
-                    name="{{ $countryFieldName }}" 
-                    class="form-select select2-location-select"
-                    wire:model.change="selectedCountryName">
-                <option value=""></option>
-                @if($selectedCountryName && !$countries->contains('name', $selectedCountryName))
-                    <option value="{{ $selectedCountryName }}" selected>{{ $selectedCountryName }}</option>
-                @endif
-                @foreach($countries as $country)
-                    <option value="{{ $country->name }}" {{ $selectedCountryName == $country->name ? 'selected' : '' }}>{{ $country->name }}</option>
-                @endforeach
-            </select>
-        </div>
-
         {{-- State --}}
         <div class="col-md-4" wire:key="state-col-{{ $selectedCountryName }}-{{ $selectedStateName }}">
             <label class="form-label">State / Province <span class="text-danger">*</span></label>
             <select id="state-select-{{ $this->getId() }}" 
                     name="{{ $stateFieldName }}" 
                     class="form-select select2-location-select"
+                    data-placeholder="Select state/province"
                     wire:model.change="selectedStateName">
                 <option value=""></option>
                 @if($selectedStateName && !collect($states)->contains('name', $selectedStateName))
@@ -40,6 +24,7 @@
             <select id="city-select-{{ $this->getId() }}" 
                     name="{{ $cityFieldName }}" 
                     class="form-select select2-location-select"
+                    data-placeholder="Select city/district"
                     wire:model.change="selectedCityName">
                 <option value=""></option>
                 @if($selectedCityName && !collect($cities)->contains('name', $selectedCityName))
@@ -47,6 +32,24 @@
                 @endif
                 @foreach($cities as $city)
                     <option value="{{ $city->name }}" {{ $selectedCityName == $city->name ? 'selected' : '' }}>{{ $city->name }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        {{-- Country --}}
+        <div class="col-md-4" wire:key="country-col-{{ $selectedCountryName }}">
+            <label class="form-label">Country <span class="text-danger">*</span></label>
+            <select id="country-select-{{ $this->getId() }}" 
+                    name="{{ $countryFieldName }}" 
+                    class="form-select select2-location-select"
+                    data-placeholder="Select country"
+                    wire:model.change="selectedCountryName">
+                <option value=""></option>
+                @if($selectedCountryName && !$countries->contains('name', $selectedCountryName))
+                    <option value="{{ $selectedCountryName }}" selected>{{ $selectedCountryName }}</option>
+                @endif
+                @foreach($countries as $country)
+                    <option value="{{ $country->name }}" {{ $selectedCountryName == $country->name ? 'selected' : '' }}>{{ $country->name }}</option>
                 @endforeach
             </select>
         </div>
@@ -81,7 +84,7 @@
                         if (!element.hasClass("select2-hidden-accessible")) {
                             element.select2({
                                 tags: true,
-                                placeholder: 'Select or type...',
+                                placeholder: element.attr('data-placeholder') || 'Select or type to add if not found...',
                                 allowClear: true
                             }).on('change', function (e) {
                                 this.dispatchEvent(new Event('input'));

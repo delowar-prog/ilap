@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
             UserRegisterSeeder::class,
             CampusSeeder::class,
-            
+            DropdownOptionSeeder::class,
         ]);
     }
 }

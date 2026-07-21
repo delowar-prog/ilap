@@ -166,7 +166,7 @@
                     <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Nationality</label><span>{{ $student->nationality ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Native Language</label><span>{{ $student->native_language ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Country of Residence</label><span>{{ $student->country ? $student->country->name : 'N/A' }}</span></div>
                     <div class="info-item"><label>Phone</label><span>{{ $student->phone ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Skype ID</label><span>{{ $student->skype_id ?? 'N/A' }}</span></div>
                 </div>
@@ -206,12 +206,80 @@
                     <div class="info-item"><label>Issue Location</label><span>{{ $student->passport_issue_location ?? 'N/A' }}</span></div>
                 </div>
                 
-                <h6 class="text-muted text-uppercase mb-3 mt-4" style="font-size: 0.8rem;">UK Travel History</h6>
-                <div class="info-grid">
-                    <div class="info-item"><label>Applied to remain in UK?</label><span>{{ $student->applied_leave_to_remain_uk ? 'Yes' : 'No' }}</span></div>
-                    <div class="info-item"><label>Need Visa for UK?</label><span>{{ $student->need_visa_for_uk ? 'Yes' : 'No' }}</span></div>
-                    <div class="info-item"><label>Refused Visa or Deported?</label><span>{{ $student->refused_visa_or_deported ? 'Yes' : 'No' }}</span></div>
-                    <div class="info-item"><label>Taken TB Test?</label><span>{{ $student->taken_tb_test ?? 'N/A' }}</span></div>
+                @php
+                    $travelHistory = $student->travel_history ?? $assessment->travel_history ?? [];
+                    $immigrationHistory = $student->immigration_history ?? $assessment->immigration_history ?? [];
+                    $visaRefusals = $student->visa_refusals ?? $assessment->visa_refusals ?? [];
+                    $takenTbTest = $student->taken_tb_test ?? 'N/A';
+                @endphp
+                <h6 class="text-muted text-uppercase mb-3 mt-4" style="font-size: 0.8rem;">Travel & Immigration History</h6>
+                <div class="row g-3">
+                    {{-- 1. Travel History --}}
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light font-13">
+                            <strong>Permission to remain in past 10 years:</strong> 
+                            <span class="badge {{ ($travelHistory['has_history'] ?? '') === 'yes' ? 'bg-primary' : 'bg-secondary' }}">
+                                {{ strtoupper($travelHistory['has_history'] ?? 'No') }}
+                            </span>
+                            @if(($travelHistory['has_history'] ?? '') === 'yes')
+                                <div class="mt-2 ps-3 border-start border-3 border-primary">
+                                    <div class="row g-2">
+                                        <div class="col-md-6"><strong>Country:</strong> {{ $travelHistory['country'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $travelHistory['visa_type'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Purpose:</strong> {{ $travelHistory['purpose_of_visit'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Arrival Date:</strong> {{ $travelHistory['arrival_date'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Departure Date:</strong> {{ $travelHistory['departure_date'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Visa Validity:</strong> {{ $travelHistory['visa_start_date'] ?? 'N/A' }} to {{ $travelHistory['visa_expiry_date'] ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- 2. Immigration History --}}
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light font-13">
+                            <strong>Needs visa for:</strong> 
+                            @php
+                                $immCountries = $immigrationHistory['countries'] ?? [];
+                            @endphp
+                            @if(empty($immCountries) || in_array('None', $immCountries))
+                                <span class="badge bg-secondary">None</span>
+                            @else
+                                @foreach($immCountries as $country)
+                                    <span class="badge bg-success me-1">{{ $country }}</span>
+                                @endforeach
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- 3. Visa Rejections --}}
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light font-13">
+                            <strong>Refused visa/asylum/deported:</strong> 
+                            <span class="badge {{ ($visaRefusals['has_refusal'] ?? '') === 'yes' ? 'bg-danger' : 'bg-secondary' }}">
+                                {{ strtoupper($visaRefusals['has_refusal'] ?? 'No') }}
+                            </span>
+                            @if(($visaRefusals['has_refusal'] ?? '') === 'yes')
+                                <div class="mt-2 ps-3 border-start border-3 border-danger">
+                                    <div class="row g-2">
+                                        <div class="col-md-6"><strong>Country:</strong> {{ $visaRefusals['country'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $visaRefusals['visa_type'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Refusal Type:</strong> {{ $visaRefusals['refusal_type'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $visaRefusals['refusal_date'] ?? 'N/A' }}</div>
+                                        <div class="col-md-12"><strong>Details/Reason:</strong> {{ $visaRefusals['details'] ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- 4. TB Test Details --}}
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light font-13">
+                            <strong>TB Test Details:</strong> {{ $takenTbTest }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -317,14 +385,21 @@
                 @if($documents->count() > 0)
                 <div class="list-group">
                     @foreach($documents as $doc)
-                    <a href="{{ asset($doc->file_path) }}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                    <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                         <div>
                             <i class="fas fa-file-pdf text-danger me-2 fs-2 align-middle"></i>
                             <strong>{{ $doc->document_type }}</strong>
                             <div class="text-muted small mt-1">Uploaded: {{ $doc->created_at->format('d M Y H:i') }}</div>
                         </div>
-                        <i class="fas fa-external-link-alt text-primary"></i>
-                    </a>
+                        <div class="d-flex gap-2">
+                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-info" title="View Document">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{{ Storage::url($doc->file_path) }}" class="btn btn-sm btn-outline-primary" download title="Download Document">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
+                    </div>
                     @endforeach
                 </div>
                 @else
@@ -354,19 +429,58 @@
                             
                             @if($assessment->selected_form)
                             <div class="mt-2 pt-2 border-top border-success">
-                                <strong>Form:</strong> <span class="badge bg-success">{{ $assessment->selected_form }}</span>
+                                <strong>Department:</strong> <span class="badge bg-success">{{ $assessment->selected_form }}</span>
                             </div>
                             @endif
                             
                             @if($assessment->mandatory_documents && count($assessment->mandatory_documents) > 0)
-                            <div class="mt-2 pt-1">
-                                <strong>Mandatory Docs:</strong>
-                                <div class="mt-1">
-                                    @foreach($assessment->mandatory_documents as $doc)
-                                        <span class="badge bg-primary me-1">{{ $doc }}</span>
-                                    @endforeach
+                                @php
+                                    $hasMandatory = false;
+                                    $hasOptional = false;
+                                    $mandatoryList = [];
+                                    $optionalList = [];
+                                    
+                                    if (is_array($assessment->mandatory_documents)) {
+                                        foreach ($assessment->mandatory_documents as $key => $val) {
+                                            if (is_numeric($key)) {
+                                                // Old style array, default to Mandatory
+                                                $mandatoryList[] = $val;
+                                                $hasMandatory = true;
+                                            } else {
+                                                // New style associative array
+                                                if ($val === 'M') {
+                                                    $mandatoryList[] = $key;
+                                                    $hasMandatory = true;
+                                                } elseif ($val === 'N') {
+                                                    $optionalList[] = $key;
+                                                    $hasOptional = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                
+                                @if($hasMandatory)
+                                <div class="mt-2 pt-1">
+                                    <strong>Mandatory Docs:</strong>
+                                    <div class="mt-1">
+                                        @foreach($mandatoryList as $doc)
+                                            <span class="badge bg-danger me-1">{{ $doc }}</span>
+                                        @endforeach
+                                    </div>
                                 </div>
-                            </div>
+                                @endif
+                                
+                                @if($hasOptional)
+                                <div class="mt-2 pt-1 border-top pt-2">
+                                    <strong>Non-Mandatory Docs:</strong>
+                                    <div class="mt-1">
+                                        @foreach($optionalList as $doc)
+                                            <span class="badge bg-warning text-dark me-1">{{ $doc }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                                @endif
                             @endif
                         </div>
                         @if(!$assessment->student || !$assessment->student->enrolment_status)
@@ -396,34 +510,41 @@
                     <form action="{{ route('admin.pre.assessments.approve', $assessment->id) }}" method="POST" class="mb-3">
                         @csrf
                         <div class="mb-3">
-                            <label class="form-label font-13 fw-bold">Select Form <span class="text-danger">*</span></label>
+                            <label class="form-label font-13 fw-bold">Select Department <span class="text-danger">*</span></label>
                             <select name="selected_form" class="form-select form-select-sm" required>
-                                <option value="">-- Choose Form --</option>
-                                <option value="CES">CES</option>
-                                <option value="GCL">GCL</option>
-                                <option value="UKVAS">UKVAS</option>
-                                <option value="EVENT">EVENT</option>
-                                <option value="MEMBERSHIP">MEMBERSHIP</option>
+                                <option value="">-- Choose Department --</option>
+                                @foreach($departments as $dept)
+                                    <option value="{{ $dept }}">{{ $dept }}</option>
+                                @endforeach
                             </select>
                         </div>
                         
                         <div class="mb-3 border p-2 bg-light">
-                            <label class="form-label font-13 fw-bold mb-2">Mandatory Documents</label>
-                            <p class="font-12 text-muted mb-2">Select the documents that the student MUST upload.</p>
+                            <label class="form-label font-13 fw-bold mb-2">Document Requirements</label>
+                            <p class="font-12 text-muted mb-2">Select requirement status: <strong>M</strong> (Mandatory) or <strong>N</strong> (Non-Mandatory).</p>
                             
-                            @php
-                                $docTypes = ['CV', 'Passport', 'Certificate', 'Transcript', 'EnglishResult', 'SOP', 'LOR', 'Other'];
-                            @endphp
-                            
-                            <div class="row">
-                            @foreach($docTypes as $docType)
-                                <div class="col-6 mb-1">
-                                    <div class="form-check form-check-sm">
-                                        <input class="form-check-input" type="checkbox" name="mandatory_documents[]" value="{{ $docType }}" id="doc_{{ $docType }}">
-                                        <label class="form-check-label font-13" for="doc_{{ $docType }}">{{ $docType }}</label>
-                                    </div>
-                                </div>
-                            @endforeach
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tbody>
+                                    @foreach($docOptions as $docType)
+                                        <tr>
+                                            <td class="font-13 fw-semibold py-1 align-middle" style="width: 50%;">{{ $docType }}</td>
+                                            <td class="py-1 align-middle">
+                                                <div class="d-flex gap-3">
+                                                    <div class="form-check form-check-inline mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="mandatory_documents[{{ $docType }}]" value="M" id="doc_m_{{ $loop->index }}" onclick="toggleDocRequirement(this, 'doc_n_{{ $loop->index }}')">
+                                                        <label class="form-check-label font-12 fw-bold text-danger" for="doc_m_{{ $loop->index }}">M</label>
+                                                    </div>
+                                                    <div class="form-check form-check-inline mb-0">
+                                                        <input class="form-check-input" type="checkbox" name="mandatory_documents[{{ $docType }}]" value="N" id="doc_n_{{ $loop->index }}" onclick="toggleDocRequirement(this, 'doc_m_{{ $loop->index }}')">
+                                                        <label class="form-check-label font-12 fw-bold text-warning" for="doc_n_{{ $loop->index }}">N</label>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
@@ -452,4 +573,11 @@
         </div>
     </div>
 </div>
+    <script>
+    function toggleDocRequirement(current, pairId) {
+        if (current.checked) {
+            document.getElementById(pairId).checked = false;
+        }
+    }
+    </script>
 @endsection

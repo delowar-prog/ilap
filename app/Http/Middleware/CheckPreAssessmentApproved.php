@@ -13,23 +13,32 @@ class CheckPreAssessmentApproved
         $user = Auth::user();
 
         // Only apply to students
-        if (!$user || !$user->hasRole('Student')) {
+        if (! $user || ! $user->hasRole('Student')) {
             return $next($request);
         }
 
         $student = $user->student;
-        if (!$student) return $next($request);
+        if (! $student) {
+            return $next($request);
+        }
 
         $assessment = $student->preAssessment;
 
         // Not submitted yet → redirect to form
-        if (!$assessment || $assessment->assessment_status === 'not_submitted') {
+        if (! $assessment || $assessment->assessment_status === 'not_submitted') {
             return redirect()->route('pre.assessment.show');
         }
 
         // Pending or Rejected → show status page (but only if NOT already on status/form routes)
         if (in_array($assessment->assessment_status, ['pending', 'rejected'])) {
-            if (!$request->routeIs('pre.assessment.*')) {
+            if (! $request->routeIs('pre.assessment.*')) {
+                return redirect()->route('pre.assessment.index');
+            }
+        }
+
+        // Approved but not sent to pre-enrolment yet → show status page (but only if NOT already on status/form routes)
+        if ($assessment->assessment_status === 'approved' && ! $student->enrolment_status) {
+            if (! $request->routeIs('pre.assessment.*')) {
                 return redirect()->route('pre.assessment.index');
             }
         }

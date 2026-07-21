@@ -120,6 +120,29 @@
                 </div>
             </div>
 
+            @if($student->enrolment_status === 'enrolled')
+            <div class="action-bar border-bottom p-3 bg-light d-flex gap-2 align-items-center flex-wrap">
+                <a href="{{ route('admin.students.profile.pdf', $student->id) }}" class="btn btn-primary btn-sm rounded-pill shadow-sm px-3">
+                    <i class="fas fa-file-pdf me-1"></i> Profile PDF
+                </a>
+                <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Generate Letter', text: 'Generate letter option is coming soon!', icon: 'info'})">
+                    <i class="fas fa-envelope-open-text me-1"></i> Generate Letter
+                </a>
+                <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Invoice', text: 'Invoice/Receipt management option is coming soon!', icon: 'info'})">
+                    <i class="fas fa-file-invoice-dollar me-1"></i> Invoice
+                </a>
+                <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Chatting', text: 'Chatting option is coming soon!', icon: 'info'})">
+                    <i class="fas fa-comments me-1"></i> Chatting
+                </a>
+                <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Email', text: 'Email communication option is coming soon!', icon: 'info'})">
+                    <i class="fas fa-envelope me-1"></i> Email
+                </a>
+                <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Support', text: 'Support ticket/queries option is coming soon!', icon: 'info'})">
+                    <i class="fas fa-headset me-1"></i> Support
+                </a>
+            </div>
+            @endif
+
             <!-- Referral Info (Only visible to the owner and enrolled students) -->
             @if(Auth::id() == $student->user_id && $student->enrolment_status === 'enrolled')
             <div class="info-section bg-light" style="border-bottom: 2px solid #e1e8f1;">
@@ -159,7 +182,7 @@
                     <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Nationality</label><span>{{ $student->nationality ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Native Language</label><span>{{ $student->native_language ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Country of Residence</label><span>{{ $student->country ? $student->country->name : 'N/A' }}</span></div>
                     <div class="info-item"><label>Phone</label><span>{{ $student->phone ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Skype ID</label><span>{{ $student->skype_id ?? 'N/A' }}</span></div>
                 </div>
@@ -199,12 +222,80 @@
                     <div class="info-item"><label>Issue Location</label><span>{{ $student->passport_issue_location ?? 'N/A' }}</span></div>
                 </div>
                 
-                <h6 class="text-muted text-uppercase mb-3 mt-4" style="font-size: 0.8rem;">UK Travel History</h6>
-                <div class="info-grid">
-                    <div class="info-item"><label>Applied to remain in UK?</label><span>{{ $student->applied_leave_to_remain_uk ? 'Yes' : 'No' }}</span></div>
-                    <div class="info-item"><label>Need Visa for UK?</label><span>{{ $student->need_visa_for_uk ? 'Yes' : 'No' }}</span></div>
-                    <div class="info-item"><label>Refused Visa or Deported?</label><span>{{ $student->refused_visa_or_deported ? 'Yes' : 'No' }}</span></div>
-                    <div class="info-item"><label>Taken TB Test?</label><span>{{ $student->taken_tb_test ?? 'N/A' }}</span></div>
+                @php
+                    $travelHistory = $student->travel_history ?? [];
+                    $immigrationHistory = $student->immigration_history ?? [];
+                    $visaRefusals = $student->visa_refusals ?? [];
+                    $takenTbTest = $student->taken_tb_test ?? 'N/A';
+                @endphp
+                <h6 class="text-muted text-uppercase mb-3 mt-4" style="font-size: 0.8rem;">Travel & Immigration History</h6>
+                <div class="row g-3">
+                    {{-- 1. Travel History --}}
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light font-13">
+                            <strong>Permission to remain in past 10 years:</strong> 
+                            <span class="badge {{ ($travelHistory['has_history'] ?? '') === 'yes' ? 'bg-primary' : 'bg-secondary' }}">
+                                {{ strtoupper($travelHistory['has_history'] ?? 'No') }}
+                            </span>
+                            @if(($travelHistory['has_history'] ?? '') === 'yes')
+                                <div class="mt-2 ps-3 border-start border-3 border-primary">
+                                    <div class="row g-2">
+                                        <div class="col-md-6"><strong>Country:</strong> {{ $travelHistory['country'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $travelHistory['visa_type'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Purpose:</strong> {{ $travelHistory['purpose_of_visit'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Arrival Date:</strong> {{ $travelHistory['arrival_date'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Departure Date:</strong> {{ $travelHistory['departure_date'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Visa Validity:</strong> {{ $travelHistory['visa_start_date'] ?? 'N/A' }} to {{ $travelHistory['visa_expiry_date'] ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- 2. Immigration History --}}
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light font-13">
+                            <strong>Needs visa for:</strong> 
+                            @php
+                                $immCountries = $immigrationHistory['countries'] ?? [];
+                            @endphp
+                            @if(empty($immCountries) || in_array('None', $immCountries))
+                                <span class="badge bg-secondary">None</span>
+                            @else
+                                @foreach($immCountries as $country)
+                                    <span class="badge bg-success me-1">{{ $country }}</span>
+                                @endforeach
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- 3. Visa Rejections --}}
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light font-13">
+                            <strong>Refused visa/asylum/deported:</strong> 
+                            <span class="badge {{ ($visaRefusals['has_refusal'] ?? '') === 'yes' ? 'bg-danger' : 'bg-secondary' }}">
+                                {{ strtoupper($visaRefusals['has_refusal'] ?? 'No') }}
+                            </span>
+                            @if(($visaRefusals['has_refusal'] ?? '') === 'yes')
+                                <div class="mt-2 ps-3 border-start border-3 border-danger">
+                                    <div class="row g-2">
+                                        <div class="col-md-6"><strong>Country:</strong> {{ $visaRefusals['country'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $visaRefusals['visa_type'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Refusal Type:</strong> {{ $visaRefusals['refusal_type'] ?? 'N/A' }}</div>
+                                        <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $visaRefusals['refusal_date'] ?? 'N/A' }}</div>
+                                        <div class="col-md-12"><strong>Details/Reason:</strong> {{ $visaRefusals['details'] ?? 'N/A' }}</div>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- 4. TB Test Details --}}
+                    <div class="col-md-12">
+                        <div class="p-3 border rounded bg-light font-13">
+                            <strong>TB Test Details:</strong> {{ $takenTbTest }}
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -310,14 +401,21 @@
                 @if($documents->count() > 0)
                 <div class="list-group">
                     @foreach($documents as $doc)
-                    <a href="{{ asset($doc->file_path) }}" target="_blank" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                    <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                         <div>
                             <i class="fas fa-file-pdf text-danger me-2 fs-2 align-middle"></i>
                             <strong>{{ $doc->document_type }}</strong>
                             <div class="text-muted small mt-1">Uploaded: {{ $doc->created_at->format('d M Y H:i') }}</div>
                         </div>
-                        <i class="fas fa-external-link-alt text-primary"></i>
-                    </a>
+                        <div class="d-flex gap-2">
+                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-info" title="View Document">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a href="{{ Storage::url($doc->file_path) }}" class="btn btn-sm btn-outline-primary" download title="Download Document">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
+                    </div>
                     @endforeach
                 </div>
                 @else

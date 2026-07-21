@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\DropdownOption;
+use Illuminate\Database\Seeder;
 
 class DropdownOptionSeeder extends Seeder
 {
@@ -53,6 +53,32 @@ class DropdownOptionSeeder extends Seeder
                 'Scholarship',
                 'Employer Sponsorship',
                 'Combination of the above',
+            ],
+            'english_proficiency' => [
+                'English is my native language',
+                'IELTS',
+                'TOEFL',
+                'PTE Academic',
+                'Duolingo English Test',
+                'Other English Qualification',
+                'No English qualification yet',
+            ],
+            'department' => [
+                'CES',
+                'GCL',
+                'UKVAS',
+                'EVENT',
+                'MEMBERSHIP',
+            ],
+            'document_type' => [
+                'CV / Resume',
+                'Passport',
+                'Academic Certificate',
+                'Academic Transcript',
+                'English Test Result',
+                'Statement of Purpose (SOP)',
+                'Letter of Reference (LOR)',
+                'Other',
             ],
         ];
 
