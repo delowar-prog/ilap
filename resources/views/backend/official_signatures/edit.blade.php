@@ -1,0 +1,177 @@
+@extends('layouts.backend_master')
+
+@section('admin_contents')
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-header py-3 bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 text-primary fw-bold">
+            <i class="fas fa-edit me-2"></i> Edit Official Signature / Seal
+        </h5>
+        <a href="{{ route('admin.official-signatures.index') }}" class="btn btn-outline-secondary btn-sm rounded-pill">
+            <i class="fas fa-arrow-left me-1"></i> Back to Signatures
+        </a>
+    </div>
+
+    <div class="card-body">
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form action="{{ route('admin.official-signatures.update', $signature->id) }}" method="POST" enctype="multipart/form-data" id="signatureForm">
+            @csrf
+            @method('PUT')
+
+            <input type="hidden" name="signature_data" id="signature_data_input">
+
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Signatory Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $signature->name) }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Designation / Role Title <span class="text-danger">*</span></label>
+                        @php
+                            $currentDesig = old('designation', $signature->designation);
+                            $isCustom = isset($roles) && !in_array($currentDesig, $roles);
+                        @endphp
+                        <select name="designation_select" id="designation_select" class="form-select" onchange="toggleCustomDesignation(this.value)" required>
+                            <option value="">-- Select Role / Designation --</option>
+                            @if(isset($roles))
+                                @foreach($roles as $roleOpt)
+                                    <option value="{{ $roleOpt }}" {{ (!$isCustom && $currentDesig == $roleOpt) ? 'selected' : '' }}>{{ $roleOpt }}</option>
+                                @endforeach
+                            @endif
+                            <option value="custom_other" {{ $isCustom ? 'selected' : '' }} class="fw-bold text-primary">+ Other Custom Designation...</option>
+                        </select>
+
+                        <div id="custom_designation_box" class="mt-2 {{ $isCustom ? '' : 'd-none' }}">
+                            <input type="text" name="custom_designation" id="custom_designation_input" class="form-control border-primary" placeholder="Type custom designation name..." value="{{ $isCustom ? $currentDesig : '' }}">
+                        </div>
+                        <input type="hidden" name="designation" id="final_designation" value="{{ $currentDesig }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Item Type <span class="text-danger">*</span></label>
+                        <select name="type" class="form-select" required>
+                            <option value="signature" {{ old('type', $signature->type) == 'signature' ? 'selected' : '' }}>Signature (Digital Hand Sign)</option>
+                            <option value="seal" {{ old('type', $signature->type) == 'seal' ? 'selected' : '' }}>Official Seal / Stamp</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tag Code</label>
+                        <input type="text" class="form-control bg-light text-primary fw-bold" value="{{ $signature->tag }}" readonly>
+                        <small class="text-muted">Use this tag in any letter template body.</small>
+                    </div>
+
+                    <!-- Current Saved Image -->
+                    <div class="mb-3 p-3 border rounded bg-light">
+                        <label class="form-label fw-bold text-muted d-block mb-2">Current Saved Signature / Seal Image:</label>
+                        <div class="bg-white p-2 border rounded d-inline-block">
+                            <img src="{{ asset($signature->signature_path) }}" alt="{{ $signature->name }}" style="max-height: 80px;" class="img-fluid">
+                        </div>
+                    </div>
+
+                    <div class="card bg-light border-info mb-3">
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold text-info"><i class="fas fa-file-upload me-1"></i> Replace File (Optional)</h6>
+                            <input type="file" name="signature_file" id="signature_file_input" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Digital Signature Canvas Pad Column -->
+                <div class="col-lg-6">
+                    <div class="card border-primary shadow-sm h-100">
+                        <div class="card-header bg-primary text-white py-2 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold"><i class="fas fa-pen-fancy me-1"></i> Re-Draw Signature on Canvas Pad</h6>
+                            <button type="button" id="clearCanvasBtn" class="btn btn-outline-light btn-xs rounded-pill px-2">
+                                <i class="fas fa-eraser me-1"></i> Clear Pad
+                            </button>
+                        </div>
+                        <div class="card-body p-3 text-center d-flex flex-column justify-content-center">
+                            <p class="small text-muted mb-2">Draw a new signature below ONLY if you wish to overwrite the current signature.</p>
+                            
+                            <div class="border rounded p-1 bg-white shadow-sm position-relative my-auto" style="touch-action: none;">
+                                <canvas id="officialCanvas" width="460" height="200" class="w-100 border rounded" style="background: #fff; cursor: crosshair; touch-action: none;"></canvas>
+                            </div>
+                            
+                            <small class="text-muted mt-2"><i class="fas fa-info-circle me-1"></i> Leave canvas blank if keeping current signature.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow">
+                    <i class="fas fa-save me-1"></i> Update Official Signature
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script>
+$(document).ready(function() {
+    var canvas = document.getElementById('officialCanvas');
+    if (!canvas) return;
+
+    var signaturePad = new SignaturePad(canvas, {
+        backgroundColor: 'rgba(255, 255, 255, 0)',
+        penColor: 'rgb(0, 0, 128)',
+        minWidth: 1.5,
+        maxWidth: 3.5
+    });
+
+    function resizeCanvas() {
+        var ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad.clear();
+    }
+
+    resizeCanvas();
+
+    $('#clearCanvasBtn').on('click', function() {
+        signaturePad.clear();
+    });
+
+    window.toggleCustomDesignation = function(val) {
+        if (val === 'custom_other') {
+            $('#custom_designation_box').removeClass('d-none');
+            $('#custom_designation_input').prop('required', true).focus();
+        } else {
+            $('#custom_designation_box').addClass('d-none');
+            $('#custom_designation_input').prop('required', false);
+        }
+    };
+
+    $('#signatureForm').on('submit', function(e) {
+        var selectedRole = $('#designation_select').val();
+        if (selectedRole === 'custom_other') {
+            $('#final_designation').val($('#custom_designation_input').val());
+        } else {
+            $('#final_designation').val(selectedRole);
+        }
+
+        if (!signaturePad.isEmpty()) {
+            var dataUrl = signaturePad.toDataURL('image/png');
+            $('#signature_data_input').val(dataUrl);
+        }
+    });
+});
+</script>
+@endpush
+
+@endsection

@@ -80,6 +80,15 @@ class DropdownOptionSeeder extends Seeder
                 'Letter of Reference (LOR)',
                 'Other',
             ],
+            'letter_type' => [
+                'Offer Letter',
+                'Acceptance Letter',
+                'No Objection Certificate (NOC)',
+                'Visa Support Letter',
+                'Recommendation Letter',
+                'Experience Certificate',
+                'Custom Letter',
+            ],
         ];
 
         foreach ($defaults as $category => $labels) {

@@ -23,6 +23,8 @@ class DropdownOption extends Model
         'english_proficiency' => 'English Language Proficiency',
         'department' => 'Departments',
         'document_type' => 'Document Types',
+        'letter_type' => 'Letter Template Types',
+        'invoice_type' => 'Invoice Template Types',
     ];
 
     /**

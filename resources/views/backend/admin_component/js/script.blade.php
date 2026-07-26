@@ -76,6 +76,31 @@
   });
 </script>
 
+<script>
+$(document).ready(function() {
+    // Global SweetAlert Delete Confirmation
+    $(document).on('click', '.delete-btn-confirm', function(e) {
+        e.preventDefault();
+        const form = $(this).closest('form');
+        const text = $(this).data('text') || "You won't be able to revert this!";
+        
+        Swal.fire({
+            title: 'Are you sure?',
+            text: text,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+});
+</script>
+
 
 {{-- <script>
     document.querySelectorAll('.deleteButton').forEach(button => {
@@ -266,7 +291,54 @@
 
 
 
-      
+    });
+
+    // Global Status Toggle Switch Handler
+    $(document).on('change', '.global-status-toggle', function() {
+        const switchEl = $(this);
+        const url = switchEl.data('url');
+        const isChecked = switchEl.is(':checked');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                _method: 'PATCH'
+            },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Status updated successfully');
+                } else if (typeof Swal !== 'undefined') {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Status updated successfully'
+                    });
+                }
+            },
+            error: function(xhr) {
+                switchEl.prop('checked', !isChecked);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to update status. Please try again.'
+                    });
+                } else {
+                    alert('Failed to update status.');
+                }
+            }
+        });
     });
   </script>
   

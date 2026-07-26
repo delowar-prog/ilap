@@ -49,18 +49,10 @@
                     @error('currency_symbol') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label class="form-label">Capital</label>
                     <input type="text" name="capital" class="form-control @error('capital') is-invalid @enderror" value="{{ old('capital') }}">
                     @error('capital') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label">Status <span class="text-danger">*</span></label>
-                    <select name="status" class="form-select" required>
-                        <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                    </select>
                 </div>
             </div>
         </div>

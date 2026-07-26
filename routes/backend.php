@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\DropdownOptionController;
+use App\Http\Controllers\Admin\LetterTemplateController;
 use App\Http\Controllers\Admin\PreAssessmentAdminController;
 use App\Http\Controllers\Admin\StudentController;
+use App\Http\Controllers\Admin\StudentLetterController;
 use App\Http\Controllers\AgentCommissionController;
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\CampusController;
@@ -37,6 +39,8 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('commissions', AgentCommissionController::class);
     Route::resource('courses', CourseController::class);
     Route::resource('institutes', InstituteController::class);
+    Route::patch('/status-toggle/{modelType}/{id}', [\App\Http\Controllers\StatusToggleController::class, 'toggle'])->name('status.toggle');
+    Route::post('/save-signature', [\App\Http\Controllers\SignatureController::class, 'saveSignature'])->name('user.signature.save');
 });
 
 // ==================== Pre-Assessment Routes (Student) ====================
@@ -89,6 +93,35 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::delete('/students/{id}', [StudentController::class, 'destroy'])->name('students.destroy');
     Route::get('/students/{id}/profile-pdf', [StudentController::class, 'downloadProfilePdf'])->name('students.profile.pdf');
     Route::resource('students', StudentController::class)->only(['index', 'show']);
+
+    // ── Official Signatures & Seals CRUD ──────────────────────────────
+    Route::resource('official-signatures', \App\Http\Controllers\Admin\OfficialSignatureController::class)->names('official-signatures');
+
+    // ── Letter Templates CRUD & Generation Routes ──────────────────────────────
+    Route::get('letter-templates/{letterTemplate}/preview', [LetterTemplateController::class, 'preview'])->name('letter-templates.preview');
+    Route::patch('letter-templates/{letterTemplate}/toggle', [LetterTemplateController::class, 'toggleStatus'])->name('letter-templates.toggle');
+    Route::resource('letter-templates', LetterTemplateController::class)->names('letter-templates');
+
+    Route::get('students/{student}/letter-preview-modal', [StudentLetterController::class, 'previewModal'])->name('students.letters.preview_modal');
+    Route::post('students/{student}/generate-letter', [StudentLetterController::class, 'generate'])->name('students.letters.generate');
+    Route::get('generated-letters/{generatedLetter}/download', [StudentLetterController::class, 'downloadHistory'])->name('students.letters.download');
+    Route::get('generated-letters/{generatedLetter}/preview', [StudentLetterController::class, 'previewLetter'])->name('students.letters.preview');
+    Route::patch('generated-letters/{generatedLetter}/send', [StudentLetterController::class, 'sendToStudent'])->name('students.letters.send');
+    Route::delete('generated-letters/{generatedLetter}', [StudentLetterController::class, 'deleteHistory'])->name('students.letters.delete');
+    Route::get('letter-history', [StudentLetterController::class, 'globalHistory'])->name('letters.history');
+
+    // ── Invoice Templates CRUD & Generation Routes ──────────────────────────────
+    Route::get('invoice-templates/{invoiceTemplate}/preview', [\App\Http\Controllers\Admin\InvoiceTemplateController::class, 'preview'])->name('invoice-templates.preview');
+    Route::patch('invoice-templates/{invoiceTemplate}/toggle', [\App\Http\Controllers\Admin\InvoiceTemplateController::class, 'toggleStatus'])->name('invoice-templates.toggle');
+    Route::resource('invoice-templates', \App\Http\Controllers\Admin\InvoiceTemplateController::class)->names('invoice-templates');
+
+    Route::get('students/{student}/invoice-preview-modal', [\App\Http\Controllers\Admin\StudentInvoiceController::class, 'previewModal'])->name('students.invoices.preview_modal');
+    Route::post('students/{student}/generate-invoice', [\App\Http\Controllers\Admin\StudentInvoiceController::class, 'generate'])->name('students.invoices.generate');
+    Route::get('generated-invoices/{generatedInvoice}/download', [\App\Http\Controllers\Admin\StudentInvoiceController::class, 'downloadHistory'])->name('students.invoices.download');
+    Route::get('generated-invoices/{generatedInvoice}/preview', [\App\Http\Controllers\Admin\StudentInvoiceController::class, 'previewInvoice'])->name('students.invoices.preview');
+    Route::patch('generated-invoices/{generatedInvoice}/send', [\App\Http\Controllers\Admin\StudentInvoiceController::class, 'sendToStudent'])->name('students.invoices.send');
+    Route::delete('generated-invoices/{generatedInvoice}', [\App\Http\Controllers\Admin\StudentInvoiceController::class, 'deleteHistory'])->name('students.invoices.delete');
+    Route::get('invoice-history', [\App\Http\Controllers\Admin\StudentInvoiceController::class, 'globalHistory'])->name('invoices.history');
 
     // ── Configuration: Dropdown Options ───────────────────────────────────────
     Route::prefix('config/dropdown-options')->name('config.dropdown.')->group(function () {

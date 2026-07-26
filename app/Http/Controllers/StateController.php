@@ -38,8 +38,9 @@ class StateController extends Controller
             'name' => 'required|string|max:100',
             'state_code' => 'nullable|string|max:10',
             'type' => 'nullable|string|max:50',
-            'status' => 'required|in:active,inactive',
+            'status' => 'nullable|in:active,inactive',
         ]);
+        $validated['status'] = $validated['status'] ?? 'active';
 
         State::create($validated);
 
@@ -63,7 +64,7 @@ class StateController extends Controller
             'name' => 'required|string|max:100',
             'state_code' => 'nullable|string|max:10',
             'type' => 'nullable|string|max:50',
-            'status' => 'required|in:active,inactive',
+            'status' => 'nullable|in:active,inactive',
         ]);
 
         $state->update($validated);

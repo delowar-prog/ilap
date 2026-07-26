@@ -64,6 +64,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Student-facing: My Letters & Documents
+    Route::prefix('my-letters')->name('student.letters.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Student\MyLettersController::class, 'index'])->name('index');
+        Route::get('/{generatedLetter}/download', [\App\Http\Controllers\Student\MyLettersController::class, 'download'])->name('download');
+        Route::get('/{generatedLetter}/preview', [\App\Http\Controllers\Student\MyLettersController::class, 'preview'])->name('preview');
+    });
+
+    // Student-facing: My Invoices
+    Route::prefix('my-invoices')->name('student.invoices.')->group(function () {
+        Route::get('/{generatedInvoice}/download', [\App\Http\Controllers\Student\MyInvoicesController::class, 'download'])->name('download');
+        Route::get('/{generatedInvoice}/preview', [\App\Http\Controllers\Student\MyInvoicesController::class, 'preview'])->name('preview');
+    });
 });
 
 require __DIR__.'/auth.php';

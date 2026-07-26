@@ -11,7 +11,7 @@
     <!-- ===============================================-->
     <title>Universitas Law Chambers </title>
 
-    @stack('scripts')
+    @stack('head_scripts')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.0/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.12.1/font/bootstrap-icons.min.css">
     <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
@@ -256,8 +256,9 @@
             });
         });
     </script>
-     @livewireScripts
-     @stack('scripts')
+    @include('components.signature_pad_modal')
+    @livewireScripts
+    @stack('scripts')
 </body>
 
 </html>

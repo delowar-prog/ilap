@@ -229,10 +229,215 @@
                                 </a>
                             </li>
                         @endcan
-                     
                     </ul>
                 </li>
                 @endcanany
+
+                @if(!$isStudent)
+                <!-- ==================== Pre-Assessment ==================== -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('admin.pre.assessments.index') }}">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-file-signature"></span></span>
+                            <span class="nav-link-text ps-1">Pre-Assessments</span>
+                        </div>
+                    </a>
+                </li>
+
+                <!-- ==================== Enrolment Details ==================== -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-indicator" href="#students" role="button" data-bs-toggle="collapse"
+                        aria-expanded="false" aria-controls="students">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-user-graduate"></span></span>
+                            <span class="nav-link-text ps-1">Students</span>
+                        </div>
+                    </a>
+                    <ul class="nav collapse" id="students">
+                        @can('student view')
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.students.index') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Pre-Enrolment</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('admin.students.enrolled') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Enrolled Students</span>
+                                </div>
+                            </a>
+                        </li>
+                        @endcan
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">New Applications</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Multi-Program Students</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Enrolment Pipeline</span>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- ==================== Document ==================== -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-indicator" href="#docuemnts" role="button"
+                        data-bs-toggle="collapse" aria-expanded="false" aria-controls="docuemnts">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-folder-open"></span></span>
+                            <span class="nav-link-text ps-1">Documents</span>
+                        </div>
+                    </a>
+                    <ul class="nav collapse" id="docuemnts">
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Document Upload Center</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Dropbox Sync Status</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Student Documents</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Document Exchange</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Document Verification</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Document Templates</span>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- ==================== Letter Generate ==================== -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-indicator" href="#letter" role="button" data-bs-toggle="collapse"
+                        aria-expanded="false" aria-controls="letter">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-envelope-open-text"></span></span>
+                            <span class="nav-link-text ps-1">Letter Generate</span>
+                        </div>
+                    </a>
+                    <ul class="nav collapse" id="letter">
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.letter-templates.*') ? 'active' : '' }}" href="{{ route('admin.letter-templates.index') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Letter Templates</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->is('admin/config/dropdown-options/letter_type*') ? 'active' : '' }}" href="{{ route('admin.config.dropdown.category', 'letter_type') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Template Types</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.official-signatures.*') ? 'active' : '' }}" href="{{ route('admin.official-signatures.index') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Signatures & Seals</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.students.enrolled') ? 'active' : '' }}" href="{{ route('admin.students.enrolled') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Generate Letters</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.letters.history') ? 'active' : '' }}" href="{{ route('admin.letters.history') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Letter History</span>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- ==================== Invoice Generate ==================== -->
+                <li class="nav-item">
+                    <a class="nav-link dropdown-indicator" href="#invoice_gen" role="button" data-bs-toggle="collapse"
+                        aria-expanded="false" aria-controls="invoice_gen">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-file-invoice-dollar"></span></span>
+                            <span class="nav-link-text ps-1">Invoice Generate</span>
+                        </div>
+                    </a>
+                    <ul class="nav collapse" id="invoice_gen">
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.invoice-templates.*') ? 'active' : '' }}" href="{{ route('admin.invoice-templates.index') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Invoice Templates</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->is('admin/config/dropdown-options/invoice_type*') ? 'active' : '' }}" href="{{ route('admin.config.dropdown.category', 'invoice_type') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Template Types</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.students.enrolled') ? 'active' : '' }}" href="{{ route('admin.students.enrolled') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Generate Invoices</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.invoices.history') ? 'active' : '' }}" href="{{ route('admin.invoices.history') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Invoice History</span>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 @canany(['user view', 'permission view', 'role view'])
                 <li class="nav-item">
                     <!-- ==================== User & Role ==================== -->
@@ -318,6 +523,7 @@
                     </ul>
                 </li>
                 @endcanany
+
                 <!-- ==================== Courses & Academic ==================== -->
                 @if((Auth::check() && Auth::user()->canany(['course view', 'institute view'])) || $isStudent)
                 <li class="nav-item">
@@ -330,7 +536,6 @@
                         </div>
                     </a>
                     <ul class="nav collapse" id="ilap_course">
-                        
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('courses.index') }}">
                                 <div class="d-flex align-items-center">
@@ -404,140 +609,6 @@
                 </li>
                 @endif
 
-                @if(!$isStudent)
-                <!-- ==================== Pre-Assessment ==================== -->
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ route('admin.pre.assessments.index') }}">
-                        <div class="d-flex align-items-center">
-                            <span class="nav-link-icon"><span class="fas fa-file-signature"></span></span>
-                            <span class="nav-link-text ps-1">Pre-Assessments</span>
-                        </div>
-                    </a>
-                </li>
-
-                <!-- ==================== Enrolment Details ==================== -->
-                <li class="nav-item">
-                    <a class="nav-link dropdown-indicator" href="#students" role="button" data-bs-toggle="collapse"
-                        aria-expanded="false" aria-controls="students">
-                        <div class="d-flex align-items-center">
-                            <span class="nav-link-icon"><span class="fas fa-user-graduate"></span></span>
-                            <span class="nav-link-text ps-1">Students</span>
-                        </div>
-                    </a>
-                    <ul class="nav collapse" id="students">
-                        @can('student view')
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.students.index') }}">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Pre-Enrolment</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('admin.students.enrolled') }}">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Enrolled Students</span>
-                                </div>
-                            </a>
-                        </li>
-                        @endcan
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">New Applications</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Multi-Program Students</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Enrolment Pipeline</span>
-                                </div>
-                            </a>
-                        </li>
-                    </ul>
-
-                    <!-- Note: I kept this ul inside the same li, just updated icons -->
-                    <ul class="nav collapse" id="letter_certificate">
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Offer Letters</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Certificates</span>
-                                </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-
-
-                <!-- ==================== Document ==================== -->
-                <li class="nav-item">
-                    <a class="nav-link dropdown-indicator" href="#docuemnts" role="button"
-                        data-bs-toggle="collapse" aria-expanded="false" aria-controls="docuemnts">
-                        <div class="d-flex align-items-center">
-                            <span class="nav-link-icon"><span class="fas fa-wallet"></span></span>
-                            <span class="nav-link-text ps-1">Docuemnts</span>
-                        </div>
-                    </a>
-                    <ul class="nav collapse" id="docuemnts">
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Document Upload Center</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Dropbox Sync Status</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Student Documents</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Document Exchange</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Document Verification</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Document Templates</span>
-                                </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
                 <!-- ==================== Finance ==================== -->
                 <li class="nav-item">
                     <a class="nav-link dropdown-indicator" href="#finance" role="button" data-bs-toggle="collapse"
@@ -587,54 +658,6 @@
                             <a class="nav-link" href="">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1">Due Fee Reminders</span>
-                                </div>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-
-                <!-- ==================== Letter & Certificate ==================== -->
-                <li class="nav-item">
-                    <a class="nav-link dropdown-indicator" href="#letter" role="button" data-bs-toggle="collapse"
-                        aria-expanded="false" aria-controls="letter">
-                        <div class="d-flex align-items-center">
-                            <span class="nav-link-icon"><span class="fas fa-headset"></span></span>
-                            <span class="nav-link-text ps-1">Letter and Certificate Engine</span>
-                        </div>
-                    </a>
-                    <ul class="nav collapse" id="letter">
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Letter Templates</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Generate Letters</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Certificates</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Transcripts</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Letter History</span>
                                 </div>
                             </a>
                         </li>

@@ -38,18 +38,10 @@
                     @error('state_code') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-8">
                     <label class="form-label">Type</label>
                     <input type="text" name="type" class="form-control @error('type') is-invalid @enderror" value="{{ old('type', $state->type) }}">
                     @error('type') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
-
-                <div class="col-md-4">
-                    <label class="form-label">Status <span class="text-danger">*</span></label>
-                    <select name="status" class="form-select" required>
-                        <option value="active" {{ old('status', $state->status) == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ old('status', $state->status) == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                    </select>
                 </div>
             </div>
         </div>

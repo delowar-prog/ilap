@@ -224,7 +224,9 @@
             <div class="dropdown-menu dropdown-caret dropdown-caret dropdown-menu-end py-0" aria-labelledby="navbarDropdownUser">
                 <div class="bg-white dark__bg-1000 rounded-2 py-2">
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#!">Set status</a>
+                    <a class="dropdown-item fw-semibold text-primary" href="#" data-bs-toggle="modal" data-bs-target="#signaturePadModal">
+                        <i class="fas fa-pen-fancy me-2"></i> Digital Signature Pad
+                    </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="#">Settings</a>
                     <form method="POST" action="{{ route('logout') }}">

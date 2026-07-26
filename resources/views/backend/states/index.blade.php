@@ -71,12 +71,15 @@
                         <td class="fw-semibold">{{ $state->name }}</td>
                         <td><span class="badge bg-secondary bg-opacity-10 text-secondary">{{ $state->state_code ?? 'N/A' }}</span></td>
                         <td>{{ $state->type ?? 'N/A' }}</td>
-                        <td>
-                            @if($state->status == 'active')
-                                <span class="badge bg-success bg-opacity-10 text-success">Active</span>
-                            @else
-                                <span class="badge bg-danger bg-opacity-10 text-danger">Inactive</span>
-                            @endif
+                        <td class="text-center">
+                            <div class="form-check form-switch d-inline-block m-0">
+                                <input class="form-check-input global-status-toggle" 
+                                       type="checkbox" 
+                                       role="switch" 
+                                       data-url="{{ route('status.toggle', ['modelType' => 'state', 'id' => $state->id]) }}"
+                                       {{ $state->status == 'active' ? 'checked' : '' }} 
+                                       style="cursor: pointer; width: 2.8em; height: 1.4em;">
+                            </div>
                         </td>
                         <td class="text-center">
                             <div class="dropdown">

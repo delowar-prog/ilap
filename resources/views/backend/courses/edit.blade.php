@@ -256,15 +256,6 @@
                     </div>
                 </div>
 
-                <div class="col-md-4">
-                    <label class="form-label">Status <span class="text-danger">*</span></label>
-                    <select name="status" class="form-select" required>
-                        <option value="active" {{ old('status', $course->status) == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ old('status', $course->status) == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                        <option value="archived" {{ old('status', $course->status) == 'archived' ? 'selected' : '' }}>Archived</option>
-                    </select>
-                </div>
-
             </div>
         </div>
 

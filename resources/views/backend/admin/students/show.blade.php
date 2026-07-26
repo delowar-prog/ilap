@@ -125,12 +125,12 @@
                 <a href="{{ route('admin.students.profile.pdf', $student->id) }}" class="btn btn-primary btn-sm rounded-pill shadow-sm px-3">
                     <i class="fas fa-file-pdf me-1"></i> Profile PDF
                 </a>
-                <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Generate Letter', text: 'Generate letter option is coming soon!', icon: 'info'})">
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#generateLetterModal">
                     <i class="fas fa-envelope-open-text me-1"></i> Generate Letter
-                </a>
-                <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Invoice', text: 'Invoice/Receipt management option is coming soon!', icon: 'info'})">
-                    <i class="fas fa-file-invoice-dollar me-1"></i> Invoice
-                </a>
+                </button>
+                <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#generateInvoiceModal">
+                    <i class="fas fa-file-invoice-dollar me-1"></i> Generate Invoice
+                </button>
                 <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Chatting', text: 'Chatting option is coming soon!', icon: 'info'})">
                     <i class="fas fa-comments me-1"></i> Chatting
                 </a>
@@ -393,38 +393,476 @@
                 @else
                 <p class="text-muted mb-0">No referees provided.</p>
                 @endif
-            </div>
-
-            <!-- Documents -->
+            <!-- Student Uploaded Documents -->
             <div class="info-section">
-                <div class="info-section-title"><i class="fas fa-folder-open"></i> Uploaded Documents</div>
-                @if($documents->count() > 0)
-                <div class="list-group">
+                <div class="info-section-title"><i class="fas fa-file-upload text-success"></i> Student Uploaded Documents</div>
+                @if(isset($documents) && $documents->count() > 0)
+                <div class="row g-2">
                     @foreach($documents as $doc)
-                    <div class="list-group-item d-flex justify-content-between align-items-center p-3">
-                        <div>
-                            <i class="fas fa-file-pdf text-danger me-2 fs-2 align-middle"></i>
-                            <strong>{{ $doc->document_type }}</strong>
-                            <div class="text-muted small mt-1">Uploaded: {{ $doc->created_at->format('d M Y H:i') }}</div>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-info" title="View Document">
-                                <i class="fas fa-eye"></i> View
-                            </a>
-                            <a href="{{ Storage::url($doc->file_path) }}" class="btn btn-sm btn-outline-primary" download title="Download Document">
-                                <i class="fas fa-download"></i> Download
-                            </a>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center justify-content-between p-3 bg-white rounded border shadow-sm h-100">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fas fa-file-pdf text-danger fs-4"></i>
+                                <div>
+                                    <div class="fw-bold text-dark small">{{ $doc->document_type }}</div>
+                                    @if($doc->title)
+                                        <div class="text-muted small" style="font-size: 11px;">{{ $doc->title }}</div>
+                                    @endif
+                                    <div class="text-muted" style="font-size: 10px;">Uploaded: {{ $doc->created_at->format('d M, Y') }}</div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill px-3">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </a>
+                                <a href="{{ Storage::url($doc->file_path) }}" download class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                    <i class="fas fa-download me-1"></i> Download
+                                </a>
+                            </div>
                         </div>
                     </div>
                     @endforeach
                 </div>
                 @else
-                <p class="text-muted mb-0">No documents uploaded.</p>
+                <p class="text-muted mb-0">No documents uploaded by the student yet.</p>
+                @endif
+            </div>
+
+            <!-- Generated Letters History Section -->
+            <div class="info-section">
+                <div class="info-section-title d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-history text-primary me-2"></i> Generated Letters History</span>
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#generateLetterModal">
+                        <i class="fas fa-plus me-1"></i> Generate New Letter
+                    </button>
+                </div>
+                @if(isset($letterHistory) && $letterHistory->count() > 0)
+                <div class="table-responsive mt-2">
+                    <table class="table table-hover table-striped align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Letter Title</th>
+                                <th>Type</th>
+                                <th>Generated By</th>
+                                <th>Date & Time</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($letterHistory as $idx => $item)
+                            <tr>
+                                <td>{{ $idx + 1 }}</td>
+                                <td><strong>{{ $item->letter_title }}</strong></td>
+                                <td><span class="badge bg-secondary text-uppercase">{{ $item->file_type }}</span></td>
+                                <td>{{ $item->generator->name ?? 'System Admin' }}</td>
+                                <td>{{ $item->created_at->format('d M, Y h:i A') }}</td>
+                                <td class="text-center">
+                                    @if($item->sent_to_student)
+                                        <span class="badge bg-success rounded-pill"><i class="fas fa-check me-1"></i> Sent</span>
+                                        <div class="text-muted" style="font-size:10px;">{{ $item->sent_at?->format('d M, Y') }}</div>
+                                    @else
+                                        <span class="badge bg-light text-secondary border">Not Sent</span>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ route('admin.students.letters.preview', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-info" title="Preview Letter">
+                                        <i class="fas fa-eye me-1"></i> Preview
+                                    </a>
+                                    <a href="{{ route('admin.students.letters.download', $item->id) }}" class="btn btn-sm btn-outline-success" title="Download Letter">
+                                        <i class="fas fa-download me-1"></i> Download
+                                    </a>
+                                    @if(!$item->sent_to_student)
+                                    <form action="{{ route('admin.students.letters.send', $item->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="btn btn-sm btn-success" title="Send to Student">
+                                            <i class="fas fa-paper-plane me-1"></i> Send
+                                        </button>
+                                    </form>
+                                    @endif
+                                    <form action="{{ route('admin.students.letters.delete', $item->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger delete-btn-confirm" data-text="You want to delete this generated letter history!" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <p class="text-muted mb-0 py-2">No letters generated yet for this student.</p>
+                @endif
+            </div>
+
+            <!-- Generated Invoices History Section -->
+            <div class="info-section mt-4">
+                <div class="info-section-title d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-history text-success me-2"></i> Generated Invoices History</span>
+                    <button type="button" class="btn btn-sm btn-success rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#generateInvoiceModal">
+                        <i class="fas fa-plus me-1"></i> Generate New Invoice
+                    </button>
+                </div>
+                @if(isset($invoiceHistory) && $invoiceHistory->count() > 0)
+                <div class="table-responsive mt-2">
+                    <table class="table table-hover table-striped align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Invoice Title</th>
+                                <th>Type</th>
+                                <th>Generated By</th>
+                                <th>Date & Time</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($invoiceHistory as $idx => $item)
+                            <tr>
+                                <td>{{ $idx + 1 }}</td>
+                                <td><strong>{{ $item->invoice_title }}</strong></td>
+                                <td><span class="badge bg-secondary text-uppercase">{{ $item->file_type }}</span></td>
+                                <td>{{ $item->generator->name ?? 'System Admin' }}</td>
+                                <td>{{ $item->created_at->format('d M, Y h:i A') }}</td>
+                                <td class="text-center">
+                                    @if($item->sent_to_student)
+                                        <span class="badge bg-success rounded-pill"><i class="fas fa-check me-1"></i> Sent</span>
+                                        <div class="text-muted" style="font-size:10px;">{{ $item->sent_at?->format('d M, Y') }}</div>
+                                    @else
+                                        <span class="badge bg-light text-secondary border">Not Sent</span>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    <a href="{{ route('admin.students.invoices.preview', $item->id) }}" target="_blank" class="btn btn-sm btn-outline-info" title="Preview Invoice">
+                                        <i class="fas fa-eye me-1"></i> Preview
+                                    </a>
+                                    <a href="{{ route('admin.students.invoices.download', $item->id) }}" class="btn btn-sm btn-outline-success" title="Download Invoice">
+                                        <i class="fas fa-download me-1"></i> Download
+                                    </a>
+                                    @if(!$item->sent_to_student)
+                                    <form action="{{ route('admin.students.invoices.send', $item->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="btn btn-sm btn-success" title="Send to Student">
+                                            <i class="fas fa-paper-plane me-1"></i> Send
+                                        </button>
+                                    </form>
+                                    @endif
+                                    <form action="{{ route('admin.students.invoices.delete', $item->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger delete-btn-confirm" data-text="You want to delete this generated invoice history!" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @else
+                <p class="text-muted mb-0 py-2">No invoices generated yet for this student.</p>
                 @endif
             </div>
 
         </div>
     </div>
 </div>
+
+<!-- ==================== Generate Letter Modal ==================== -->
+<div class="modal fade" id="generateLetterModal" tabindex="-1" aria-labelledby="generateLetterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form action="{{ route('admin.students.letters.generate', $student->id) }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="letter_action" id="letter_action_input" value="download">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fw-bold text-white" id="generateLetterModalLabel">
+                <i class="fas fa-envelope-open-text me-2"></i> Generate Letter for {{ $student->first_name }} {{ $student->surname }}
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body p-4">
+             <!-- Mode Switch -->
+             <div class="card bg-light border-0 mb-4 p-3">
+                 <label class="form-label fw-bold me-3">Choose Generation Method:</label>
+                 <div class="d-flex gap-4">
+                     <div class="form-check">
+                         <input class="form-check-input" type="radio" name="generation_type" id="gen_type_template" value="template" checked onclick="toggleGenMode('template')">
+                         <label class="form-check-label fw-semibold" for="gen_type_template">
+                            <i class="fas fa-list-alt text-primary me-1"></i> Select Built-in Template
+                         </label>
+                     </div>
+                     <div class="form-check">
+                         <input class="form-check-input" type="radio" name="generation_type" id="gen_type_file" value="file_upload" onclick="toggleGenMode('file')">
+                         <label class="form-check-label fw-semibold" for="gen_type_file">
+                            <i class="fas fa-cloud-upload-alt text-success me-1"></i> Upload File (DOCX / PDF / Image)
+                         </label>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- Template Block -->
+             <div id="block_template">
+                 <div class="mb-3">
+                     <label class="form-label fw-bold">Select Template <span class="text-danger">*</span></label>
+                     <select name="letter_template_id" id="modal_template_id" class="form-select form-select-lg" onchange="fetchTemplatePreview(this.value)">
+                         <option value="">-- Choose a Letter Template --</option>
+                         @if(isset($letterTemplates))
+                             @foreach($letterTemplates as $tpl)
+                                 <option value="{{ $tpl->id }}">{{ $tpl->title }} ({{ strtoupper($tpl->type) }})</option>
+                             @endforeach
+                         @endif
+                     </select>
+                 </div>
+
+                 <!-- Live Preview Box -->
+                 <div id="preview_container" class="d-none">
+                     <div class="d-flex justify-content-between align-items-center mb-2">
+                         <label class="form-label fw-bold text-success mb-0"><i class="fas fa-eye me-1"></i> Live Preview (Editable before generating):</label>
+                         <span class="badge bg-success bg-opacity-10 text-success small">Auto-filled with student data</span>
+                     </div>
+                     <div class="border rounded shadow-sm bg-white">
+                         <textarea name="custom_content" id="modal_custom_content" class="form-control"></textarea>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- File Upload Block -->
+             <div id="block_file" class="d-none">
+                 <div class="mb-3">
+                     <label class="form-label fw-bold">Upload Custom Letter File (.docx, .pdf, .jpg, .png)</label>
+                     <input type="file" name="uploaded_file" class="form-control form-control-lg" accept=".docx,.pdf,.jpg,.jpeg,.png">
+                     <div class="form-text mt-2">
+                        <i class="fas fa-info-circle text-info"></i> For <strong>Microsoft Word (.docx)</strong> templates, include placeholders such as <code>${student_name}</code>, <code>${passport_number}</code>, <code>${today_date}</code> inside your doc file to auto-populate student data.
+                     </div>
+                 </div>
+             </div>
+
+          </div>
+
+          <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                <i class="fas fa-times me-1"></i> Close
+            </button>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-outline-primary rounded-pill px-4" onclick="document.getElementById('letter_action_input').value='download'">
+                    <i class="fas fa-file-download me-1"></i> Download PDF
+                </button>
+                <button type="submit" class="btn btn-success rounded-pill px-4" onclick="document.getElementById('letter_action_input').value='send'">
+                    <i class="fas fa-paper-plane me-1"></i> Send to Student
+                </button>
+            </div>
+          </div>
+        </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==================== Generate Invoice Modal ==================== -->
+<div class="modal fade" id="generateInvoiceModal" tabindex="-1" aria-labelledby="generateInvoiceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <form action="{{ route('admin.students.invoices.generate', $student->id) }}" method="POST" enctype="multipart/form-data">
+        @csrf
+        <input type="hidden" name="invoice_action" id="invoice_action_input" value="download">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title fw-bold text-white" id="generateInvoiceModalLabel">
+                <i class="fas fa-file-invoice-dollar me-2"></i> Generate Invoice for {{ $student->first_name }} {{ $student->surname }}
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+
+          <div class="modal-body p-4">
+             <!-- Mode Switch -->
+             <div class="card bg-light border-0 mb-4 p-3">
+                 <label class="form-label fw-bold me-3">Choose Generation Method:</label>
+                 <div class="d-flex gap-4">
+                     <div class="form-check">
+                         <input class="form-check-input" type="radio" name="generation_type" id="inv_gen_type_template" value="template" checked onclick="toggleInvGenMode('template')">
+                         <label class="form-check-label fw-semibold" for="inv_gen_type_template">
+                            <i class="fas fa-list-alt text-success me-1"></i> Select Built-in Template
+                         </label>
+                     </div>
+                     <div class="form-check">
+                         <input class="form-check-input" type="radio" name="generation_type" id="inv_gen_type_file" value="file_upload" onclick="toggleInvGenMode('file')">
+                         <label class="form-check-label fw-semibold" for="inv_gen_type_file">
+                            <i class="fas fa-cloud-upload-alt text-primary me-1"></i> Upload File (DOCX / PDF / Image)
+                         </label>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- Template Block -->
+             <div id="inv_block_template">
+                 <div class="mb-3">
+                     <label class="form-label fw-bold">Select Template <span class="text-danger">*</span></label>
+                     <select name="invoice_template_id" id="modal_invoice_template_id" class="form-select form-select-lg" onchange="fetchInvoiceTemplatePreview(this.value)">
+                          <option value="">-- Choose an Invoice Template --</option>
+                          @if(isset($invoiceTemplates))
+                              @foreach($invoiceTemplates as $tpl)
+                                  <option value="{{ $tpl->id }}">{{ $tpl->title }} ({{ strtoupper($tpl->type) }})</option>
+                              @endforeach
+                          @endif
+                     </select>
+                 </div>
+
+                 <!-- Live Preview Box -->
+                 <div id="inv_preview_container" class="d-none">
+                     <div class="d-flex justify-content-between align-items-center mb-2">
+                          <label class="form-label fw-bold text-success mb-0"><i class="fas fa-eye me-1"></i> Live Preview (Editable before generating):</label>
+                          <span class="badge bg-success bg-opacity-10 text-success small">Auto-filled with student data</span>
+                     </div>
+                     <div class="border rounded shadow-sm bg-white">
+                          <textarea name="custom_content" id="modal_invoice_custom_content" class="form-control"></textarea>
+                     </div>
+                 </div>
+             </div>
+
+             <!-- File Upload Block -->
+             <div id="inv_block_file" class="d-none">
+                 <div class="mb-3">
+                     <label class="form-label fw-bold">Upload Custom Invoice File (.docx, .pdf, .jpg, .png)</label>
+                     <input type="file" name="uploaded_file" class="form-control form-control-lg" accept=".docx,.pdf,.jpg,.jpeg,.png">
+                     <div class="form-text mt-2">
+                        <i class="fas fa-info-circle text-info"></i> For <strong>Microsoft Word (.docx)</strong> templates, include placeholders such as <code>${student_name}</code>, <code>${passport_number}</code>, <code>${today_date}</code> inside your doc file to auto-populate student data.
+                     </div>
+                 </div>
+             </div>
+
+          </div>
+
+          <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                <i class="fas fa-times me-1"></i> Close
+            </button>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-outline-success rounded-pill px-4" onclick="document.getElementById('invoice_action_input').value='download'">
+                    <i class="fas fa-file-download me-1"></i> Download PDF
+                </button>
+                <button type="submit" class="btn btn-success rounded-pill px-4" onclick="document.getElementById('invoice_action_input').value='send'">
+                    <i class="fas fa-paper-plane me-1"></i> Send to Student
+                </button>
+            </div>
+          </div>
+        </div>
+    </form>
+  </div>
+</div>
+
+@push('css')
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+@endpush
+
+<script>
+function toggleGenMode(mode) {
+    if (mode === 'template') {
+        document.getElementById('block_template').classList.remove('d-none');
+        document.getElementById('block_file').classList.add('d-none');
+    } else {
+        document.getElementById('block_template').classList.add('d-none');
+        document.getElementById('block_file').classList.remove('d-none');
+    }
+}
+
+function fetchTemplatePreview(templateId) {
+    if (!templateId) {
+        document.getElementById('preview_container').classList.add('d-none');
+        return;
+    }
+
+    const url = "{{ route('admin.students.letters.preview_modal', $student->id) }}?template_id=" + templateId;
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('preview_container').classList.remove('d-none');
+                // Set content into Summernote editor
+                $('#modal_custom_content').summernote('code', data.content);
+            }
+        })
+        .catch(err => console.error('Error fetching preview:', err));
+}
+
+function toggleInvGenMode(mode) {
+    if (mode === 'template') {
+        document.getElementById('inv_block_template').classList.remove('d-none');
+        document.getElementById('inv_block_file').classList.add('d-none');
+    } else {
+        document.getElementById('inv_block_template').classList.add('d-none');
+        document.getElementById('inv_block_file').classList.remove('d-none');
+    }
+}
+
+function fetchInvoiceTemplatePreview(templateId) {
+    if (!templateId) {
+        document.getElementById('inv_preview_container').classList.add('d-none');
+        return;
+    }
+
+    const url = "{{ route('admin.students.invoices.preview_modal', $student->id) }}?template_id=" + templateId;
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('inv_preview_container').classList.remove('d-none');
+                // Set content into Summernote editor
+                $('#modal_invoice_custom_content').summernote('code', data.content);
+            }
+        })
+        .catch(err => console.error('Error fetching invoice preview:', err));
+}
+</script>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#modal_custom_content').summernote({
+        height: 380,
+        placeholder: 'Template preview will appear here after selecting a template above...',
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['fontsize']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['insert', ['table', 'hr']],
+            ['view', ['codeview']],
+        ]
+    });
+
+    $('#modal_invoice_custom_content').summernote({
+        height: 380,
+        placeholder: 'Template preview will appear here after selecting a template above...',
+        toolbar: [
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['fontsize']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['insert', ['table', 'hr']],
+            ['view', ['codeview']],
+        ]
+    });
+
+    // Make sure Summernote content is synced before form submit
+    $('form').on('submit', function() {
+        if ($('#modal_custom_content').length && $('#modal_custom_content').data('summernote')) {
+            $('#modal_custom_content').val($('#modal_custom_content').summernote('code'));
+        }
+        if ($('#modal_invoice_custom_content').length && $('#modal_invoice_custom_content').data('summernote')) {
+            $('#modal_invoice_custom_content').val($('#modal_invoice_custom_content').summernote('code'));
+        }
+    });
+});
+</script>
+@endpush
 
 @endsection

@@ -83,6 +83,15 @@ class DropdownOptionController extends Controller
     public function toggle(DropdownOption $dropdownOption)
     {
         $dropdownOption->update(['is_active' => !$dropdownOption->is_active]);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'success'   => true,
+                'is_active' => (bool) $dropdownOption->is_active,
+                'message'   => 'Status updated successfully.'
+            ]);
+        }
+
         $state = $dropdownOption->is_active ? 'enabled' : 'disabled';
         return back()->with('success', "Option \"{$dropdownOption->label}\" has been {$state}.");
     }

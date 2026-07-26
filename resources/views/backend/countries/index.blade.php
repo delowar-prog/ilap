@@ -67,12 +67,15 @@
                         <td>{{ $country->phone_code ?? 'N/A' }}</td>
                         <td>{{ $country->currency }} {{ $country->currency_symbol }}</td>
                         <td>{{ $country->capital ?? 'N/A' }}</td>
-                        <td>
-                            @if($country->status == 'active')
-                                <span class="badge bg-success bg-opacity-10 text-success">Active</span>
-                            @else
-                                <span class="badge bg-danger bg-opacity-10 text-danger">Inactive</span>
-                            @endif
+                        <td class="text-center">
+                            <div class="form-check form-switch d-inline-block m-0">
+                                <input class="form-check-input global-status-toggle" 
+                                       type="checkbox" 
+                                       role="switch" 
+                                       data-url="{{ route('status.toggle', ['modelType' => 'country', 'id' => $country->id]) }}"
+                                       {{ $country->status == 'active' ? 'checked' : '' }} 
+                                       style="cursor: pointer; width: 2.8em; height: 1.4em;">
+                            </div>
                         </td>
                         <td class="text-center">
                             <div class="dropdown">

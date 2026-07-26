@@ -96,6 +96,11 @@ class Student extends Model
         return $this->hasMany(StudentDocument::class);
     }
 
+    public function generatedInvoices()
+    {
+        return $this->hasMany(GeneratedInvoice::class);
+    }
+
     public function getCompletionPercentage()
     {
         $completionPercent = 0;

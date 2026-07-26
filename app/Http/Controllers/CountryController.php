@@ -35,8 +35,9 @@ class CountryController extends Controller
             'currency' => 'nullable|string|max:10',
             'currency_symbol' => 'nullable|string|max:10',
             'capital' => 'nullable|string|max:100',
-            'status' => 'required|in:active,inactive',
+            'status' => 'nullable|in:active,inactive',
         ]);
+        $validated['status'] = $validated['status'] ?? 'active';
 
         Country::create($validated);
 
@@ -62,7 +63,7 @@ class CountryController extends Controller
             'currency' => 'nullable|string|max:10',
             'currency_symbol' => 'nullable|string|max:10',
             'capital' => 'nullable|string|max:100',
-            'status' => 'required|in:active,inactive',
+            'status' => 'nullable|in:active,inactive',
         ]);
 
         $country->update($validated);

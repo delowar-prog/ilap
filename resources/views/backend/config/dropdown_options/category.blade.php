@@ -66,23 +66,18 @@
                                     </form>
                                 </td>
                                 <td class="text-center">
-                                    @if($opt->is_active)
-                                        <span class="badge bg-success">Active</span>
-                                    @else
-                                        <span class="badge bg-secondary">Inactive</span>
-                                    @endif
+                                    <div class="form-check form-switch d-inline-block m-0">
+                                        <input class="form-check-input option-status-toggle" 
+                                               type="checkbox" 
+                                               role="switch" 
+                                               data-id="{{ $opt->id }}" 
+                                               data-url="{{ route('admin.config.dropdown.toggle', $opt->id) }}"
+                                               {{ $opt->is_active ? 'checked' : '' }} 
+                                               style="cursor: pointer; width: 2.6em; height: 1.3em;">
+                                    </div>
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex gap-1 justify-content-center">
-                                        {{-- Toggle active --}}
-                                        <form action="{{ route('admin.config.dropdown.toggle', $opt->id) }}" method="POST" class="d-inline">
-                                            @csrf @method('PATCH')
-                                            <button type="submit" class="btn btn-sm {{ $opt->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}"
-                                                    data-bs-toggle="tooltip"
-                                                    title="{{ $opt->is_active ? 'Disable' : 'Enable' }}">
-                                                <i class="fas {{ $opt->is_active ? 'fa-eye-slash' : 'fa-eye' }}"></i>
-                                            </button>
-                                        </form>
                                         {{-- Delete --}}
                                         <form action="{{ route('admin.config.dropdown.destroy', $opt->id) }}" method="POST" class="d-inline">
                                             @csrf @method('DELETE')
@@ -103,38 +98,27 @@
         </div>
     </div>
 
-    {{-- RIGHT: Add New Option --}}
+    {{-- RIGHT: Add New Form --}}
     <div class="col-md-4">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3">
                 <h6 class="mb-0 fw-semibold"><i class="fas fa-plus-circle me-2 text-success"></i>Add New Option</h6>
             </div>
             <div class="card-body">
-                @if($errors->any())
-                    <div class="alert alert-danger py-2 mb-3">
-                        @foreach($errors->all() as $e)
-                            <div class="small">{{ $e }}</div>
-                        @endforeach
-                    </div>
-                @endif
                 <form action="{{ route('admin.config.dropdown.store', $category) }}" method="POST">
                     @csrf
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Option Label <span class="text-danger">*</span></label>
-                        <input type="text" name="label" class="form-control" value="{{ old('label') }}"
-                               placeholder="e.g. United Kingdom (UK)" required autofocus>
-                        <small class="text-muted">This is exactly what will show in the dropdown.</small>
+                        <label class="form-label text-muted small fw-bold">LABEL / NAME</label>
+                        <input type="text" name="label" class="form-control @error('label') is-invalid @enderror"
+                               placeholder="e.g. Higher Secondary" value="{{ old('label') }}" required>
+                        @error('label')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
-                    <button type="submit" class="btn btn-success w-100">
+                    <button type="submit" class="btn btn-primary w-100 fw-semibold">
                         <i class="fas fa-plus me-1"></i> Add Option
                     </button>
                 </form>
-
-                <hr>
-
-                <a href="{{ route('admin.config.dropdown.index') }}" class="btn btn-outline-secondary w-100">
-                    <i class="fas fa-arrow-left me-1"></i> Back to All Categories
-                </a>
             </div>
         </div>
 
@@ -175,6 +159,62 @@
             }
         });
     }
+
+    // AJAX Toggle Switch
+    $(document).on('change', '.option-status-toggle', function() {
+        const switchEl = $(this);
+        const url = switchEl.data('url');
+        const isChecked = switchEl.is(':checked');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                _token: $('meta[name="csrf-token"]').attr('content'),
+                _method: 'PATCH'
+            },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                const tr = switchEl.closest('tr');
+                if (isChecked) {
+                    tr.removeClass('table-secondary opacity-75');
+                } else {
+                    tr.addClass('table-secondary opacity-75');
+                }
+
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('Status updated successfully');
+                } else if (typeof Swal !== 'undefined') {
+                    const Toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Status updated successfully'
+                    });
+                }
+            },
+            error: function() {
+                switchEl.prop('checked', !isChecked);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to update status. Please try again.'
+                    });
+                } else {
+                    alert('Failed to update status.');
+                }
+            }
+        });
+    });
+
     // Init tooltips
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
         new bootstrap.Tooltip(el);

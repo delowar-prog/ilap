@@ -116,14 +116,15 @@
 
                             <td>{{ $user->phone ?? 'N/A' }}</td>
 
-                            <td class="">
-                                @if ($user->status == 1 || $user->status == 'active')
-                                    <span class="badge bg-success bg-opacity-10 text-success"
-                                        style="font-size: 0.75rem;">Active</span>
-                                @else
-                                    <span class="badge bg-danger bg-opacity-10 text-danger"
-                                        style="font-size: 0.75rem;">Inactive</span>
-                                @endif
+                            <td class="text-center">
+                                <div class="form-check form-switch d-inline-block m-0">
+                                    <input class="form-check-input global-status-toggle" 
+                                           type="checkbox" 
+                                           role="switch" 
+                                           data-url="{{ route('status.toggle', ['modelType' => 'user', 'id' => $user->id]) }}"
+                                           {{ ($user->status == 1 || $user->status == 'active') ? 'checked' : '' }} 
+                                           style="cursor: pointer; width: 2.8em; height: 1.4em;">
+                                </div>
                             </td>
 
                             <td class="text-start">

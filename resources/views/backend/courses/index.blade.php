@@ -135,10 +135,15 @@
                                 <span class="text-muted">N/A</span>
                             @endif
                         </td>
-                        <td>
-                            <span class="badge bg-{{ $course->status === 'active' ? 'success' : ($course->status === 'archived' ? 'secondary' : 'danger') }}">
-                                {{ ucfirst($course->status) }}
-                            </span>
+                        <td class="text-center">
+                            <div class="form-check form-switch d-inline-block m-0">
+                                <input class="form-check-input global-status-toggle" 
+                                       type="checkbox" 
+                                       role="switch" 
+                                       data-url="{{ route('status.toggle', ['modelType' => 'course', 'id' => $course->id]) }}"
+                                       {{ $course->status == 'active' ? 'checked' : '' }} 
+                                       style="cursor: pointer; width: 2.8em; height: 1.4em;">
+                            </div>
                         </td>
                         @if(!auth()->user()->hasRole(['Student', 'student']))
                         <td class="text-center">

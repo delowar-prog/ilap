@@ -1026,17 +1026,82 @@
 
               <div class="mt-4">
                 <button type="button" class="btn btn-outline-secondary" onclick="switchTab(5)"><i class="fas fa-arrow-left me-1"></i> Back</button>
-                <button type="button" class="btn btn-primary ms-2" onclick="switchTab(7)">Next <i class="fas fa-arrow-right ms-1"></i></button>
+                <button type="button" class="btn btn-success ms-2" onclick="validateAndSubmitProfile()"><i class="fas fa-check-circle me-1"></i> Finish & Submit</button>
               </div>
             </div>
 
             <!-- ═══════════ TAB 7: Download Documents (Admin Uploaded) ═══════════ -->
             <div class="tab-section d-none" id="tab-7">
               <div class="section-title"><i class="fas fa-download text-primary"></i> Download Documents</div>
-              <p class="text-muted fs--1 mb-3">Documents uploaded by the administration for you.</p>
+              <p class="text-muted fs--1 mb-3">Official letters, invoices and documents sent to you by the administration.</p>
 
-              <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Admin Documents</h6>
+              <!-- Section 1: Official Letters & Certificates -->
+              <h6 class="fw-bold mb-3" style="color: #2c3e7a;"><i class="fas fa-envelope-open-text me-2 text-primary"></i>Official Letters & Certificates</h6>
+              <div id="student-letters-list" class="mb-4">
+                @forelse($studentLetters as $letter)
+                  <div class="d-flex align-items-center justify-content-between p-3 mb-2 bg-white rounded-3 border shadow-sm">
+                    <div class="d-flex align-items-center gap-3">
+                      @if($letter->file_type === 'pdf')
+                        <i class="fas fa-file-pdf text-danger fs-5"></i>
+                      @else
+                        <i class="fas fa-file-alt text-info fs-5"></i>
+                      @endif
+                      <div>
+                        <div class="fw-600 fs--1">{{ $letter->letter_title }}</div>
+                        <div class="text-500 fs--2">Sent: {{ $letter->sent_at?->format('d M Y') ?? $letter->created_at->format('d M Y') }}</div>
+                      </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                      @if($letter->file_type === 'pdf')
+                        <a href="{{ route('student.letters.preview', $letter->id) }}" target="_blank" class="btn btn-xs btn-outline-info rounded-pill px-3">
+                          <i class="fas fa-eye me-1"></i> Preview
+                        </a>
+                      @endif
+                      <a href="{{ route('student.letters.download', $letter->id) }}" class="btn btn-xs btn-primary rounded-pill px-3" download>
+                        <i class="fas fa-download me-1"></i> Download
+                      </a>
+                    </div>
+                  </div>
+                @empty
+                  <div class="text-center text-muted py-3 bg-light rounded-3 border"><i class="fas fa-inbox fs-4 mb-2 d-block"></i>No letters or certificates sent yet.</div>
+                @endforelse
+              </div>
+
+              <!-- Section 1.5: Official Invoices -->
+              <h6 class="fw-bold mb-3 mt-4" style="color: #2c3e7a;"><i class="fas fa-file-invoice-dollar me-2 text-success"></i>Official Invoices</h6>
+              <div id="student-invoices-list" class="mb-4">
+                @forelse($studentInvoices as $invoice)
+                  <div class="d-flex align-items-center justify-content-between p-3 mb-2 bg-white rounded-3 border shadow-sm">
+                    <div class="d-flex align-items-center gap-3">
+                      @if($invoice->file_type === 'pdf')
+                        <i class="fas fa-file-pdf text-danger fs-5"></i>
+                      @else
+                        <i class="fas fa-file-invoice text-success fs-5"></i>
+                      @endif
+                      <div>
+                        <div class="fw-600 fs--1">{{ $invoice->invoice_title }}</div>
+                        <div class="text-500 fs--2">Sent: {{ $invoice->sent_at?->format('d M Y') ?? $invoice->created_at->format('d M Y') }}</div>
+                      </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                      @if($invoice->file_type === 'pdf')
+                        <a href="{{ route('student.invoices.preview', $invoice->id) }}" target="_blank" class="btn btn-xs btn-outline-info rounded-pill px-3">
+                          <i class="fas fa-eye me-1"></i> Preview
+                        </a>
+                      @endif
+                      <a href="{{ route('student.invoices.download', $invoice->id) }}" class="btn btn-xs btn-primary rounded-pill px-3" download>
+                        <i class="fas fa-download me-1"></i> Download
+                      </a>
+                    </div>
+                  </div>
+                @empty
+                  <div class="text-center text-muted py-3 bg-light rounded-3 border"><i class="fas fa-inbox fs-4 mb-2 d-block"></i>No invoices sent yet.</div>
+                @endforelse
+              </div>
+
+              <!-- Section 2: Other Admin Documents -->
+              <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+                <h6 class="mb-0 fw-bold" style="color: #2c3e7a;"><i class="fas fa-folder-open me-2 text-success"></i>Admin Uploaded Files</h6>
                 <form action="{{ route('student.profile.edit') }}" method="GET" class="d-flex" style="max-width: 300px;">
                   <input type="hidden" name="tab" value="7">
                   <input type="text" name="admin_doc_search" class="form-control form-control-sm me-2" placeholder="Search..." value="{{ request('admin_doc_search') }}">
@@ -1049,7 +1114,7 @@
 
               <div id="admin-docs-list">
                 @forelse($adminDocuments as $doc)
-                  <div class="d-flex align-items-center justify-content-between p-3 mb-2 bg-white rounded-3 border">
+                  <div class="d-flex align-items-center justify-content-between p-3 mb-2 bg-white rounded-3 border shadow-sm">
                     <div class="d-flex align-items-center gap-3">
                       <i class="fas fa-file-alt text-success fs-5"></i>
                       <div>
@@ -1060,7 +1125,7 @@
                     <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill" download><i class="fas fa-download me-1"></i> Download</a>
                   </div>
                 @empty
-                  <div class="text-center text-muted py-4"><i class="fas fa-inbox fs-3 mb-2 d-block"></i>No documents from admin yet.</div>
+                  <div class="text-center text-muted py-3 bg-light rounded-3 border"><i class="fas fa-inbox fs-4 mb-2 d-block"></i>No files from admin yet.</div>
                 @endforelse
               </div>
 
@@ -1068,10 +1133,6 @@
                 {{ $adminDocuments->appends(request()->query())->fragment('tab-7')->links('pagination::bootstrap-5') }}
               </div>
 
-              <div class="mt-4">
-                <button type="button" class="btn btn-outline-secondary" onclick="switchTab(6)"><i class="fas fa-arrow-left me-1"></i> Back</button>
-                <button type="button" class="btn btn-success ms-2" onclick="validateAndSubmitProfile()"><i class="fas fa-check-circle me-1"></i> Finish & Submit</button>
-              </div>
             </div>
 
           </div><!-- /p-4 -->

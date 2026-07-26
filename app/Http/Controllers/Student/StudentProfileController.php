@@ -137,6 +137,20 @@ class StudentProfileController extends Controller
         }
         $adminDocuments = $adminDocQuery->latest()->paginate(5, ['*'], 'admin_page')->withQueryString();
 
+        // Retrieve generated letters sent to this student
+        $studentLetters = \App\Models\GeneratedLetter::where('student_id', $student->id)
+            ->where('sent_to_student', true)
+            ->with('generator')
+            ->latest('sent_at')
+            ->get();
+
+        // Retrieve generated invoices sent to this student
+        $studentInvoices = \App\Models\GeneratedInvoice::where('student_id', $student->id)
+            ->where('sent_to_student', true)
+            ->with('generator')
+            ->latest('sent_at')
+            ->get();
+
         // Calculate Completion Percentage
         $completionPercent = $student->getCompletionPercentage();
 
@@ -168,6 +182,8 @@ class StudentProfileController extends Controller
             'referees',
             'documents',
             'adminDocuments',
+            'studentLetters',
+            'studentInvoices',
             'institutes',
             'courses',
             'completionPercent',

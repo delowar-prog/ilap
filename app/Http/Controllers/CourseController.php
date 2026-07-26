@@ -163,7 +163,7 @@ class CourseController extends Controller
             'is_available_for_admission' => 'nullable|boolean',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'brochure' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
-            'status' => 'required|in:active,inactive,archived',
+            'status' => 'nullable|in:active,inactive,archived',
             'sort_order' => 'nullable|integer',
         ];
 

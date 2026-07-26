@@ -65,6 +65,12 @@ class StudentController extends Controller
         // Calculate Completion Percentage
         $completionPercent = $student->getCompletionPercentage();
 
+        $letterTemplates = \App\Models\LetterTemplate::where('status', 1)->get();
+        $letterHistory = \App\Models\GeneratedLetter::where('student_id', $student->id)->with('generator')->latest()->get();
+
+        $invoiceTemplates = \App\Models\InvoiceTemplate::where('status', 1)->get();
+        $invoiceHistory = \App\Models\GeneratedInvoice::where('student_id', $student->id)->with('generator')->latest()->get();
+
         return view('backend.admin.students.show', compact(
             'student',
             'preAssessment',
@@ -72,7 +78,11 @@ class StudentController extends Controller
             'englishTests',
             'referees',
             'documents',
-            'completionPercent'
+            'completionPercent',
+            'letterTemplates',
+            'letterHistory',
+            'invoiceTemplates',
+            'invoiceHistory'
         ));
     }
 
