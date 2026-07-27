@@ -25,6 +25,7 @@ class DropdownOption extends Model
         'document_type' => 'Document Types',
         'letter_type' => 'Letter Template Types',
         'invoice_type' => 'Invoice Template Types',
+        'campus_type' => 'Campus Types',
     ];
 
     /**

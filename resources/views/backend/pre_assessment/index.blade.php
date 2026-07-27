@@ -89,7 +89,9 @@
                                         return "<a href=\"{$url}\" class=\"text-dark text-decoration-none\">{$label} <small>{$icon}</small></a>";
                                     }
                                 @endphp
-                                <th>{!! paSort('full_name', 'Student Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
+                                <th>{!! paSort('first_name', 'First Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
+                                <th>{!! paSort('middle_name', 'Middle Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
+                                <th>{!! paSort('surname', 'Last Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>Email</th>
                                 <th>{!! paSort('contact_number', 'Phone', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>Study Destination</th>
@@ -103,10 +105,12 @@
                                     <td>
                                         <h5 class="font-14 my-1">
                                             <a href="{{ route('admin.pre.assessments.show', $assessment->id) }}" class="text-body">
-                                                {{ $assessment->full_name ?? $assessment->student->first_name }}
+                                                {{ $assessment->first_name ?? $assessment->student->first_name }}
                                             </a>
                                         </h5>
                                     </td>
+                                    <td>{{ $assessment->middle_name ?? $assessment->student->middle_name ?? '-' }}</td>
+                                    <td>{{ $assessment->surname ?? $assessment->student->surname }}</td>
                                     <td>{{ $assessment->student->email ?? '-' }}</td>
                                     <td>{{ $assessment->contact_number ?? $assessment->student->phone }}</td>
                                     <td>{{ $assessment->study_destination ?? '-' }}</td>

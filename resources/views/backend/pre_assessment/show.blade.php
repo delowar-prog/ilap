@@ -160,7 +160,9 @@
             <div class="info-section">
                 <div class="info-section-title"><i class="fas fa-user-circle"></i> Personal Information</div>
                 <div class="info-grid">
-                    <div class="info-item"><label>Full Name</label><span>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</span></div>
+                    <div class="info-item"><label>First Name</label><span>{{ $student->first_name }}</span></div>
+                    <div class="info-item"><label>Middle Name</label><span>{{ $student->middle_name ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Last Name (Surname)</label><span>{{ $student->surname }}</span></div>
                     <div class="info-item"><label>Preferred Institute</label><span><span class="badge bg-primary">{{ $student->institute ? $student->institute->name : 'N/A' }}</span></span></div>
                     <div class="info-item"><label>Date of Birth</label><span>{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>

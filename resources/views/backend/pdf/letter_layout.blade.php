@@ -154,9 +154,12 @@
                                     @else
                                         <div style="height: 50px;"></div>
                                     @endif
-                                    <div style="border-top: 1.5px solid #003366; width: 170px; margin: 0 auto 3px auto;"></div>
-                                    <div style="font-weight: bold; font-size: 10.5px; color: #003366; line-height: 1.2;">{{ $sig['name'] }}</div>
-                                    <div style="font-size: 9px; color: #666; line-height: 1.2;">{{ $sig['designation'] }}</div>
+                                    
+                                    @if(!isset($sig['type']) || $sig['type'] !== 'seal')
+                                        <div style="border-top: 1.5px solid #003366; width: 170px; margin: 0 auto 3px auto;"></div>
+                                        <div style="font-weight: bold; font-size: 10.5px; color: #003366; line-height: 1.2;">{{ $sig['name'] }}</div>
+                                        <div style="font-size: 9px; color: #666; line-height: 1.2;">{{ $sig['designation'] }}</div>
+                                    @endif
                                 </div>
                             </td>
                         @endforeach

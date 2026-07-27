@@ -14,35 +14,7 @@
 
     <form action="{{ route('campuses.store') }}"
           method="POST"
-          enctype="multipart/form-data"
-          x-data="{
-              name: '',
-              countryIso2: '',
-              campusNumber: {{ $nextCampusNumber }},
-              get campusCode() {
-                  if (!this.name) return 'Will be auto-generated';
-                  let cleanName = this.name.replace(/[^A-Za-z0-9\s]/g, '');
-                  let words = cleanName.trim().split(/\s+/).filter(w => w.length > 0);
-                  let abbr = '';
-                  if (words.length === 0) {
-                      abbr = 'XXX';
-                  } else if (words.length === 1) {
-                      abbr = words[0].substring(0, 3).toUpperCase();
-                  } else if (words.length === 2) {
-                      let w1 = words[0].toUpperCase();
-                      let w2 = words[1].toUpperCase();
-                      abbr = w1.charAt(0) + w2.charAt(0) + w2.charAt(w2.length - 1);
-                  } else {
-                      abbr = (words[0].charAt(0) + words[1].charAt(0) + words[2].charAt(0)).toUpperCase();
-                  }
-                  while (abbr.length < 3) {
-                      abbr += 'X';
-                  }
-                  let iso = this.countryIso2 ? this.countryIso2.toUpperCase() : 'XX';
-                  return iso + abbr + 'C' + this.campusNumber;
-              }
-          }"
-          @country-selected.window="countryIso2 = $event.detail.iso2">
+          enctype="multipart/form-data">
 
         @csrf
 
@@ -62,29 +34,49 @@
                     <hr class="mt-1 mb-0">
                 </div>
 
-                <div class="col-md-6">
+                <div class="col-md-4">
+                    <label class="form-label">Campus Type <span class="text-danger">*</span></label>
+                    <select name="campus_type" class="form-select @error('campus_type') is-invalid @enderror" required>
+                        <option value="">Select Type</option>
+                        @foreach($campusTypes as $type)
+                            <option value="{{ $type }}" {{ old('campus_type') == $type ? 'selected' : '' }}>
+                                {{ $type }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('campus_type') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="col-md-4">
                     <label class="form-label">Campus Name <span class="text-danger">*</span></label>
                     <input type="text"
                            name="name"
                            class="form-control @error('name') is-invalid @enderror"
-                           x-model="name"
                            value="{{ old('name') }}"
                            required>
                     @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Campus Code <span class="text-muted">(Preview)</span></label>
+                <div class="col-md-4">
+                    <label class="form-label">Campus Code <span class="text-danger">*</span></label>
                     <input type="text"
-                           class="form-control"
-                           style="background-color: #e9ecef; font-family: monospace; font-weight: bold; letter-spacing: 0.5px;"
-                           x-bind:value="campusCode"
-                           disabled
-                           readonly>
+                           name="campus_code"
+                           class="form-control @error('campus_code') is-invalid @enderror"
+                           value="{{ old('campus_code') }}"
+                           required>
+                    @error('campus_code') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 {{-- Location Selector (submits hidden country & city fields) --}}
                 <livewire:geo.location-selector />
+
+                <div class="col-md-12">
+                    <label class="form-label">Address</label>
+                    <textarea name="address"
+                              rows="2"
+                              class="form-control @error('address') is-invalid @enderror">{{ old('address') }}</textarea>
+                    @error('address') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
 
                 <div class="col-md-6">
                     <label class="form-label">Campus Phone</label>
@@ -115,20 +107,23 @@
                     @error('logo') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
+
                 <div class="col-md-6">
-                    <label class="form-label">Status</label>
-                    <select name="status" class="form-select">
-                        <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
-                    </select>
+                    <label class="form-label">Website Link</label>
+                    <input type="url"
+                           name="website_link"
+                           class="form-control @error('website_link') is-invalid @enderror"
+                           value="{{ old('website_link') }}"
+                           placeholder="https://example.com">
+                    @error('website_link') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="col-md-12">
-                    <label class="form-label">Address</label>
-                    <textarea name="address"
+                    <label class="form-label">Note</label>
+                    <textarea name="note"
                               rows="2"
-                              class="form-control @error('address') is-invalid @enderror">{{ old('address') }}</textarea>
-                    @error('address') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                              class="form-control @error('note') is-invalid @enderror">{{ old('note') }}</textarea>
+                    @error('note') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 {{-- ─── Campus Head (Admin User) ─────────────────────── --}}

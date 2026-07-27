@@ -22,16 +22,9 @@
                     <input type="text" name="search" class="form-control" placeholder="Search by Name, Designation, or Tag..." value="{{ request('search') }}">
                 </div>
             </div>
-            <div class="col-md-3">
-                <select name="type" class="form-select" onchange="this.form.submit()">
-                    <option value="">-- All Types --</option>
-                    <option value="signature" {{ request('type') == 'signature' ? 'selected' : '' }}>Signatures</option>
-                    <option value="seal" {{ request('type') == 'seal' ? 'selected' : '' }}>Seals & Stamps</option>
-                </select>
-            </div>
             <div class="col-md-4 d-flex gap-2">
                 <button type="submit" class="btn btn-secondary text-white rounded-pill px-3"><i class="fas fa-filter me-1"></i> Filter</button>
-                @if(request()->anyFilled(['search', 'type']))
+                @if(request()->anyFilled(['search']))
                     <a href="{{ route('admin.official-signatures.index') }}" class="btn btn-outline-secondary rounded-pill px-3">Reset</a>
                 @endif
             </div>
@@ -42,11 +35,11 @@
                 <thead class="table-light">
                     <tr>
                         <th width="60" class="text-center">#</th>
-                        <th width="120">Preview</th>
+                        <th width="120">Signature</th>
+                        <th width="120">Seal</th>
                         <th>Signatory Name</th>
                         <th>Designation / Role</th>
                         <th>Tag Key</th>
-                        <th>Type</th>
                         <th class="text-center">Status</th>
                         <th width="120" class="text-center">Actions</th>
                     </tr>
@@ -56,9 +49,22 @@
                         <tr>
                             <td class="text-center fw-bold">{{ $signatures->firstItem() + $loop->index }}</td>
                             <td>
+                                @if($sig->signature_path)
                                 <div class="bg-white border rounded p-1 text-center" style="width: 90px; height: 50px;">
                                     <img src="{{ asset($sig->signature_path) }}" alt="{{ $sig->name }}" class="img-fluid h-100" style="object-fit: contain;">
                                 </div>
+                                @else
+                                <span class="text-muted small">N/A</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($sig->seal_path)
+                                <div class="bg-white border rounded p-1 text-center" style="width: 90px; height: 50px;">
+                                    <img src="{{ asset($sig->seal_path) }}" alt="Seal" class="img-fluid h-100" style="object-fit: contain;">
+                                </div>
+                                @else
+                                <span class="text-muted small">N/A</span>
+                                @endif
                             </td>
                             <td>
                                 <span class="fw-bold text-dark">{{ $sig->name }}</span>
@@ -70,13 +76,6 @@
                                 <code class="bg-light text-primary px-2 py-1 border rounded fw-bold cursor-pointer" onclick="copyToClipboard('{{ $sig->tag }}')" title="Click to copy tag">
                                     {{ $sig->tag }}
                                 </code>
-                            </td>
-                            <td>
-                                @if($sig->type === 'seal')
-                                    <span class="badge bg-info bg-opacity-10 text-info px-2 py-1"><i class="fas fa-stamp me-1"></i> Seal/Stamp</span>
-                                @else
-                                    <span class="badge bg-primary bg-opacity-10 text-primary px-2 py-1"><i class="fas fa-pen-nib me-1"></i> Signature</span>
-                                @endif
                             </td>
                             <td class="text-center">
                                 <div class="form-check form-switch d-inline-block m-0">

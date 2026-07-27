@@ -123,11 +123,14 @@
                             <td>{{ $campus->city }}</td>
 
                             <td class="text-center">
-                                @if ($campus->status == 'active')
-                                    <span class="badge bg-success bg-opacity-10 text-success" style="font-size: 0.75rem;">Active</span>
-                                @else
-                                    <span class="badge bg-danger bg-opacity-10 text-danger" style="font-size: 0.75rem;">Inactive</span>
-                                @endif
+                                <div class="form-check form-switch d-inline-block m-0">
+                                    <input class="form-check-input global-status-toggle" 
+                                           type="checkbox" 
+                                           role="switch" 
+                                           data-url="{{ route('status.toggle', ['modelType' => 'campus', 'id' => $campus->id]) }}"
+                                           {{ ($campus->status == 1 || $campus->status == 'active') ? 'checked' : '' }} 
+                                           style="cursor: pointer; width: 2.8em; height: 1.4em;">
+                                </div>
                             </td>
 
                             <td class="text-center">

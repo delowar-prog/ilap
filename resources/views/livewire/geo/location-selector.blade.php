@@ -2,7 +2,7 @@
     <div class="row g-3">
         {{-- State --}}
         <div class="col-md-4" wire:key="state-col-{{ $selectedCountryName }}-{{ $selectedStateName }}">
-            <label class="form-label">State / Province <span class="text-danger">*</span></label>
+            <label class="form-label">State / Province</label>
             <select id="state-select-{{ $this->getId() }}" 
                     name="{{ $stateFieldName }}" 
                     class="form-select select2-location-select"
@@ -20,7 +20,7 @@
 
         {{-- City --}}
         <div class="col-md-4" wire:key="city-col-{{ $selectedStateName }}-{{ $selectedCityName }}">
-            <label class="form-label">City <span class="text-danger">*</span></label>
+            <label class="form-label">City</label>
             <select id="city-select-{{ $this->getId() }}" 
                     name="{{ $cityFieldName }}" 
                     class="form-select select2-location-select"
@@ -38,7 +38,7 @@
 
         {{-- Country --}}
         <div class="col-md-4" wire:key="country-col-{{ $selectedCountryName }}">
-            <label class="form-label">Country <span class="text-danger">*</span></label>
+            <label class="form-label">Country</label>
             <select id="country-select-{{ $this->getId() }}" 
                     name="{{ $countryFieldName }}" 
                     class="form-select select2-location-select"

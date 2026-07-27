@@ -367,6 +367,13 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.tags.*') ? 'active' : '' }}" href="{{ route('admin.tags.index') }}">
+                                <div class="d-flex align-items-center">
+                                    <span class="nav-link-text ps-1">Tag List</span>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link {{ request()->is('admin/config/dropdown-options/letter_type*') ? 'active' : '' }}" href="{{ route('admin.config.dropdown.category', 'letter_type') }}">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1">Template Types</span>
@@ -377,13 +384,6 @@
                             <a class="nav-link {{ request()->routeIs('admin.official-signatures.*') ? 'active' : '' }}" href="{{ route('admin.official-signatures.index') }}">
                                 <div class="d-flex align-items-center">
                                     <span class="nav-link-text ps-1">Signatures & Seals</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('admin.students.enrolled') ? 'active' : '' }}" href="{{ route('admin.students.enrolled') }}">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">Generate Letters</span>
                                 </div>
                             </a>
                         </li>

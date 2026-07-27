@@ -58,32 +58,51 @@
                         <input type="hidden" name="designation" id="final_designation" value="{{ $currentDesig }}">
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Item Type <span class="text-danger">*</span></label>
-                        <select name="type" class="form-select" required>
-                            <option value="signature" {{ old('type', $signature->type) == 'signature' ? 'selected' : '' }}>Signature (Digital Hand Sign)</option>
-                            <option value="seal" {{ old('type', $signature->type) == 'seal' ? 'selected' : '' }}>Official Seal / Stamp</option>
-                        </select>
-                    </div>
+
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tag Code</label>
-                        <input type="text" class="form-control bg-light text-primary fw-bold" value="{{ $signature->tag }}" readonly>
-                        <small class="text-muted">Use this tag in any letter template body.</small>
+                        <label class="form-label fw-bold">Tag Format <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">&#123;&#123;</span>
+                            @php
+                                $rawTag = str_replace(['{{', '}}'], '', $signature->tag_key);
+                            @endphp
+                            <input type="text" name="tag_key" class="form-control" value="{{ old('tag_key', $rawTag) }}" required>
+                            <span class="input-group-text">&#125;&#125;</span>
+                        </div>
+                        <small class="text-muted">Use this tag in letter templates (Only letters/numbers/underscores).</small>
                     </div>
 
                     <!-- Current Saved Image -->
                     <div class="mb-3 p-3 border rounded bg-light">
-                        <label class="form-label fw-bold text-muted d-block mb-2">Current Saved Signature / Seal Image:</label>
-                        <div class="bg-white p-2 border rounded d-inline-block">
-                            <img src="{{ asset($signature->signature_path) }}" alt="{{ $signature->name }}" style="max-height: 80px;" class="img-fluid">
+                        <label class="form-label fw-bold text-muted d-block mb-2">Current Saved Signature / Seal Image(s):</label>
+                        <div class="d-flex gap-3">
+                            @if($signature->signature_path)
+                            <div class="bg-white p-2 border rounded d-inline-block text-center">
+                                <small class="d-block text-muted mb-1">Signature</small>
+                                <img src="{{ asset($signature->signature_path) }}" alt="{{ $signature->name }}" style="max-height: 80px;" class="img-fluid">
+                            </div>
+                            @endif
+                            @if($signature->seal_path)
+                            <div class="bg-white p-2 border rounded d-inline-block text-center">
+                                <small class="d-block text-muted mb-1">Seal</small>
+                                <img src="{{ asset($signature->seal_path) }}" alt="{{ $signature->name }} Seal" style="max-height: 80px;" class="img-fluid">
+                            </div>
+                            @endif
                         </div>
                     </div>
 
                     <div class="card bg-light border-info mb-3">
                         <div class="card-body p-3">
-                            <h6 class="fw-bold text-info"><i class="fas fa-file-upload me-1"></i> Replace File (Optional)</h6>
+                            <h6 class="fw-bold text-info"><i class="fas fa-file-upload me-1"></i> Replace Signature (Optional)</h6>
                             <input type="file" name="signature_file" id="signature_file_input" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-light border-info mb-3">
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold text-info"><i class="fas fa-stamp me-1"></i> Replace Official Seal (Optional)</h6>
+                            <input type="file" name="seal_file" id="seal_file_input" class="form-control" accept="image/*">
                         </div>
                     </div>
                 </div>

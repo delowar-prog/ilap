@@ -7,6 +7,7 @@ use App\Models\LetterTemplate;
 use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class LetterTemplateController extends Controller
 {
@@ -49,6 +50,44 @@ class LetterTemplateController extends Controller
         return view('backend.letter_templates.index', compact('templates', 'types'));
     }
 
+    private function getStudentFields(): array
+    {
+        return [
+            'Profile Info' => [
+                'full_name' => 'Full Name',
+                'title' => 'Title',
+                'first_name' => 'First Name',
+                'middle_name' => 'Middle Name',
+                'surname' => 'Surname',
+                'student_id' => 'Student ID',
+                'email' => 'Email',
+                'phone' => 'Phone',
+                'dob' => 'Date of Birth',
+                'gender' => 'Gender',
+                'nationality' => 'Nationality',
+                'country_of_birth' => 'Country of Birth',
+                'skype_id' => 'Skype ID',
+            ],
+            'Address Info' => [
+                'permanent_address' => 'Permanent Address',
+                'permanent_city' => 'Permanent City',
+                'permanent_postcode' => 'Permanent Postcode',
+                'permanent_country' => 'Permanent Country',
+                'current_address' => 'Current Address',
+                'current_city' => 'Current City',
+                'current_postcode' => 'Current Postcode',
+                'current_country' => 'Current Country',
+            ],
+            'Passport & Travel Info' => [
+                'name_in_passport' => 'Name in Passport',
+                'passport_number' => 'Passport Number',
+                'passport_issue_date' => 'Passport Issue Date',
+                'passport_expiry_date' => 'Passport Expiry Date',
+                'passport_issue_location' => 'Passport Issue Location',
+            ]
+        ];
+    }
+
     /**
      * Show the form for creating a new letter template.
      */
@@ -56,7 +95,9 @@ class LetterTemplateController extends Controller
     {
         $types = $this->getLetterTypes();
         $officialSignatures = \App\Models\OfficialSignature::where('status', 'active')->get();
-        return view('backend.letter_templates.create', compact('types', 'officialSignatures'));
+        $tags = \App\Models\Tag::all();
+        $studentFields = $this->getStudentFields();
+        return view('backend.letter_templates.create', compact('types', 'officialSignatures', 'tags', 'studentFields'));
     }
 
     /**
@@ -116,7 +157,9 @@ class LetterTemplateController extends Controller
     {
         $types = $this->getLetterTypes();
         $officialSignatures = \App\Models\OfficialSignature::where('status', 'active')->get();
-        return view('backend.letter_templates.edit', compact('letterTemplate', 'types', 'officialSignatures'));
+        $tags = \App\Models\Tag::all();
+        $studentFields = $this->getStudentFields();
+        return view('backend.letter_templates.edit', compact('letterTemplate', 'types', 'officialSignatures', 'tags', 'studentFields'));
     }
 
     /**

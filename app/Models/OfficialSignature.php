@@ -14,7 +14,7 @@ class OfficialSignature extends Model
         'designation',
         'tag_key',
         'signature_path',
-        'type',
+        'seal_path',
         'status',
         'created_by',
     ];

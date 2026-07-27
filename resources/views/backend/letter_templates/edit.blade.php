@@ -103,45 +103,26 @@
                                 </button>
                             </div>
 
-                            <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{student_name}}'; ?>')">
-                                    <code><?php echo '{{student_name}}'; ?></code> - Full Name
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{student_id}}'; ?>')">
-                                    <code><?php echo '{{student_id}}'; ?></code> - Student Code
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{passport_number}}'; ?>')">
-                                    <code><?php echo '{{passport_number}}'; ?></code> - Passport Number
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{email}}'; ?>')">
-                                    <code><?php echo '{{email}}'; ?></code> - Email Address
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{phone}}'; ?>')">
-                                    <code><?php echo '{{phone}}'; ?></code> - Phone Number
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{dob}}'; ?>')">
-                                    <code><?php echo '{{dob}}'; ?></code> - Date of Birth
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{gender}}'; ?>')">
-                                    <code><?php echo '{{gender}}'; ?></code> - Gender
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{nationality}}'; ?>')">
-                                    <code><?php echo '{{nationality}}'; ?></code> - Nationality
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{institute_name}}'; ?>')">
-                                    <code><?php echo '{{institute_name}}'; ?></code> - Institute Name
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{course_name}}'; ?>')">
-                                    <code><?php echo '{{course_name}}'; ?></code> - Applied Course
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{address}}'; ?>')">
-                                    <code><?php echo '{{address}}'; ?></code> - Present Address
-                                </button>
-                                <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{today_date}}'; ?>')">
-                                    <code><?php echo '{{today_date}}'; ?></code> - Current Date
-                                </button>
-
-                                <hr class="my-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge bg-primary bg-opacity-10 text-primary"><i class="fas fa-tags me-1"></i> Data Tags</span>
+                                <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#addTagModal" class="small text-primary text-decoration-none">+ Add New</a>
+                            </div>
+                            <div class="d-grid gap-2" id="dynamicTagsContainer">
+                                @if(isset($tags))
+                                    @foreach($tags as $index => $tagObj)
+                                        <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white tag-btn-item" onclick="insertTag('<?php echo $tagObj->tag; ?>')" data-index="{{ $index }}">
+                                            <code><?php echo $tagObj->tag; ?></code> - {{ $tagObj->name }}
+                                        </button>
+                                    @endforeach
+                                @endif
+                            </div>
+                            <!-- Pagination Controls -->
+                            <div class="d-flex justify-content-between align-items-center mt-2" id="tagPaginationControls" style="display: none;">
+                                <button type="button" class="btn btn-sm btn-light border" id="prevTagPage" onclick="changeTagPage(-1)" disabled><i class="fas fa-chevron-left"></i> Prev</button>
+                                <span id="tagPageInfo" class="small text-muted">Page 1</span>
+                                <button type="button" class="btn btn-sm btn-light border" id="nextTagPage" onclick="changeTagPage(1)"><i class="fas fa-chevron-right"></i> Next</button>
+                            </div>
+                            <hr class="my-2">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <span class="badge bg-primary bg-opacity-10 text-primary"><i class="fas fa-signature me-1"></i> Signatures & Seals</span>
                                     <a href="{{ route('admin.official-signatures.create') }}" target="_blank" class="small text-primary text-decoration-none">+ Add New</a>
@@ -171,6 +152,56 @@
 </div>
 
 @include('components.signature_pad_modal')
+
+<!-- Add Tag Modal -->
+<div class="modal fade" id="addTagModal" tabindex="-1" aria-labelledby="addTagModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addTagForm">
+                @csrf
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="addTagModalLabel"><i class="fas fa-plus-circle me-1"></i> Add New Dynamic Tag</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tag For (Database Field) <span class="text-danger">*</span></label>
+                        <select name="tag_for" id="new_tag_for" class="form-select" required>
+                            <option value="">-- Select Field --</option>
+                            @if(isset($studentFields))
+                                @foreach($studentFields as $group => $fields)
+                                    <optgroup label="{{ $group }}">
+                                        @foreach($fields as $col => $label)
+                                            <option value="{{ $col }}">{{ $label }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tag Name <span class="text-danger">*</span></label>
+                        <input type="text" name="name" id="new_tag_name" class="form-control" placeholder="e.g. Session Name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tag Format <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">@{{</span>
+                            <input type="text" name="tag" id="new_tag_format" class="form-control" placeholder="session_name" required>
+                            <span class="input-group-text">}}</span>
+                        </div>
+                        <small class="text-muted">Only use letters, numbers, and underscores.</small>
+                    </div>
+                    <div id="tagErrorMsg" class="alert alert-danger d-none py-2"></div>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveTagBtn">Save Tag</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @push('css')
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
@@ -213,6 +244,7 @@ function toggleCustomType(val) {
 }
 
 function insertTag(tag) {
+    if(!tag) return;
     if (typeof $ !== 'undefined' && $('#editor').data('summernote')) {
         $('#editor').summernote('editor.insertText', ' ' + tag + ' ');
     } else {
@@ -223,6 +255,96 @@ function insertTag(tag) {
         editor.value = text.substring(0, start) + ' ' + tag + ' ' + text.substring(end);
     }
 }
+
+// Client-side pagination logic for tags
+let currentTagPage = 1;
+const tagsPerPage = 10;
+
+function renderTagPagination() {
+    const $items = $('.tag-btn-item');
+    const totalItems = $items.length;
+    if (totalItems <= tagsPerPage) {
+        $('#tagPaginationControls').hide();
+        $items.show();
+        return;
+    }
+    
+    $('#tagPaginationControls').addClass('d-flex').show();
+    const totalPages = Math.ceil(totalItems / tagsPerPage);
+    
+    if (currentTagPage < 1) currentTagPage = 1;
+    if (currentTagPage > totalPages) currentTagPage = totalPages;
+    
+    $items.hide();
+    const startIndex = (currentTagPage - 1) * tagsPerPage;
+    const endIndex = startIndex + tagsPerPage;
+    $items.slice(startIndex, endIndex).show();
+    
+    $('#tagPageInfo').text(`Page ${currentTagPage} of ${totalPages}`);
+    $('#prevTagPage').prop('disabled', currentTagPage === 1);
+    $('#nextTagPage').prop('disabled', currentTagPage === totalPages);
+}
+
+function changeTagPage(delta) {
+    currentTagPage += delta;
+    renderTagPagination();
+}
+
+$(document).ready(function() {
+    renderTagPagination();
+});
+
+// Handle Add New Tag Form Submission
+$('#addTagForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    let tagName = $('#new_tag_name').val().trim();
+    let tagFormat = $('#new_tag_format').val().trim();
+    let tagFor = $('#new_tag_for').val().trim();
+
+    if (tagName === '' || tagFormat === '' || tagFor === '') {
+        $('#tagErrorMsg').text('Tag For, Tag Name, and Tag Format are required.').removeClass('d-none');
+        return;
+    }
+
+    $('#saveTagBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Saving...');
+    $('#tagErrorMsg').addClass('d-none').text('');
+
+    $.ajax({
+        url: "{{ route('admin.tags.store') }}",
+        type: "POST",
+        data: $(this).serialize(),
+        success: function(response) {
+            if(response.success) {
+                // Add new tag to the list visually
+                const newIndex = $('.tag-btn-item').length;
+                const newTagHtml = `
+                    <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white tag-btn-item" onclick="insertTag('${response.tag.tag}')" data-index="${newIndex}">
+                        <code>${response.tag.tag}</code> - ${response.tag.name}
+                    </button>
+                `;
+                $('#dynamicTagsContainer').append(newTagHtml);
+                renderTagPagination();
+                
+                // Hide modal and reset form
+                $('#addTagModal').modal('hide');
+                $('#addTagForm')[0].reset();
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = 'An error occurred while saving the tag.';
+            if(xhr.responseJSON && xhr.responseJSON.errors) {
+                errorMsg = Object.values(xhr.responseJSON.errors)[0][0];
+            } else if(xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            $('#tagErrorMsg').removeClass('d-none').text(errorMsg);
+        },
+        complete: function() {
+            $('#saveTagBtn').prop('disabled', false).text('Save Tag');
+        }
+    });
+});
 </script>
 @endpush
 

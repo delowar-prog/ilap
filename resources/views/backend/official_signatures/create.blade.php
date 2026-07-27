@@ -52,22 +52,33 @@
                             <input type="text" name="custom_designation" id="custom_designation_input" class="form-control border-primary" placeholder="Type custom designation name..." value="{{ old('custom_designation') }}">
                         </div>
                         <input type="hidden" name="designation" id="final_designation">
-                        <small class="text-muted">Used in tag generation (e.g. <code><?php echo '{{principal_signature}}'; ?></code>)</small>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Item Type <span class="text-danger">*</span></label>
-                        <select name="type" class="form-select" required>
-                            <option value="signature" {{ old('type') == 'signature' ? 'selected' : '' }}>Signature (Digital Hand Sign)</option>
-                            <option value="seal" {{ old('type') == 'seal' ? 'selected' : '' }}>Official Seal / Stamp</option>
-                        </select>
+                        <label class="form-label fw-bold">Tag Format <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text">&#123;&#123;</span>
+                            <input type="text" name="tag_key" class="form-control" placeholder="e.g. principal" value="{{ old('tag_key') }}" required>
+                            <span class="input-group-text">&#125;&#125;</span>
+                        </div>
+                        <small class="text-muted">Use this tag in letter templates (Only letters/numbers/underscores).</small>
                     </div>
+
+
 
                     <div class="card bg-light border-info mb-3">
                         <div class="card-body p-3">
-                            <h6 class="fw-bold text-info"><i class="fas fa-file-upload me-1"></i> Alternative: Upload Signature / Seal Image</h6>
-                            <p class="small text-muted mb-2">If you already have a scanned signature or transparent PNG seal image file, you can upload it directly below.</p>
+                            <h6 class="fw-bold text-info"><i class="fas fa-file-upload me-1"></i> Upload Signature Image (Optional)</h6>
+                            <p class="small text-muted mb-2">If you already have a scanned signature transparent PNG file, you can upload it directly below.</p>
                             <input type="file" name="signature_file" id="signature_file_input" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-light border-info mb-3">
+                        <div class="card-body p-3">
+                            <h6 class="fw-bold text-info"><i class="fas fa-stamp me-1"></i> Upload Official Seal / Stamp (Optional)</h6>
+                            <p class="small text-muted mb-2">Upload a transparent PNG seal image file for this signatory.</p>
+                            <input type="file" name="seal_file" id="seal_file_input" class="form-control" accept="image/*">
                         </div>
                     </div>
                 </div>
@@ -154,13 +165,15 @@ $(document).ready(function() {
 
         var fileInput = $('#signature_file_input')[0];
         var hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+        var sealInput = $('#seal_file_input')[0];
+        var hasSeal = sealInput && sealInput.files && sealInput.files.length > 0;
 
         if (!signaturePad.isEmpty()) {
             var dataUrl = signaturePad.toDataURL('image/png');
             $('#signature_data_input').val(dataUrl);
-        } else if (!hasFile) {
+        } else if (!hasFile && !hasSeal) {
             e.preventDefault();
-            alert('Please draw a signature on the canvas pad OR select a signature image file to upload.');
+            alert('Please draw a signature on the canvas pad OR select a signature/seal image file to upload.');
             return false;
         }
     });

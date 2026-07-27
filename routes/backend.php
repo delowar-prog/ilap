@@ -97,10 +97,15 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     // ── Official Signatures & Seals CRUD ──────────────────────────────
     Route::resource('official-signatures', \App\Http\Controllers\Admin\OfficialSignatureController::class)->names('official-signatures');
 
+    // ── Campus Types CRUD ─────────────────────────────────────────────
+    Route::resource('campus-types', \App\Http\Controllers\Admin\CampusTypeController::class)->names('campus-types');
+
     // ── Letter Templates CRUD & Generation Routes ──────────────────────────────
     Route::get('letter-templates/{letterTemplate}/preview', [LetterTemplateController::class, 'preview'])->name('letter-templates.preview');
     Route::patch('letter-templates/{letterTemplate}/toggle', [LetterTemplateController::class, 'toggleStatus'])->name('letter-templates.toggle');
     Route::resource('letter-templates', LetterTemplateController::class)->names('letter-templates');
+
+    Route::resource('tags', \App\Http\Controllers\TagController::class)->except(['create', 'show', 'edit']);
 
     Route::get('students/{student}/letter-preview-modal', [StudentLetterController::class, 'previewModal'])->name('students.letters.preview_modal');
     Route::post('students/{student}/generate-letter', [StudentLetterController::class, 'generate'])->name('students.letters.generate');

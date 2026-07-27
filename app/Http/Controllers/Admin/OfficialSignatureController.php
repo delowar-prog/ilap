@@ -26,9 +26,7 @@ class OfficialSignatureController extends Controller
             });
         }
 
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
+
 
         $signatures = $query->paginate(15);
 
@@ -64,12 +62,14 @@ class OfficialSignatureController extends Controller
         $validated = $request->validate([
             'name'           => 'required|string|max:255',
             'designation'    => 'nullable|string|max:255',
-            'type'           => 'required|in:signature,seal',
+            'tag_key'        => 'required|string|max:100|unique:official_signatures,tag_key',
             'signature_data' => 'nullable|string',
             'signature_file' => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
+            'seal_file'      => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
         ]);
 
         $signaturePath = null;
+        $sealPath = null;
 
         // Process Canvas Drawing (Base64 PNG)
         if (!empty($request->signature_data) && str_contains($request->signature_data, 'base64')) {
@@ -100,25 +100,31 @@ class OfficialSignatureController extends Controller
             $signaturePath = 'uploads/official_signatures/' . $fileName;
         }
 
-        if (!$signaturePath) {
-            return back()->withInput()->withErrors(['signature_data' => 'Please draw a signature on the pad or upload a signature image file.']);
+        // Process Seal Image File
+        if ($request->hasFile('seal_file')) {
+            $file = $request->file('seal_file');
+            $fileName = 'seal_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            $destinationPath = public_path('uploads/official_signatures');
+            if (!File::exists($destinationPath)) {
+                File::makeDirectory($destinationPath, 0755, true);
+            }
+            $file->move($destinationPath, $fileName);
+            $sealPath = 'uploads/official_signatures/' . $fileName;
         }
 
-        // Generate unique tag key (e.g. "principal_signature")
-        $baseTag = Str::slug($validated['name'] . '_' . ($validated['designation'] ?? $validated['type']), '_');
-        $tagKey = $baseTag;
-        $count = 1;
-        while (OfficialSignature::where('tag_key', $tagKey)->exists()) {
-            $tagKey = $baseTag . '_' . $count;
-            $count++;
+        if (!$signaturePath && !$sealPath) {
+            return back()->withInput()->withErrors(['signature_data' => 'Please provide at least a signature or a seal.']);
         }
+
+        // Generate unique tag key
+        $tagKey = Str::slug($validated['tag_key'], '_');
 
         OfficialSignature::create([
             'name'           => $validated['name'],
             'designation'    => $validated['designation'],
             'tag_key'        => $tagKey,
             'signature_path' => $signaturePath,
-            'type'           => $validated['type'],
+            'seal_path'      => $sealPath,
             'status'         => 'active',
             'created_by'     => auth()->id(),
         ]);
@@ -147,12 +153,14 @@ class OfficialSignatureController extends Controller
         $validated = $request->validate([
             'name'           => 'required|string|max:255',
             'designation'    => 'nullable|string|max:255',
-            'type'           => 'required|in:signature,seal',
+            'tag_key'        => 'required|string|max:100|unique:official_signatures,tag_key,' . $id,
             'signature_data' => 'nullable|string',
             'signature_file' => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
+            'seal_file'      => 'nullable|image|mimes:png,jpg,jpeg,webp,svg|max:5120',
         ]);
 
         $signaturePath = $signature->signature_path;
+        $sealPath = $signature->seal_path;
 
         // Process Canvas Drawing if provided
         if (!empty($request->signature_data) && str_contains($request->signature_data, 'base64')) {
@@ -191,11 +199,29 @@ class OfficialSignatureController extends Controller
             $signaturePath = 'uploads/official_signatures/' . $fileName;
         }
 
+        // Process uploaded seal file if provided
+        if ($request->hasFile('seal_file')) {
+            if ($signature->seal_path && File::exists(public_path($signature->seal_path))) {
+                File::delete(public_path($signature->seal_path));
+            }
+            $file = $request->file('seal_file');
+            $fileName = 'seal_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            $destinationPath = public_path('uploads/official_signatures');
+            if (!File::exists($destinationPath)) {
+                File::makeDirectory($destinationPath, 0755, true);
+            }
+            $file->move($destinationPath, $fileName);
+            $sealPath = 'uploads/official_signatures/' . $fileName;
+        }
+
+        $tagKey = Str::slug($validated['tag_key'], '_');
+
         $signature->update([
             'name'           => $validated['name'],
             'designation'    => $validated['designation'],
-            'type'           => $validated['type'],
+            'tag_key'        => $tagKey,
             'signature_path' => $signaturePath,
+            'seal_path'      => $sealPath,
         ]);
 
         return redirect()->route('admin.official-signatures.index')
@@ -209,8 +235,12 @@ class OfficialSignatureController extends Controller
     {
         $signature = OfficialSignature::findOrFail($id);
 
-        if (File::exists(public_path($signature->signature_path))) {
+        if ($signature->signature_path && File::exists(public_path($signature->signature_path))) {
             File::delete(public_path($signature->signature_path));
+        }
+
+        if ($signature->seal_path && File::exists(public_path($signature->seal_path))) {
+            File::delete(public_path($signature->seal_path));
         }
 
         $signature->delete();

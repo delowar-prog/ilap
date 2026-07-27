@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CampusCreateRequest;
 use App\Models\Campus;
+use App\Models\DropdownOption;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +57,8 @@ class CampusController extends Controller
     {
         $lastCampusNumber = Campus::latest('campus_number')->value('campus_number') ?? 0;
         $nextCampusNumber = $lastCampusNumber + 1;
-        return view('backend.campus.create', compact('nextCampusNumber'));
+        $campusTypes = DropdownOption::active('campus_type');
+        return view('backend.campus.create', compact('nextCampusNumber', 'campusTypes'));
 
     }
 
@@ -68,7 +70,7 @@ class CampusController extends Controller
         DB::transaction(function () use ($request) {
 
             $campus = Campus::create(array_merge($request->safe()->only([
-                'name', 'country', 'city', 'address', 'phone', 'logo', 'currency', 'timezone', 'status',
+                'campus_type', 'campus_code', 'name', 'country', 'city', 'address', 'phone', 'website_link', 'note', 'logo', 'currency', 'timezone',
             ]), [
                 'email' => $request->campus_email,
             ]));

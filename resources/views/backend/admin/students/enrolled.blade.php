@@ -61,7 +61,9 @@
                                 @endphp
                                 <th>#</th>
                                 <th>{!! enSort('student_id', 'Student ID', $sortBy, $sortDir, $search, $perPage) !!}</th>
-                                <th>{!! enSort('first_name', 'Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
+                                <th>{!! enSort('first_name', 'First Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
+                                <th>{!! enSort('middle_name', 'Middle Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
+                                <th>{!! enSort('surname', 'Last Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>{!! enSort('email', 'Email', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>{!! enSort('phone', 'Phone', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>Status</th>
@@ -74,11 +76,13 @@
                                 <td>{{ $loop->iteration + $students->firstItem() - 1 }}</td>
                                 <td><span class="badge bg-secondary">{{ $student->student_id }}</span></td>
                                 <td>
-                                    <strong>{{ $student->first_name }} {{ $student->surname }}</strong>
+                                    <strong>{{ $student->first_name }}</strong>
                                     @if($student->nationality)
                                     <br><small class="text-muted">{{ $student->nationality }}</small>
                                     @endif
                                 </td>
+                                <td>{{ $student->middle_name ?? '-' }}</td>
+                                <td>{{ $student->surname }}</td>
                                 <td>{{ $student->email }}</td>
                                 <td>{{ $student->phone ?? '-' }}</td>
                                 <td>

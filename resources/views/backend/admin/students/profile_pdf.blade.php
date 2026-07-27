@@ -138,8 +138,16 @@
         <div class="section-title">Personal Information</div>
         <table class="info-table">
             <tr>
-                <td class="label">Full Name:</td>
-                <td class="value" colspan="3">{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</td>
+                <td class="label">First Name:</td>
+                <td class="value" colspan="3">{{ $student->first_name }}</td>
+            </tr>
+            <tr>
+                <td class="label">Middle Name:</td>
+                <td class="value" colspan="3">{{ $student->middle_name ?? 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td class="label">Last Name (Surname):</td>
+                <td class="value" colspan="3">{{ $student->surname }}</td>
             </tr>
             <tr>
                 <td class="label">Date of Birth:</td>

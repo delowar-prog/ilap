@@ -24,17 +24,25 @@ class CampusCreateRequest extends FormRequest
     {
         return [
             // ─── Campus Fields ───────────────────────────────────────────
+            'campus_type' => ['required', 'string', 'max:255'],
+
             'name' => ['required', 'string', 'max:255'],
+            
+            'campus_code' => ['required', 'string', 'max:20', 'unique:campuses,campus_code'],
 
-            'country' => ['required', 'string', 'max:100'],
+            'country' => ['nullable', 'string', 'max:100'],
 
-            'city' => ['required', 'string', 'max:100'],
+            'city' => ['nullable', 'string', 'max:100'],
 
             'address' => ['nullable', 'string', 'max:1000'],
 
             'phone' => ['nullable', 'string', 'max:30'],
 
             'campus_email' => ['nullable', 'email', 'max:150'],
+
+            'website_link' => ['nullable', 'url', 'max:255'],
+
+            'note' => ['nullable', 'string'],
 
             'logo' => [
                 'nullable',
@@ -48,7 +56,7 @@ class CampusCreateRequest extends FormRequest
 
             'timezone'  => ['nullable', 'string', 'max:50'],
 
-            'status' => ['required', 'in:active,inactive'],
+            // status field has a default value in db, not required on create
 
             // ─── Campus Head (Admin User) Fields ─────────────────────────
             'user_first_name'  => ['required', 'string', 'max:100'],
@@ -81,7 +89,7 @@ class CampusCreateRequest extends FormRequest
 
             'timezone.required' => 'Timezone is required.',
 
-            'status.required' => 'Status is required.',
+
 
             'logo.image' => 'Logo must be an image file.',
             'logo.max' => 'Logo size must not exceed 2MB.',

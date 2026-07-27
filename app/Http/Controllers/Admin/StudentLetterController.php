@@ -94,18 +94,28 @@ class StudentLetterController extends Controller
         $officialSignatures = \App\Models\OfficialSignature::where('status', 'active')->get();
         foreach ($officialSignatures as $offSig) {
             if (str_contains($content, $offSig->tag)) {
-                if (file_exists(public_path($offSig->signature_path))) {
-                    $this->activeSignatures[] = [
-                        'path'        => public_path($offSig->signature_path),
-                        'name'        => $offSig->name,
-                        'designation' => $offSig->designation ?? 'Authorized Signatory',
-                        'type'        => $offSig->type // 'signature' or 'seal'
-                    ];
+                $html = '<div style="display: inline-block; text-align: center; margin: 10px 20px;">';
+                
+                $html .= '<div style="position: relative; display: inline-block; min-height: 50px; min-width: 150px;">';
+                
+                if ($offSig->signature_path && file_exists(public_path($offSig->signature_path))) {
+                    $html .= '<img src="' . public_path($offSig->signature_path) . '" style="max-height: 60px; position: relative; z-index: 2; margin: 0 auto; display: block;" alt="Signature">';
                 }
                 
-                // Replace inline tag with clean text (bracket removed)
-                $label = $offSig->type === 'seal' ? 'Official Seal' : ($offSig->name . ' - ' . ($offSig->designation ?? 'Authorized Signatory'));
-                $content = str_replace($offSig->tag, '<span style="font-weight: bold; font-family: Arial, sans-serif; font-size: 13px; color: #333;">' . e($label) . '</span>', $content);
+                if ($offSig->seal_path && file_exists(public_path($offSig->seal_path))) {
+                    // Seal slightly offset and below signature visually
+                    $html .= '<img src="' . public_path($offSig->seal_path) . '" style="max-height: 80px; opacity: 0.85; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 1;" alt="Seal">';
+                }
+                
+                $html .= '</div>';
+                
+                $designationText = $offSig->designation ? $offSig->designation . ' Signature' : 'Signature';
+                
+                $html .= '<div style="border-top: 1.5px solid #003366; width: 170px; margin: 5px auto 3px auto;"></div>';
+                $html .= '<div style="font-weight: bold; font-size: 11px; color: #003366; line-height: 1.2;">' . e($designationText) . '</div>';
+                $html .= '</div>';
+                
+                $content = str_replace($offSig->tag, $html, $content);
             }
         }
 
@@ -125,6 +135,20 @@ class StudentLetterController extends Controller
             '{{address}}'           => $student->address ?? 'N/A',
             '{{issuer_name}}'       => $issuerName,
         ];
+
+        // Dynamic Database Tags Mapping
+        $dbTags = \App\Models\Tag::all();
+        foreach ($dbTags as $dbTag) {
+            $rawColumn = $dbTag->tag_for ?? str_replace(['{{', '}}'], '', $dbTag->tag);
+            // Only map it if we haven't already explicitly defined it above
+            if (!array_key_exists($dbTag->tag, $placeholders)) {
+                if ($rawColumn === 'full_name') {
+                    $placeholders[$dbTag->tag] = $fullName;
+                } else {
+                    $placeholders[$dbTag->tag] = $student->$rawColumn ?? 'N/A';
+                }
+            }
+        }
 
         return str_replace(array_keys($placeholders), array_values($placeholders), $content);
     }
