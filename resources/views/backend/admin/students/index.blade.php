@@ -88,6 +88,7 @@
                                 <th>{!! stSort('first_name', 'First Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>{!! stSort('middle_name', 'Middle Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>{!! stSort('surname', 'Last Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
+                                <th>Campus</th>
                                 <th>{!! stSort('email', 'Email', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>{!! stSort('phone', 'Phone', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>Status</th>
@@ -107,6 +108,13 @@
                                 </td>
                                 <td>{{ $student->middle_name ?? '-' }}</td>
                                 <td>{{ $student->surname }}</td>
+                                <td>
+                                    @if($student->campus)
+                                        <span class="badge bg-info text-dark">{{ $student->campus->name }}</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td>{{ $student->email }}</td>
                                 <td>{{ $student->phone ?? '-' }}</td>
                                 <td>

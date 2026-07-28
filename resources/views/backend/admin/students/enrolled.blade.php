@@ -64,6 +64,7 @@
                                 <th>{!! enSort('first_name', 'First Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>{!! enSort('middle_name', 'Middle Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>{!! enSort('surname', 'Last Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
+                                <th>Campus</th>
                                 <th>{!! enSort('email', 'Email', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>{!! enSort('phone', 'Phone', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>Status</th>
@@ -83,6 +84,13 @@
                                 </td>
                                 <td>{{ $student->middle_name ?? '-' }}</td>
                                 <td>{{ $student->surname }}</td>
+                                <td>
+                                    @if($student->campus)
+                                        <span class="badge bg-info text-dark">{{ $student->campus->name }}</span>
+                                    @else
+                                        -
+                                    @endif
+                                </td>
                                 <td>{{ $student->email }}</td>
                                 <td>{{ $student->phone ?? '-' }}</td>
                                 <td>
@@ -103,7 +111,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-muted">
+                                <td colspan="8" class="text-center py-4 text-muted">
                                     <i class="fas fa-inbox fa-2x d-block mb-2"></i>No enrolled students found.
                                 </td>
                             </tr>

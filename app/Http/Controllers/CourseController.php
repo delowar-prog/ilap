@@ -37,11 +37,11 @@ class CourseController extends Controller
 
     public function create()
     {
-        $categories   = ['short', 'long', 'degree', 'diploma', 'certificate'];
-        $levels       = ['undergraduate', 'postgraduate', 'phd', 'professional'];
+        $categories   = DropdownOption::active('course_category');
+        $levels       = DropdownOption::active('level_of_study');
         $studyMethods = DropdownOption::active('study_method');
-        $currencies   = ['GBP', 'USD', 'BDT', 'SHS', 'AED', 'INR', 'EUR'];
-        $intakes      = ['Fall', 'Spring', 'Summer', 'Rolling', 'January', 'September'];
+        $currencies   = DropdownOption::active('currency');
+        $intakes      = DropdownOption::active('intake');
 
         return view('backend.courses.create', compact(
             'categories', 'levels', 'studyMethods', 'currencies', 'intakes'
@@ -56,16 +56,23 @@ class CourseController extends Controller
         if ($request->hasFile('thumbnail')) {
             $validated['thumbnail'] = $request->file('thumbnail')->store('courses/thumbnails', 'public');
         }
-        if ($request->hasFile('brochure')) {
-            $validated['brochure_path'] = $request->file('brochure')->store('courses/brochures', 'public');
-        }
 
         // Auto-generate course code if not provided
         if (empty($validated['course_code'])) {
             $validated['course_code'] = 'CRS-' . strtoupper(uniqid());
         }
 
-        Course::create($validated);
+        $course = Course::create($validated);
+
+        // Handle modules
+        if ($request->has('modules')) {
+            $this->syncModules($course, $request->input('modules', []));
+        }
+
+        // Handle brochures
+        if ($request->has('brochures')) {
+            $this->syncBrochures($course, $request);
+        }
 
         return redirect()
             ->route('courses.index')
@@ -76,11 +83,11 @@ class CourseController extends Controller
     {
         $course = Course::findOrFail($id);
         
-        $categories   = ['short', 'long', 'degree', 'diploma', 'certificate'];
-        $levels       = ['undergraduate', 'postgraduate', 'phd', 'professional'];
+        $categories   = DropdownOption::active('course_category');
+        $levels       = DropdownOption::active('level_of_study');
         $studyMethods = DropdownOption::active('study_method');
-        $currencies   = ['GBP', 'USD', 'BDT', 'SHS', 'AED', 'INR', 'EUR'];
-        $intakes      = ['Fall', 'Spring', 'Summer', 'Rolling', 'January', 'September'];
+        $currencies   = DropdownOption::active('currency');
+        $intakes      = DropdownOption::active('intake');
 
         return view('backend.courses.edit', compact(
             'course', 'categories', 'levels', 'studyMethods', 'currencies', 'intakes'
@@ -100,14 +107,17 @@ class CourseController extends Controller
             $validated['thumbnail'] = $request->file('thumbnail')->store('courses/thumbnails', 'public');
         }
 
-        if ($request->hasFile('brochure')) {
-            if ($course->brochure_path) {
-                Storage::disk('public')->delete($course->brochure_path);
-            }
-            $validated['brochure_path'] = $request->file('brochure')->store('courses/brochures', 'public');
+        $course->update($validated);
+
+        // Handle modules
+        if ($request->has('modules')) {
+            $this->syncModules($course, $request->input('modules', []));
         }
 
-        $course->update($validated);
+        // Handle brochures
+        if ($request->has('brochures')) {
+            $this->syncBrochures($course, $request);
+        }
 
         return redirect()
             ->route('courses.index')
@@ -127,8 +137,8 @@ class CourseController extends Controller
         if ($course->thumbnail) {
             Storage::disk('public')->delete($course->thumbnail);
         }
-        if ($course->brochure_path) {
-            Storage::disk('public')->delete($course->brochure_path);
+        foreach ($course->brochures as $brochure) {
+            Storage::disk('public')->delete($brochure->file_path);
         }
 
         $course->delete(); // soft delete
@@ -151,7 +161,7 @@ class CourseController extends Controller
             'subject_area' => 'nullable|string|max:100',
             'duration' => 'nullable|string|max:50',
             'duration_months' => 'nullable|integer|min:1',
-            'study_method' => 'nullable|in:online,on_campus,blended',
+            'study_method' => 'nullable|string|max:50',
             'fee' => 'required|numeric|min:0',
             'currency' => 'required|string|max:10',
             'application_fee' => 'nullable|numeric|min:0',
@@ -162,11 +172,100 @@ class CourseController extends Controller
             'is_featured' => 'nullable|boolean',
             'is_available_for_admission' => 'nullable|boolean',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'brochure' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'brochures' => 'nullable|array',
+            'brochures.*.title' => 'required_with:brochures|string|max:255',
+            'brochures.*.file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'status' => 'nullable|in:active,inactive,archived',
             'sort_order' => 'nullable|integer',
         ];
 
         return $request->validate($rules);
+    }
+
+    private function syncModules(Course $course, array $modulesData)
+    {
+        $existingModuleIds = $course->modules()->pluck('id')->toArray();
+        $updatedModuleIds = [];
+
+        foreach ($modulesData as $index => $module) {
+            if (empty($module['title'])) {
+                continue;
+            }
+
+            $moduleId = $module['id'] ?? null;
+            $data = [
+                'code' => $module['code'] ?? null,
+                'title' => $module['title'],
+                'credit' => $module['credit'] ?? null,
+                'glh' => $module['glh'] ?? null,
+                'is_mandatory' => isset($module['is_mandatory']) ? true : false,
+                'priority' => $module['priority'] ?? $index,
+            ];
+
+            if ($moduleId) {
+                $existing = $course->modules()->find($moduleId);
+                if ($existing) {
+                    $existing->update($data);
+                    $updatedModuleIds[] = $existing->id;
+                }
+            } else {
+                $newModule = $course->modules()->create($data);
+                $updatedModuleIds[] = $newModule->id;
+            }
+        }
+
+        $modulesToDelete = array_diff($existingModuleIds, $updatedModuleIds);
+        if (!empty($modulesToDelete)) {
+            $course->modules()->whereIn('id', $modulesToDelete)->delete();
+        }
+    }
+
+    private function syncBrochures(Course $course, Request $request)
+    {
+        $existingBrochureIds = $course->brochures()->pluck('id')->toArray();
+        $updatedBrochureIds = [];
+        $brochuresData = $request->input('brochures', []);
+        $brochuresFiles = $request->file('brochures', []);
+
+        foreach ($brochuresData as $index => $bData) {
+            if (empty($bData['title'])) {
+                continue;
+            }
+
+            $brochureId = $bData['id'] ?? null;
+            $title = $bData['title'];
+            $fileObj = $brochuresFiles[$index]['file'] ?? null;
+
+            if ($brochureId) {
+                $existing = $course->brochures()->find($brochureId);
+                if ($existing) {
+                    $updateData = ['title' => $title];
+                    if ($fileObj) {
+                        Storage::disk('public')->delete($existing->file_path);
+                        $updateData['file_path'] = $fileObj->store('courses/brochures', 'public');
+                    }
+                    $existing->update($updateData);
+                    $updatedBrochureIds[] = $existing->id;
+                }
+            } else {
+                if ($fileObj) {
+                    $filePath = $fileObj->store('courses/brochures', 'public');
+                    $newBrochure = $course->brochures()->create([
+                        'title' => $title,
+                        'file_path' => $filePath
+                    ]);
+                    $updatedBrochureIds[] = $newBrochure->id;
+                }
+            }
+        }
+
+        $brochuresToDelete = array_diff($existingBrochureIds, $updatedBrochureIds);
+        if (!empty($brochuresToDelete)) {
+            $toDelete = $course->brochures()->whereIn('id', $brochuresToDelete)->get();
+            foreach ($toDelete as $b) {
+                Storage::disk('public')->delete($b->file_path);
+                $b->delete();
+            }
+        }
     }
 }

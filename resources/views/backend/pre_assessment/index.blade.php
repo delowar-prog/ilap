@@ -92,6 +92,7 @@
                                 <th>{!! paSort('first_name', 'First Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>{!! paSort('middle_name', 'Middle Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>{!! paSort('surname', 'Last Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
+                                <th>Campus</th>
                                 <th>Email</th>
                                 <th>{!! paSort('contact_number', 'Phone', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>Study Destination</th>
@@ -111,6 +112,13 @@
                                     </td>
                                     <td>{{ $assessment->middle_name ?? $assessment->student->middle_name ?? '-' }}</td>
                                     <td>{{ $assessment->surname ?? $assessment->student->surname }}</td>
+                                    <td>
+                                        @if($assessment->student && $assessment->student->campus)
+                                            <span class="badge bg-info text-dark">{{ $assessment->student->campus->name }}</span>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td>{{ $assessment->student->email ?? '-' }}</td>
                                     <td>{{ $assessment->contact_number ?? $assessment->student->phone }}</td>
                                     <td>{{ $assessment->study_destination ?? '-' }}</td>

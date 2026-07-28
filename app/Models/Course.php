@@ -80,6 +80,16 @@ class Course extends Model
         return $this->hasMany(CommissionRule::class);
     }
 
+    public function modules()
+    {
+        return $this->hasMany(CourseModule::class)->orderBy('priority', 'asc');
+    }
+
+    public function brochures()
+    {
+        return $this->hasMany(CourseBrochure::class);
+    }
+
     // 🎯 Scopes
     public function scopeIlapOwn($query)
     {

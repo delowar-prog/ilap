@@ -89,6 +89,50 @@
                     @error('description') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
+                <div class="col-12 mt-4"><hr><h6 class="fw-bold">📚 Course Modules</h6></div>
+                <div class="col-12">
+                    <div id="course_modules_container">
+                        <div class="row g-2 mb-2 align-items-center module-row">
+                            <div class="col-md-2">
+                                <label class="form-label mb-0">Code</label>
+                                <input type="text" name="modules[0][code]" class="form-control form-control-sm" placeholder="Module Code">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label mb-0">Title <span class="text-danger">*</span></label>
+                                <input type="text" name="modules[0][title]" class="form-control form-control-sm" placeholder="Module Title" required>
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label mb-0">Credit</label>
+                                <input type="text" name="modules[0][credit]" class="form-control form-control-sm" placeholder="Credit">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label mb-0" title="Guided Learning Hours">GLH</label>
+                                <input type="text" name="modules[0][glh]" class="form-control form-control-sm" placeholder="GLH">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label mb-0">Type</label><br>
+                                <div class="form-check form-check-inline mt-1" title="Mandatory">
+                                    <input class="form-check-input" type="radio" name="modules[0][is_mandatory]" id="mand_0" value="1" checked>
+                                    <label class="form-check-label" for="mand_0">M</label>
+                                </div>
+                                <div class="form-check form-check-inline mt-1" title="Optional">
+                                    <input class="form-check-input" type="radio" name="modules[0][is_mandatory]" id="opt_0" value="0">
+                                    <label class="form-check-label" for="opt_0">O</label>
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label mb-0">Priority</label>
+                                <input type="number" name="modules[0][priority]" class="form-control form-control-sm" placeholder="Priority" value="0">
+                            </div>
+                            <div class="col-md-1 text-center">
+                                <label class="form-label mb-0 d-block">&nbsp;</label>
+                                <button type="button" class="btn btn-danger btn-sm remove-module-btn"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="add_more_module_btn" class="btn btn-success btn-sm mt-2"><i class="fas fa-plus"></i> Add More Module</button>
+                </div>
+
                 <div class="col-md-4">
                     <label class="form-label">Category</label>
                     <select name="category" class="form-select">
@@ -210,9 +254,25 @@
                     <input type="file" name="thumbnail" class="form-control" accept="image/*">
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Course Brochure (PDF)</label>
-                    <input type="file" name="brochure" class="form-control" accept=".pdf,.doc,.docx">
+                <div class="col-md-12 mt-3">
+                    <label class="form-label fw-bold">Course Brochures</label>
+                    <div id="course_brochures_container">
+                        <div class="row g-2 mb-2 align-items-center brochure-row">
+                            <div class="col-md-5">
+                                <label class="form-label mb-0">Brochure Title</label>
+                                <input type="text" name="brochures[0][title]" class="form-control form-control-sm" placeholder="e.g. Course Syllabus">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label mb-0">Upload PDF</label>
+                                <input type="file" name="brochures[0][file]" class="form-control form-control-sm" accept=".pdf,.doc,.docx">
+                            </div>
+                            <div class="col-md-1 text-center">
+                                <label class="form-label mb-0 d-block">&nbsp;</label>
+                                <button type="button" class="btn btn-danger btn-sm remove-brochure-btn"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="add_more_brochure_btn" class="btn btn-success btn-sm mt-2"><i class="fas fa-plus"></i> Add More Brochure</button>
                 </div>
 
                 <div class="col-md-4">
@@ -280,6 +340,81 @@ document.addEventListener('DOMContentLoaded', function() {
 
     courseType.addEventListener('change', togglePartnerFields);
     togglePartnerFields();
+
+    // Module dynamic rows
+    let moduleIndex = 1;
+    document.getElementById('add_more_module_btn').addEventListener('click', function() {
+        const container = document.getElementById('course_modules_container');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 align-items-center module-row mt-2';
+        row.innerHTML = `
+            <div class="col-md-2">
+                <input type="text" name="modules[${moduleIndex}][code]" class="form-control form-control-sm" placeholder="Module Code">
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="modules[${moduleIndex}][title]" class="form-control form-control-sm" placeholder="Module Title" required>
+            </div>
+            <div class="col-md-1">
+                <input type="text" name="modules[${moduleIndex}][credit]" class="form-control form-control-sm" placeholder="Credit">
+            </div>
+            <div class="col-md-1">
+                <input type="text" name="modules[${moduleIndex}][glh]" class="form-control form-control-sm" placeholder="GLH">
+            </div>
+            <div class="col-md-2">
+                <div class="form-check form-check-inline" title="Mandatory">
+                    <input class="form-check-input" type="radio" name="modules[${moduleIndex}][is_mandatory]" id="mand_${moduleIndex}" value="1" checked>
+                    <label class="form-check-label" for="mand_${moduleIndex}">M</label>
+                </div>
+                <div class="form-check form-check-inline" title="Optional">
+                    <input class="form-check-input" type="radio" name="modules[${moduleIndex}][is_mandatory]" id="opt_${moduleIndex}" value="0">
+                    <label class="form-check-label" for="opt_${moduleIndex}">O</label>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <input type="number" name="modules[${moduleIndex}][priority]" class="form-control form-control-sm" placeholder="Priority" value="${moduleIndex}">
+            </div>
+            <div class="col-md-1 text-center">
+                <button type="button" class="btn btn-danger btn-sm remove-module-btn"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        container.appendChild(row);
+        moduleIndex++;
+    });
+
+    document.getElementById('course_modules_container').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-module-btn') || e.target.closest('.remove-module-btn')) {
+            const btn = e.target.classList.contains('remove-module-btn') ? e.target : e.target.closest('.remove-module-btn');
+            btn.closest('.module-row').remove();
+        }
+    });
+
+    // Brochure dynamic rows
+    let brochureIndex = 1;
+    document.getElementById('add_more_brochure_btn').addEventListener('click', function() {
+        const container = document.getElementById('course_brochures_container');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 align-items-center brochure-row mt-2';
+        row.innerHTML = `
+            <div class="col-md-5">
+                <input type="text" name="brochures[${brochureIndex}][title]" class="form-control form-control-sm" placeholder="e.g. Course Syllabus">
+            </div>
+            <div class="col-md-6">
+                <input type="file" name="brochures[${brochureIndex}][file]" class="form-control form-control-sm" accept=".pdf,.doc,.docx">
+            </div>
+            <div class="col-md-1 text-center">
+                <button type="button" class="btn btn-danger btn-sm remove-brochure-btn"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        container.appendChild(row);
+        brochureIndex++;
+    });
+
+    document.getElementById('course_brochures_container').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-brochure-btn') || e.target.closest('.remove-brochure-btn')) {
+            const btn = e.target.classList.contains('remove-brochure-btn') ? e.target : e.target.closest('.remove-brochure-btn');
+            btn.closest('.brochure-row').remove();
+        }
+    });
 });
 </script>
 @endpush

@@ -532,7 +532,7 @@
                         data-bs-toggle="collapse" aria-expanded="false" aria-controls="ilap_course">
                         <div class="d-flex align-items-center">
                             <span class="nav-link-icon"><span class="fas fa-book-open"></span></span>
-                            <span class="nav-link-text ps-1">iLAP Own Courses</span>
+                            <span class="nav-link-text ps-1">Courses</span>
                         </div>
                     </a>
                     <ul class="nav collapse" id="ilap_course">
@@ -551,7 +551,7 @@
                         data-bs-toggle="collapse" aria-expanded="false" aria-controls="institute">
                         <div class="d-flex align-items-center">
                             <span class="nav-link-icon"><span class="fas fa-university"></span></span>
-                            <span class="nav-link-text ps-1">Institute & Courses</span>
+                            <span class="nav-link-text ps-1">Institute</span>
                         </div>
                     </a>
                     <ul class="nav collapse" id="institute">
@@ -562,15 +562,7 @@
                                 </div>
                             </a>
                         </li>
-                        @if((Auth::check() && Auth::user()->can('course view')) || $isStudent)
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('courses.index') }}">
-                                <div class="d-flex align-items-center">
-                                    <span class="nav-link-text ps-1">All Courses</span>
-                                </div>
-                            </a>
-                        </li>
-                        @endif
+
                     </ul>
                     @endif
 
