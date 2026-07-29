@@ -70,7 +70,7 @@ class CampusController extends Controller
         DB::transaction(function () use ($request) {
 
             $campus = Campus::create(array_merge($request->safe()->only([
-                'campus_type', 'campus_code', 'name', 'country', 'city', 'address', 'phone', 'website_link', 'note', 'logo', 'currency', 'timezone',
+                'campus_type', 'campus_code', 'name', 'country', 'state', 'city', 'post_code', 'address', 'phone', 'website_link', 'note', 'logo', 'currency', 'timezone',
             ]), [
                 'email' => $request->campus_email,
             ]));

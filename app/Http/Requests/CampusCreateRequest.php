@@ -32,7 +32,11 @@ class CampusCreateRequest extends FormRequest
 
             'country' => ['nullable', 'string', 'max:100'],
 
+            'state' => ['nullable', 'string', 'max:100'],
+
             'city' => ['nullable', 'string', 'max:100'],
+
+            'post_code' => ['nullable', 'string', 'max:50'],
 
             'address' => ['nullable', 'string', 'max:1000'],
 
@@ -62,9 +66,9 @@ class CampusCreateRequest extends FormRequest
             'user_first_name'  => ['required', 'string', 'max:100'],
             'user_middle_name' => ['nullable', 'string', 'max:100'],
             'user_last_name'   => ['required', 'string', 'max:100'],
-            'user_email'       => ['required', 'email', 'max:255', 'unique:users,email'],
+            'user_email'       => ['required', 'email', 'max:255', 'unique:users,email', 'confirmed'],
             'user_phone'       => ['nullable', 'string', 'max:30'],
-            'password'         => ['required', 'string', 'min:8'],
+            'password'         => ['required', 'string', 'min:8', 'confirmed'],
         ];
     }
 

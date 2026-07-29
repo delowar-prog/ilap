@@ -28,11 +28,39 @@ class LocationSelector extends Component
     public $stateFieldName = 'state';
     public $cityFieldName = 'city';
 
-    public function mount($initialCountry = null, $initialState = null, $initialCity = null, $countryField = 'country', $stateField = 'state', $cityField = 'city')
-    {
+    public $stateColClass = 'col-md-4';
+    public $cityColClass = 'col-md-4';
+    public $countryColClass = 'col-md-4';
+
+    public $showPostCode = false;
+    public $postCode = null;
+    public $postCodeFieldName = 'post_code';
+
+    public function mount(
+        $initialCountry = null, 
+        $initialState = null, 
+        $initialCity = null, 
+        $countryField = 'country', 
+        $stateField = 'state', 
+        $cityField = 'city', 
+        $stateColClass = 'col-md-4', 
+        $cityColClass = 'col-md-4', 
+        $countryColClass = 'col-md-4',
+        $showPostCode = false,
+        $initialPostCode = null,
+        $postCodeField = 'post_code'
+    ) {
         $this->countryFieldName = $countryField;
         $this->stateFieldName = $stateField;
         $this->cityFieldName = $cityField;
+
+        $this->stateColClass = $stateColClass;
+        $this->cityColClass = $cityColClass;
+        $this->countryColClass = $countryColClass;
+
+        $this->showPostCode = $showPostCode;
+        $this->postCode = $initialPostCode;
+        $this->postCodeFieldName = $postCodeField;
 
         $this->selectedCountryName = $initialCountry;
         $this->selectedStateName = $initialState;

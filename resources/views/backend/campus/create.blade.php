@@ -67,15 +67,20 @@
                     @error('campus_code') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                {{-- Location Selector (submits hidden country & city fields) --}}
-                <livewire:geo.location-selector />
-
                 <div class="col-md-12">
                     <label class="form-label">Address</label>
                     <textarea name="address"
                               rows="2"
                               class="form-control @error('address') is-invalid @enderror">{{ old('address') }}</textarea>
                     @error('address') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+
+                {{-- Location Selector (now handles Post Code internally for perfect alignment) --}}
+                <div class="col-md-12">
+                    <livewire:geo.location-selector 
+                        :showPostCode="true"
+                        :initialPostCode="old('post_code')"
+                    />
                 </div>
 
                 <div class="col-md-6">
@@ -174,6 +179,15 @@
                 </div>
 
                 <div class="col-md-6">
+                    <label class="form-label">Confirm Admin Email <span class="text-danger">*</span></label>
+                    <input type="email"
+                           name="user_email_confirmation"
+                           class="form-control"
+                           value="{{ old('user_email_confirmation') }}"
+                           required>
+                </div>
+
+                <div class="col-md-6">
                     <label class="form-label">Admin Phone</label>
                     <input type="text"
                            name="user_phone"
@@ -182,14 +196,36 @@
                            placeholder="+880 1700 000000">
                     @error('user_phone') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
+                
+                <div class="col-md-6"></div>
 
                 <div class="col-md-6">
                     <label class="form-label">Password <span class="text-danger">*</span></label>
-                    <input type="password"
-                           name="password"
-                           class="form-control @error('password') is-invalid @enderror"
-                           required>
-                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    <div class="input-group has-validation">
+                        <input type="password"
+                               name="password"
+                               id="password"
+                               class="form-control @error('password') is-invalid @enderror"
+                               required>
+                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password"
+                               name="password_confirmation"
+                               id="password_confirmation"
+                               class="form-control"
+                               required>
+                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="password_confirmation">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -205,5 +241,29 @@
     </form>
 
 </div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    });
+</script>
+@endpush
 
 @endsection
