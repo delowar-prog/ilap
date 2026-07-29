@@ -29,8 +29,18 @@ class StudentController extends Controller
         }
         $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
 
-        $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])
-            ->where('enrolment_status', $status);
+        if ($status === 'approved') {
+            $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])
+                ->where('enrolment_status', 'approved')
+                ->whereDoesntHave('applications');
+        } elseif ($status === 'assigned') {
+            $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])
+                ->where('enrolment_status', 'approved')
+                ->whereHas('applications');
+        } else {
+            $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])
+                ->where('enrolment_status', $status);
+        }
 
         if ($search) {
             $studentsQuery->where(function ($q) use ($search) {
@@ -46,7 +56,8 @@ class StudentController extends Controller
 
         $counts = [
             'pending' => Student::where('enrolment_status', 'pending')->count(),
-            'approved' => Student::where('enrolment_status', 'approved')->count(),
+            'approved' => Student::where('enrolment_status', 'approved')->whereDoesntHave('applications')->count(),
+            'assigned' => Student::where('enrolment_status', 'approved')->whereHas('applications')->count(),
             'rejected' => Student::where('enrolment_status', 'rejected')->count(),
         ];
 
@@ -267,5 +278,134 @@ class StudentController extends Controller
         $filename = $cleanName.'-'.$student->student_id.'.pdf';
 
         return $pdf->download($filename);
+    }
+
+    public function manageEnrolmentDetails($studentId)
+    {
+        $student = Student::findOrFail($studentId);
+        $courses = \App\Models\Course::where('status', 'active')->get();
+        $costTypes = \App\Models\DropdownOption::active('additional_cost');
+        
+        $application = \App\Models\StudentApplication::with(['additionalCosts', 'installments'])
+            ->where('student_id', $student->id)
+            ->first();
+
+        $coursesJson = $courses->keyBy('id')->map(function($course) {
+            return [
+                'fee' => $course->fee,
+                'currency' => $course->currency ?? 'GBP',
+            ];
+        })->toJson();
+
+        return view('backend.admin.students.manage_enrolment', compact('student', 'courses', 'costTypes', 'application', 'coursesJson'));
+    }
+
+    public function saveEnrolmentDetails(Request $request, $studentId)
+    {
+        $student = Student::findOrFail($studentId);
+        
+        $request->validate([
+            'course_id' => 'required|exists:courses,id',
+            'additional_costs' => 'nullable|array',
+            'additional_costs.*.cost_name' => 'required|string',
+            'additional_costs.*.amount' => 'required|numeric|min:0',
+            'installments' => 'required|array|min:1',
+            'installments.*.amount' => 'required|numeric|min:0.01',
+            'installments.*.due_date' => 'required|date',
+            'installments.*.status' => 'required|in:pending,paid,partially_paid',
+            'installments.*.paid_amount' => 'nullable|numeric|min:0',
+        ]);
+
+        \DB::transaction(function() use ($request, $student) {
+            $application = \App\Models\StudentApplication::updateOrCreate(
+                ['student_id' => $student->id],
+                [
+                    'course_id' => $request->course_id,
+                    'assigned_agent_id' => $student->agent_id,
+                    'stage' => 'accepted',
+                    'total_fee' => 0, // Set temporarily
+                    'paid_amount' => 0,
+                ]
+            );
+
+            $application->additionalCosts()->delete();
+            $additionalCostsTotal = 0;
+            if ($request->has('additional_costs')) {
+                foreach ($request->additional_costs as $costData) {
+                    $application->additionalCosts()->create([
+                        'cost_name' => $costData['cost_name'],
+                        'amount' => $costData['amount'],
+                    ]);
+                    $additionalCostsTotal += $costData['amount'];
+                }
+            }
+
+            $course = \App\Models\Course::findOrFail($request->course_id);
+            $grandTotal = $course->fee + $additionalCostsTotal;
+
+            $application->installments()->delete();
+            $totalApplicationPaid = 0;
+            foreach ($request->installments as $index => $instData) {
+                $status = $instData['status'] ?? 'pending';
+                $paid = 0;
+                if ($status === 'paid') {
+                    $paid = $instData['amount'];
+                } elseif ($status === 'partially_paid') {
+                    $paid = min($instData['paid_amount'] ?? 0, $instData['amount']);
+                }
+
+                $application->installments()->create([
+                    'installment_number' => $index + 1,
+                    'amount' => $instData['amount'],
+                    'due_date' => $instData['due_date'],
+                    'status' => $status,
+                    'paid_amount' => $paid,
+                ]);
+
+                $totalApplicationPaid += $paid;
+            }
+
+            $application->update([
+                'total_fee' => $grandTotal,
+                'paid_amount' => $totalApplicationPaid,
+                'stage' => ($totalApplicationPaid >= $grandTotal) ? 'payment_made' : 'accepted'
+            ]);
+        });
+
+        return redirect()->route('admin.students.index', ['status' => 'approved'])
+            ->with('success', 'Enrolment details saved successfully.');
+    }
+
+    public function recordInstallmentPayment(Request $request, $installmentId)
+    {
+        $installment = \App\Models\StudentApplicationInstallment::findOrFail($installmentId);
+        $application = $installment->application;
+        
+        $maxAllowed = $installment->amount - $installment->paid_amount;
+
+        $request->validate([
+            'amount_paid' => 'required|numeric|min:0.01|max:' . $maxAllowed,
+        ]);
+
+        \DB::transaction(function() use ($request, $installment, $application) {
+            $installment->paid_amount += $request->amount_paid;
+            
+            if ($installment->paid_amount >= $installment->amount) {
+                $installment->status = 'paid';
+            } else {
+                $installment->status = 'partially_paid';
+            }
+            $installment->save();
+
+            $totalPaid = $application->installments()->sum('paid_amount');
+            $application->paid_amount = $totalPaid;
+            
+            if ($application->paid_amount >= $application->total_fee) {
+                $application->stage = 'payment_made';
+            }
+            $application->save();
+        });
+
+        return back()->with('success', 'Payment of ' . number_format($request->amount_paid, 2) . ' ' . ($application->course->currency ?? 'GBP') . ' recorded successfully.');
     }
 }

@@ -11,6 +11,7 @@ use App\Models\DropdownOption;
 use App\Models\Institute;
 use App\Models\Student;
 use App\Models\StudentAcademic;
+use App\Models\StudentApplication;
 use App\Models\StudentDocument;
 use App\Models\StudentEnglishTest;
 use App\Models\StudentPreAssessment;
@@ -56,6 +57,11 @@ class StudentProfileController extends Controller
         $englishTests = StudentEnglishTest::where('student_id', $student->id)->get();
         $referees = StudentReferee::where('student_id', $student->id)->get();
         $documents = StudentDocument::where('student_id', $student->id)->get();
+        
+        $application = StudentApplication::with(['course', 'additionalCosts', 'installments'])
+            ->where('student_id', $student->id)
+            ->first();
+
         // Calculate Completion Percentage
         $completionPercent = $student->getCompletionPercentage();
 
@@ -66,6 +72,7 @@ class StudentProfileController extends Controller
             'englishTests',
             'referees',
             'documents',
+            'application',
             'completionPercent'
         ));
     }

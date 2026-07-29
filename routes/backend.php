@@ -92,6 +92,9 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/enrolled-students', [StudentController::class, 'enrolledStudents'])->name('students.enrolled');
     Route::delete('/students/{id}', [StudentController::class, 'destroy'])->name('students.destroy');
     Route::get('/students/{id}/profile-pdf', [StudentController::class, 'downloadProfilePdf'])->name('students.profile.pdf');
+    Route::get('/students/{student}/enrolment', [StudentController::class, 'manageEnrolmentDetails'])->name('students.enrolment');
+    Route::post('/students/{student}/enrolment', [StudentController::class, 'saveEnrolmentDetails'])->name('students.enrolment.save');
+    Route::post('/installments/{installment}/record-payment', [StudentController::class, 'recordInstallmentPayment'])->name('admin.installments.record_payment');
     Route::resource('students', StudentController::class)->only(['index', 'show']);
 
     // ── Official Signatures & Seals CRUD ──────────────────────────────

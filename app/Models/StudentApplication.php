@@ -24,4 +24,14 @@ class StudentApplication extends Model
     
     // Commission Transaction (One-to-One)
     public function commissionTransaction() { return $this->hasOne(CommissionTransaction::class, 'application_id'); }
+
+    public function additionalCosts()
+    {
+        return $this->hasMany(StudentApplicationAdditionalCost::class, 'student_application_id');
+    }
+
+    public function installments()
+    {
+        return $this->hasMany(StudentApplicationInstallment::class, 'student_application_id');
+    }
 }

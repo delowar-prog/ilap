@@ -21,8 +21,15 @@
                     <li class="nav-item">
                         <a href="{{ route('admin.students.index', ['status' => 'approved']) }}" 
                            class="nav-link rounded-0 {{ $status == 'approved' ? 'active' : '' }}">
-                            <i class="mdi mdi-check-circle-outline me-1"></i> Approved
+                            <i class="mdi mdi-check-circle-outline me-1"></i> Approved (Unassigned)
                             <span class="badge bg-success rounded-pill ms-1">{{ $counts['approved'] }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.students.index', ['status' => 'assigned']) }}" 
+                           class="nav-link rounded-0 {{ $status == 'assigned' ? 'active' : '' }}">
+                            <i class="mdi mdi-school-outline me-1"></i> Course Assigned
+                            <span class="badge bg-info rounded-pill ms-1">{{ $counts['assigned'] }}</span>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -118,7 +125,9 @@
                                 <td>{{ $student->email }}</td>
                                 <td>{{ $student->phone ?? '-' }}</td>
                                 <td>
-                                    @if($student->enrolment_status === 'approved')
+                                    @if($status === 'assigned')
+                                        <span class="badge bg-info">Assigned</span>
+                                    @elseif($student->enrolment_status === 'approved')
                                         <span class="badge bg-success">Approved</span>
                                     @elseif($student->enrolment_status === 'rejected')
                                         <span class="badge bg-danger">Rejected</span>
@@ -141,6 +150,11 @@
                                              </button>
                                          @elseif($student->enrolment_status === 'approved')
                                              @php $completion = $student->getCompletionPercentage(); @endphp
+                                             @if($status === 'approved')
+                                                 <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-xs btn-outline-success" data-bs-toggle="tooltip" title="Manage Course & Fees">
+                                                     <i class="fas fa-file-invoice-dollar"></i>
+                                                 </a>
+                                             @endif
                                               <button type="button" class="btn btn-xs btn-outline-primary btn-send-student" data-id="{{ $student->id }}" data-name="{{ $student->first_name }} {{ $student->surname }}" data-completion="{{ $completion }}" data-bs-toggle="tooltip" title="Send to Student (Completion: {{ $completion }}%)">
                                                   <i class="fas fa-paper-plane"></i>
                                               </button>

@@ -29,6 +29,7 @@ class DropdownOption extends Model
         'currency' => 'Currencies',
         'course_category' => 'Course Categories',
         'intake' => 'Intakes',
+        'additional_cost' => 'Additional Cost Types',
     ];
 
     /**

@@ -172,6 +172,175 @@
             </div>
             @endif
 
+            <!-- Enrolment Details -->
+            @php
+                $application = $student->applications()->with(['course', 'additionalCosts', 'installments'])->first();
+            @endphp
+            @if($application)
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4" style="border-left: 5px solid #2c3e7a !important;">
+                <div class="card-body p-4">
+                    <!-- Top Header Section -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center border-bottom pb-3 mb-4">
+                        <div class="d-flex align-items-center mb-3 mb-md-0">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle text-white me-3" style="width: 50px; height: 50px; background: linear-gradient(135deg, #2c3e7a 0%, #1a9fd4 100%) !important; box-shadow: 0 4px 10px rgba(44, 62, 122, 0.3);">
+                                <i class="fas fa-graduation-cap fa-lg"></i>
+                            </div>
+                            <div>
+                                <span class="text-muted small text-uppercase fw-bold" style="letter-spacing: 1px; font-size: 0.75rem;">Enrolled Program</span>
+                                <h4 class="mb-0 fw-bold text-dark mt-1" style="font-size: 1.35rem; line-height: 1.2;">{{ $application->course->name }}</h4>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge px-3 py-2 rounded-pill font-13 fw-bold" style="background-color: rgba(44, 62, 122, 0.1); color: #2c3e7a; border: 1px solid rgba(44, 62, 122, 0.2); font-size: 0.9rem;">
+                                <i class="fas fa-barcode me-1"></i> {{ $application->course->course_code }}
+                            </span>
+                            <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-sm btn-primary py-2 px-3 rounded-pill shadow-sm">
+                                <i class="fas fa-edit me-1"></i> Edit Enrolment
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Course Attributes Grid -->
+                    <div class="row g-4 mb-4">
+                        <!-- Partner Institute -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-primary me-3" style="width: 42px; height: 42px; background-color: rgba(44, 62, 122, 0.1);">
+                                    <i class="fas fa-university fa-lg"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Partner Institute</small>
+                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $application->course->partner_institute }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Study Method -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-success me-3" style="width: 42px; height: 42px; background-color: rgba(40, 167, 69, 0.1);">
+                                    <i class="fas fa-book-reader fa-lg"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Study Method</small>
+                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $application->course->study_method }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Duration -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-warning me-3" style="width: 42px; height: 42px; background-color: rgba(255, 193, 7, 0.1);">
+                                    <i class="fas fa-clock fa-lg"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Duration</small>
+                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ is_numeric($application->course->duration) ? $application->course->duration . ' Years' : $application->course->duration }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tuition Fee -->
+                        <div class="col-md-6 col-lg-3">
+                            <div class="d-flex align-items-center">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center text-danger me-3" style="width: 42px; height: 42px; background-color: rgba(220, 53, 69, 0.1);">
+                                    <i class="fas fa-wallet fa-lg"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Tuition Fee</small>
+                                    <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ number_format($application->total_fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Schedule & Summary Row -->
+                    <div class="row g-4 pt-3 border-top">
+                        <!-- Payment Installments -->
+                        <div class="col-lg-8">
+                            <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.5px;"><i class="fas fa-calendar-alt text-primary me-2"></i> Payment Installments Schedule</h6>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm align-middle" style="font-size: 0.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Installment</th>
+                                            <th>Due Date</th>
+                                            <th class="text-end">Amount</th>
+                                            <th class="text-end">Paid</th>
+                                            <th class="text-center">Status</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($application->installments as $inst)
+                                            <tr>
+                                                <td class="fw-semibold text-muted">Installment {{ $inst->installment_number }}</td>
+                                                <td>{{ $inst->due_date ? $inst->due_date->format('d M, Y') : '-' }}</td>
+                                                <td class="text-end fw-bold">{{ number_format($inst->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
+                                                <td class="text-end text-success">{{ number_format($inst->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
+                                                <td class="text-center">
+                                                    @if($inst->status === 'paid')
+                                                        <span class="badge bg-success">Paid</span>
+                                                    @elseif($inst->status === 'partially_paid')
+                                                        <span class="badge bg-info text-dark">Partially Paid</span>
+                                                    @else
+                                                        @if($inst->due_date && $inst->due_date->isPast())
+                                                            <span class="badge bg-danger">Overdue</span>
+                                                        @else
+                                                            <span class="badge bg-warning text-dark">Pending</span>
+                                                        @endif
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    @if($inst->status !== 'paid')
+                                                        <button type="button" 
+                                                                class="btn btn-xs btn-outline-success record-payment-btn" 
+                                                                data-id="{{ $inst->id }}" 
+                                                                data-inst="{{ $inst->installment_number }}" 
+                                                                data-due="{{ $inst->due_date ? $inst->due_date->format('d M, Y') : '-' }}" 
+                                                                data-amount="{{ $inst->amount }}" 
+                                                                data-paid="{{ $inst->paid_amount }}" 
+                                                                data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                data-bs-toggle="tooltip" 
+                                                                title="Record Payment">
+                                                            <i class="fas fa-coins"></i>
+                                                        </button>
+                                                    @else
+                                                        <span class="text-success"><i class="fas fa-check-circle"></i></span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Fees Summary -->
+                        <div class="col-lg-4">
+                            <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.5px;"><i class="fas fa-receipt text-primary me-2"></i> Fees Summary</h6>
+                            <div class="p-3 border rounded bg-light">
+                                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                                    <span class="text-dark fw-bold">Course Fee</span>
+                                    <span class="text-primary fw-bold fs-5">{{ number_format($application->total_fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Total Paid</span>
+                                    <span class="fw-semibold text-success">{{ number_format($application->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Balance Due</span>
+                                    <span class="fw-semibold text-danger">{{ number_format($application->total_fee - $application->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            @endif
+
             <!-- Personal Info -->
             <div class="info-section">
                 <div class="info-section-title"><i class="fas fa-user-circle"></i> Personal Information</div>
@@ -863,8 +1032,77 @@ $(document).ready(function() {
             $('#modal_invoice_custom_content').val($('#modal_invoice_custom_content').summernote('code'));
         }
     });
+
+    // Record Payment Modal logic
+    $(document).on('click', '.record-payment-btn', function() {
+        const id = $(this).data('id');
+        const number = $(this).data('inst');
+        const due = $(this).data('due');
+        const amount = parseFloat($(this).data('amount'));
+        const paid = parseFloat($(this).data('paid'));
+        const currency = $(this).data('currency');
+        const remaining = amount - paid;
+
+        $('#modal_installment_title').text(`Installment ${number}`);
+        $('#modal_due_date').text(due);
+        $('#modal_amount_display').text(`${amount.toFixed(2)} ${currency}`);
+        $('#modal_paid_display').text(`${paid.toFixed(2)} ${currency}`);
+        $('.currency-label').text(currency);
+        
+        $('#amount_paid_input').val(remaining.toFixed(2));
+        
+        // Update form action url dynamically
+        $('#recordPaymentForm').attr('action', `/admin/installments/${id}/record-payment`);
+        
+        $('#recordPaymentModal').modal('show');
+    });
 });
 </script>
 @endpush
+
+<!-- Record Payment Modal -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-labelledby="recordPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="recordPaymentModalLabel"><i class="fas fa-coins me-2"></i> Record Payment</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="recordPaymentForm" method="POST" action="">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <span class="text-muted d-block text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Installment Details</span>
+                        <h5 class="fw-bold text-dark mb-1" id="modal_installment_title">Installment 1</h5>
+                        <small class="text-muted">Due date: <span id="modal_due_date">N/A</span></small>
+                    </div>
+                    <hr class="my-3">
+                    <div class="row mb-3 font-13">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Installment Fee</small>
+                            <span class="fw-bold text-dark" id="modal_amount_display">0.00</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Already Paid</small>
+                            <span class="fw-bold text-success" id="modal_paid_display">0.00</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Amount to Pay (<span class="currency-label">GBP</span>) <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text currency-label">GBP</span>
+                            <input type="number" name="amount_paid" id="amount_paid_input" class="form-control" step="0.01" min="0.01" readonly required>
+                        </div>
+                        <small class="text-muted mt-1 d-block">The installment amount will be paid in full.</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-save me-1"></i> Save Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 @endsection
