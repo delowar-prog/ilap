@@ -40,6 +40,8 @@ class DropdownOptionController extends Controller
 
         $request->validate([
             'label' => 'required|string|max:255',
+            'country' => 'nullable|string|max:255',
+            'website' => 'nullable|url|max:255',
         ]);
 
         // Check duplicate within category
@@ -56,6 +58,8 @@ class DropdownOptionController extends Controller
         DropdownOption::create([
             'category'   => $category,
             'label'      => $request->label,
+            'country'    => $request->country,
+            'website'    => $request->website,
             'sort_order' => $maxOrder + 1,
             'is_active'  => true,
         ]);
@@ -68,11 +72,15 @@ class DropdownOptionController extends Controller
     {
         $request->validate([
             'label'     => 'required|string|max:255',
+            'country'   => 'nullable|string|max:255',
+            'website'   => 'nullable|url|max:255',
             'is_active' => 'nullable|boolean',
         ]);
 
         $dropdownOption->update([
             'label'     => $request->label,
+            'country'   => $request->country,
+            'website'   => $request->website,
             'is_active' => $request->boolean('is_active', true),
         ]);
 

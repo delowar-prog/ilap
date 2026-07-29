@@ -42,9 +42,12 @@ class CourseController extends Controller
         $studyMethods = DropdownOption::active('study_method');
         $currencies   = DropdownOption::active('currency');
         $intakes      = DropdownOption::active('intake');
+        $englishTests = DropdownOption::active('english_proficiency');
+        $partnerInstitutes = \App\Models\PartnerInstitute::where('is_active', true)->orderBy('name')->get();
+        $ilapInstitutes = \App\Models\DropdownOption::where('category', 'department')->where('is_active', true)->orderBy('sort_order')->get();
 
         return view('backend.courses.create', compact(
-            'categories', 'levels', 'studyMethods', 'currencies', 'intakes'
+            'categories', 'levels', 'studyMethods', 'currencies', 'intakes', 'englishTests', 'partnerInstitutes', 'ilapInstitutes'
         ));
     }
 
@@ -59,7 +62,9 @@ class CourseController extends Controller
 
         // Auto-generate course code if not provided
         if (empty($validated['course_code'])) {
-            $validated['course_code'] = 'CRS-' . strtoupper(uniqid());
+            $firstChar = strtoupper(substr($validated['name'] ?? 'C', 0, 1));
+            $randomNumber = mt_rand(10000, 99999);
+            $validated['course_code'] = $firstChar . $randomNumber;
         }
 
         $course = Course::create($validated);
@@ -88,9 +93,12 @@ class CourseController extends Controller
         $studyMethods = DropdownOption::active('study_method');
         $currencies   = DropdownOption::active('currency');
         $intakes      = DropdownOption::active('intake');
+        $englishTests = DropdownOption::active('english_proficiency');
+        $partnerInstitutes = \App\Models\PartnerInstitute::where('is_active', true)->orderBy('name')->get();
+        $ilapInstitutes = \App\Models\DropdownOption::where('category', 'department')->where('is_active', true)->orderBy('sort_order')->get();
 
         return view('backend.courses.edit', compact(
-            'course', 'categories', 'levels', 'studyMethods', 'currencies', 'intakes'
+            'course', 'categories', 'levels', 'studyMethods', 'currencies', 'intakes', 'englishTests', 'partnerInstitutes', 'ilapInstitutes'
         ));
     }
 
@@ -167,13 +175,16 @@ class CourseController extends Controller
             'application_fee' => 'nullable|numeric|min:0',
             'intake' => 'nullable|string|max:50',
             'application_deadline' => 'nullable|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
             'entry_requirements' => 'nullable|string',
-            'ielts_required' => 'nullable|numeric|min:0|max:9',
+            'english_test' => 'nullable|string|max:100',
+            'english_test_score' => 'nullable|string|max:100',
             'is_featured' => 'nullable|boolean',
             'is_available_for_admission' => 'nullable|boolean',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
             'brochures' => 'nullable|array',
-            'brochures.*.title' => 'required_with:brochures|string|max:255',
+            'brochures.*.title' => 'nullable|string|max:255',
             'brochures.*.file' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
             'status' => 'nullable|in:active,inactive,archived',
             'sort_order' => 'nullable|integer',
@@ -188,7 +199,8 @@ class CourseController extends Controller
         $updatedModuleIds = [];
 
         foreach ($modulesData as $index => $module) {
-            if (empty($module['title'])) {
+            // skip if entire row is empty
+            if (empty($module['title']) && empty($module['code']) && empty($module['credit']) && empty($module['glh'])) {
                 continue;
             }
 
@@ -228,13 +240,14 @@ class CourseController extends Controller
         $brochuresFiles = $request->file('brochures', []);
 
         foreach ($brochuresData as $index => $bData) {
-            if (empty($bData['title'])) {
+            $brochureId = $bData['id'] ?? null;
+            $title = $bData['title'] ?? null;
+            $fileObj = $brochuresFiles[$index]['file'] ?? null;
+
+            // skip if no title and no file (and no existing ID to update)
+            if (empty($title) && !$fileObj && !$brochureId) {
                 continue;
             }
-
-            $brochureId = $bData['id'] ?? null;
-            $title = $bData['title'];
-            $fileObj = $brochuresFiles[$index]['file'] ?? null;
 
             if ($brochureId) {
                 $existing = $course->brochures()->find($brochureId);

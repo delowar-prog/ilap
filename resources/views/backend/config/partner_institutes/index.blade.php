@@ -1,81 +1,71 @@
 @extends('layouts.backend_master')
-@section('title', 'Manage — ' . $categoryName)
+@section('title', 'Manage — Partner Institutes')
 
 @section('admin_contents')
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-flex align-items-center justify-content-between">
             <h4 class="page-title mb-0">
-                <i class="fas fa-sliders-h me-2"></i> {{ $categoryName }}
+                <i class="fas fa-university me-2"></i> Partner Institutes
             </h4>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('admin.config.dropdown.index') }}">Configuration</a></li>
-                    <li class="breadcrumb-item active">{{ $categoryName }}</li>
+                    <li class="breadcrumb-item active">Partner Institutes</li>
                 </ol>
             </nav>
         </div>
     </div>
 </div>
 
-
-
-<div class="row">
+<div class="row mt-3">
     {{-- LEFT: Options List --}}
     <div class="col-md-8">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-semibold"><i class="fas fa-list me-2 text-primary"></i>Current Options</h6>
-                <small class="text-muted">Drag rows to reorder</small>
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-list me-2 text-primary"></i>Current Partner Institutes</h6>
             </div>
             <div class="card-body p-0">
                 @if($options->isEmpty())
                     <div class="text-center py-5 text-muted">
                         <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
-                        No options yet. Add one using the form on the right.
+                        No partner institutes yet. Add one using the form on the right.
                     </div>
                 @else
-                    <table class="table table-hover align-middle mb-0" id="sortable-table">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th width="36" class="text-center text-muted"><i class="fas fa-grip-vertical"></i></th>
-                                <th>Label</th>
+                                <th>Institute Details</th>
                                 <th width="100" class="text-center">Status</th>
-                                <th width="160" class="text-center">Actions</th>
+                                <th width="120" class="text-center">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="sortable-body">
+                        <tbody>
                             @foreach($options as $opt)
-                            <tr data-id="{{ $opt->id }}" class="{{ $opt->is_active ? '' : 'table-secondary opacity-75' }}">
-                                <td class="text-center text-muted" style="cursor:grab;">
-                                    <i class="fas fa-grip-vertical"></i>
-                                </td>
+                            <tr class="{{ $opt->is_active ? '' : 'table-secondary opacity-75' }}">
                                 <td>
                                     {{-- Inline edit form --}}
-                                    <form action="{{ route('admin.config.dropdown.update', $opt->id) }}" method="POST"
-                                          class="d-flex gap-2 align-items-center" id="edit-form-{{ $opt->id }}">
+                                    <form action="{{ route('admin.config.partner_institutes.update', $opt->id) }}" method="POST" id="edit-form-{{ $opt->id }}">
                                         @csrf @method('PUT')
-                                        <div class="d-flex flex-column gap-1">
-                                            <div class="d-flex gap-2 align-items-center">
-                                                <input type="text" name="label" value="{{ $opt->label }}"
-                                                       class="form-control form-control-sm"
-                                                       style="max-width:280px;" required placeholder="Label">
-                                                <input type="hidden" name="is_active" value="{{ $opt->is_active ? '1' : '0' }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-primary px-2" title="Save">
-                                                    <i class="fas fa-save"></i>
+                                        <div class="row g-2 align-items-center">
+                                            <div class="col-md-5">
+                                                <input type="text" name="name" value="{{ $opt->name }}"
+                                                       class="form-control form-control-sm" placeholder="Name" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <input type="text" name="country" value="{{ $opt->country }}"
+                                                       class="form-control form-control-sm" placeholder="Country">
+                                            </div>
+                                            <div class="col-md-10 mt-1">
+                                                <input type="url" name="website" value="{{ $opt->website }}"
+                                                       class="form-control form-control-sm" placeholder="Website (https://...)">
+                                            </div>
+                                            <div class="col-md-2 mt-1">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary px-2 w-100" title="Save Changes">
+                                                    <i class="fas fa-save"></i> Save
                                                 </button>
                                             </div>
-                                            @if($category === 'department')
-                                            <div class="d-flex gap-2 align-items-center mt-1">
-                                                <input type="text" name="country" value="{{ $opt->country }}"
-                                                       class="form-control form-control-sm"
-                                                       style="max-width:140px;" placeholder="Country">
-                                                <input type="url" name="website" value="{{ $opt->website }}"
-                                                       class="form-control form-control-sm"
-                                                       style="max-width:180px;" placeholder="Website (url)">
-                                            </div>
-                                            @endif
                                         </div>
                                     </form>
                                 </td>
@@ -84,8 +74,7 @@
                                         <input class="form-check-input option-status-toggle" 
                                                type="checkbox" 
                                                role="switch" 
-                                               data-id="{{ $opt->id }}" 
-                                               data-url="{{ route('admin.config.dropdown.toggle', $opt->id) }}"
+                                               data-url="{{ route('admin.config.partner_institutes.toggle', $opt->id) }}"
                                                {{ $opt->is_active ? 'checked' : '' }} 
                                                style="cursor: pointer; width: 2.6em; height: 1.3em;">
                                     </div>
@@ -93,11 +82,11 @@
                                 <td class="text-center">
                                     <div class="d-flex gap-1 justify-content-center">
                                         {{-- Delete --}}
-                                        <form action="{{ route('admin.config.dropdown.destroy', $opt->id) }}" method="POST" class="d-inline">
+                                        <form action="{{ route('admin.config.partner_institutes.destroy', $opt->id) }}" method="POST" class="d-inline">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger"
                                                     data-bs-toggle="tooltip" title="Delete"
-                                                    onclick="return confirm('Delete this option?')">
+                                                    onclick="return confirm('Delete this institute?')">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </form>
@@ -116,53 +105,42 @@
     <div class="col-md-4">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3">
-                <h6 class="mb-0 fw-semibold"><i class="fas fa-plus-circle me-2 text-success"></i>Add New Option</h6>
+                <h6 class="mb-0 fw-semibold"><i class="fas fa-plus-circle me-2 text-success"></i>Add New Institute</h6>
             </div>
             <div class="card-body">
-                <form action="{{ route('admin.config.dropdown.store', $category) }}" method="POST">
+                <form action="{{ route('admin.config.partner_institutes.store') }}" method="POST">
                     @csrf
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">LABEL / NAME</label>
-                        <input type="text" name="label" class="form-control @error('label') is-invalid @enderror"
-                               placeholder="e.g. Higher Secondary" value="{{ old('label') }}" required>
-                        @error('label')
+                        <label class="form-label text-muted small fw-bold">INSTITUTE NAME <span class="text-danger">*</span></label>
+                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
+                               placeholder="e.g. University of Oxford" value="{{ old('name') }}" required>
+                        @error('name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    @if($category === 'department')
+                    
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">COUNTRY</label>
                         <input type="text" name="country" class="form-control @error('country') is-invalid @enderror"
-                               placeholder="e.g. UK" value="{{ old('country') }}">
+                               placeholder="e.g. United Kingdom" value="{{ old('country') }}">
                         @error('country')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">WEBSITE</label>
                         <input type="url" name="website" class="form-control @error('website') is-invalid @enderror"
-                               placeholder="https://..." value="{{ old('website') }}">
+                               placeholder="e.g. https://www.ox.ac.uk" value="{{ old('website') }}">
                         @error('website')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    @endif
+
                     <button type="submit" class="btn btn-primary w-100 fw-semibold">
-                        <i class="fas fa-plus me-1"></i> Add Option
+                        <i class="fas fa-plus me-1"></i> Add Institute
                     </button>
                 </form>
-            </div>
-        </div>
-
-        {{-- Info card --}}
-        <div class="card border-0 shadow-sm mt-3 border-start border-info border-3">
-            <div class="card-body py-3">
-                <h6 class="fw-semibold text-info mb-2"><i class="fas fa-info-circle me-1"></i>How it works</h6>
-                <ul class="small text-muted mb-0 ps-3">
-                    <li>Add options here and they appear in dropdowns across the project.</li>
-                    <li>Disable an option to hide it from forms without deleting.</li>
-                    <li>Drag rows to change the display order.</li>
-                </ul>
             </div>
         </div>
     </div>
@@ -170,28 +148,7 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
-    const tbody = document.getElementById('sortable-body');
-    if (tbody) {
-        Sortable.create(tbody, {
-            animation: 150,
-            handle: '.fa-grip-vertical',
-            onEnd: function () {
-                const rows = tbody.querySelectorAll('tr[data-id]');
-                const order = Array.from(rows).map((r, i) => r.dataset.id);
-                fetch('{{ route('admin.config.dropdown.reorder') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ order })
-                });
-            }
-        });
-    }
-
     // AJAX Toggle Switch
     $(document).on('change', '.option-status-toggle', function() {
         const switchEl = $(this);

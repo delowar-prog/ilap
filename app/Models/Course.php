@@ -36,13 +36,19 @@ class Course extends Model
         'currency',
         'application_fee',
         
+        // Additional Details
+        'thumbnail',
+        'application_deadline',
+        'start_date',
+        'end_date',
+        
         // Intake
         'intake',
-        'application_deadline',
         
         // Requirements
         'entry_requirements',
-        'ielts_required',
+        'english_test',
+        'english_test_score',
         
         // Visibility
         'is_featured',
@@ -61,12 +67,13 @@ class Course extends Model
         'is_ilap_course' => 'boolean',
         'fee' => 'decimal:2',
         'application_fee' => 'decimal:2',
-        'ielts_required' => 'decimal:1',
         'is_featured' => 'boolean',
         'is_available_for_admission' => 'boolean',
         'duration_months' => 'integer',
         'sort_order' => 'integer',
         'application_deadline' => 'date',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     // 🔗 Relationships

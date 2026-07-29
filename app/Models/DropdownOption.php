@@ -9,7 +9,7 @@ class DropdownOption extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['category', 'label', 'sort_order', 'is_active'];
+    protected $fillable = ['category', 'label', 'sort_order', 'is_active', 'country', 'website'];
 
     protected $casts = ['is_active' => 'boolean'];
 

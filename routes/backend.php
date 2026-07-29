@@ -138,6 +138,15 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::delete('/option/{dropdownOption}', [DropdownOptionController::class, 'destroy'])->name('destroy');
         Route::post('/reorder', [DropdownOptionController::class, 'reorder'])->name('reorder');
     });
+
+    // ── Configuration: Partner Institutes ───────────────────────────────────────
+    Route::prefix('config/partner-institutes')->name('config.partner_institutes.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\PartnerInstituteController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\PartnerInstituteController::class, 'store'])->name('store');
+        Route::put('/{partnerInstitute}', [\App\Http\Controllers\Admin\PartnerInstituteController::class, 'update'])->name('update');
+        Route::patch('/{partnerInstitute}/toggle', [\App\Http\Controllers\Admin\PartnerInstituteController::class, 'toggle'])->name('toggle');
+        Route::delete('/{partnerInstitute}', [\App\Http\Controllers\Admin\PartnerInstituteController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Impersonation Routes

@@ -36,19 +36,20 @@
                     @error('is_ilap_course') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                {{-- Partner Institute (for external courses) --}}
+                {{-- Institute Selection --}}
                 <div class="col-md-6" id="partner_institute_div">
-                    <label class="form-label fw-semibold">Partner Institute <span class="text-danger">*</span></label>
-                    <input type="text" name="partner_institute" 
-                           class="form-control @error('partner_institute') is-invalid @enderror" 
-                           value="{{ old('partner_institute') }}" 
-                           placeholder="e.g., University of Oxford">
+                    <label class="form-label fw-semibold" id="institute_label_text">Partner Institute <span class="text-danger" id="partner_asterisk">*</span></label>
+                    <select name="partner_institute" id="partner_institute_input"
+                            class="form-select select2-tags partner-select2 @error('partner_institute') is-invalid @enderror">
+                        <option value="">Select or type an institute</option>
+                        {{-- Options will be populated by JS --}}
+                    </select>
                     @error('partner_institute') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="col-md-6" id="institute_country_div">
                     <label class="form-label">Institute Country</label>
-                    <input type="text" name="institute_country" 
+                    <input type="text" name="institute_country" id="institute_country_input"
                            class="form-control @error('institute_country') is-invalid @enderror" 
                            value="{{ old('institute_country') }}" 
                            placeholder="e.g., United Kingdom">
@@ -57,7 +58,7 @@
 
                 <div class="col-md-6" id="institute_website_div">
                     <label class="form-label">Institute Website</label>
-                    <input type="url" name="institute_website" 
+                    <input type="url" name="institute_website" id="institute_website_input"
                            class="form-control @error('institute_website') is-invalid @enderror" 
                            value="{{ old('institute_website') }}" 
                            placeholder="https://www.ox.ac.uk">
@@ -98,8 +99,8 @@
                                 <input type="text" name="modules[0][code]" class="form-control form-control-sm" placeholder="Module Code">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label mb-0">Title <span class="text-danger">*</span></label>
-                                <input type="text" name="modules[0][title]" class="form-control form-control-sm" placeholder="Module Title" required>
+                                <label class="form-label mb-0">Title</label>
+                                <input type="text" name="modules[0][title]" class="form-control form-control-sm" placeholder="Module Title">
                             </div>
                             <div class="col-md-1">
                                 <label class="form-label mb-0">Credit</label>
@@ -237,9 +238,33 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">IELTS Required</label>
-                    <input type="number" step="0.5" min="0" max="9" name="ielts_required" 
-                           class="form-control" value="{{ old('ielts_required') }}" placeholder="e.g., 6.5">
+                    <label class="form-label">Course Start Date</label>
+                    <input type="date" name="start_date" class="form-control" 
+                           value="{{ old('start_date') }}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Course End Date</label>
+                    <input type="date" name="end_date" class="form-control" 
+                           value="{{ old('end_date') }}">
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">English Test Required</label>
+                    <select name="english_test" class="form-select">
+                        <option value="">Select English Test</option>
+                        @foreach($englishTests as $test)
+                            <option value="{{ $test }}" {{ old('english_test') == $test ? 'selected' : '' }}>
+                                {{ $test }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Score</label>
+                    <input type="text" name="english_test_score" class="form-control" 
+                           value="{{ old('english_test_score') }}" placeholder="e.g., 6.5 or 100">
                 </div>
 
                 <div class="col-12">
@@ -314,32 +339,102 @@
     </form>
 </div>
 
+@push('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container .select2-selection--single {
+        height: 38px !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 0.25rem !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 36px !important;
+        padding-left: 12px !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px !important;
+    }
+</style>
+@endpush
+
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+$(document).ready(function() {
     const courseType = document.getElementById('is_ilap_course');
     const partnerDiv = document.getElementById('partner_institute_div');
     const countryDiv = document.getElementById('institute_country_div');
     const websiteDiv = document.getElementById('institute_website_div');
 
+    const partnerInstitutes = @json($partnerInstitutes);
+    const ilapInstitutes = @json($ilapInstitutes);
+    const partnerInput = $('#partner_institute_input');
+    const countryInput = document.getElementById('institute_country_input');
+    const websiteInput = document.getElementById('institute_website_input');
+    const instituteLabel = document.getElementById('institute_label_text');
+    const oldInstitute = "{{ old('partner_institute') }}";
+
     function togglePartnerFields() {
         const isExternal = courseType.value === '0';
-        partnerDiv.style.display = isExternal ? 'block' : 'none';
-        countryDiv.style.display = isExternal ? 'block' : 'none';
-        websiteDiv.style.display = isExternal ? 'block' : 'none';
         
-        // Make partner_institute required for external courses
-        const partnerInput = partnerDiv.querySelector('input');
+        // Update label
         if (isExternal) {
-            partnerInput.setAttribute('required', 'required');
+            instituteLabel.innerHTML = 'Partner Institute <span class="text-danger" id="partner_asterisk">*</span>';
         } else {
-            partnerInput.removeAttribute('required');
-            partnerInput.value = '';
+            instituteLabel.innerHTML = 'iLAP Institute <span class="text-danger" id="partner_asterisk">*</span>';
         }
+
+        // Destroy select2 if initialized
+        if (partnerInput.hasClass("select2-hidden-accessible")) {
+            partnerInput.select2('destroy');
+        }
+
+        // Repopulate options
+        partnerInput.empty();
+        partnerInput.append(new Option("", "", false, false));
+        
+        const list = isExternal ? partnerInstitutes : ilapInstitutes;
+        list.forEach(inst => {
+            const instName = inst.name || inst.label;
+            const isSelected = (instName === oldInstitute);
+            partnerInput.append(new Option(instName, instName, isSelected, isSelected));
+        });
+
+        if (oldInstitute && !list.find(i => (i.name || i.label) === oldInstitute)) {
+            partnerInput.append(new Option(oldInstitute, oldInstitute, true, true));
+        }
+
+        // Re-initialize select2
+        if($.fn.select2) {
+            partnerInput.select2({
+                tags: true,
+                placeholder: "Select or type an institute",
+                allowClear: true,
+                width: '100%'
+            });
+        }
+
+        // Always require it now, since both need an institute
+        document.getElementById('partner_institute_input').setAttribute('required', 'required');
     }
 
     courseType.addEventListener('change', togglePartnerFields);
-    togglePartnerFields();
+    togglePartnerFields(); // Call on load
+
+    partnerInput.on('change', function() {
+        const selectedVal = $(this).val();
+        const isExternal = courseType.value === '0';
+        const list = isExternal ? partnerInstitutes : ilapInstitutes;
+        
+        const match = list.find(i => (i.name || i.label) === selectedVal);
+        if (match) {
+            countryInput.value = match.country || '';
+            websiteInput.value = match.website || '';
+        } else {
+            countryInput.value = '';
+            websiteInput.value = '';
+        }
+    });
 
     // Module dynamic rows
     let moduleIndex = 1;
@@ -352,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="text" name="modules[${moduleIndex}][code]" class="form-control form-control-sm" placeholder="Module Code">
             </div>
             <div class="col-md-4">
-                <input type="text" name="modules[${moduleIndex}][title]" class="form-control form-control-sm" placeholder="Module Title" required>
+                <input type="text" name="modules[${moduleIndex}][title]" class="form-control form-control-sm" placeholder="Module Title">
             </div>
             <div class="col-md-1">
                 <input type="text" name="modules[${moduleIndex}][credit]" class="form-control form-control-sm" placeholder="Credit">
