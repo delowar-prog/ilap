@@ -89,14 +89,10 @@
                                         return "<a href=\"{$url}\" class=\"text-dark text-decoration-none\">{$label} <small>{$icon}</small></a>";
                                     }
                                 @endphp
-                                <th>{!! paSort('first_name', 'First Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
-                                <th>{!! paSort('middle_name', 'Middle Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
-                                <th>{!! paSort('surname', 'Last Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
+                                <th>{!! paSort('first_name', 'Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>Campus</th>
-                                <th>Email</th>
                                 <th>{!! paSort('contact_number', 'Phone', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>Study Destination</th>
-                                <th>{!! paSort('updated_at', 'Submitted At', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th class="text-end">Action</th>
                             </tr>
                         </thead>
@@ -105,13 +101,11 @@
                                 <tr>
                                     <td>
                                         <h5 class="font-14 my-1">
-                                            <a href="{{ route('admin.pre.assessments.show', $assessment->id) }}" class="text-body">
-                                                {{ $assessment->first_name ?? $assessment->student->first_name }}
+                                            <a href="{{ route('admin.pre.assessments.show', $assessment->id) }}" class="text-body fw-bold">
+                                                {{ trim(($assessment->first_name ?? $assessment->student->first_name).' '.($assessment->surname ?? $assessment->student->surname)) }}
                                             </a>
                                         </h5>
                                     </td>
-                                    <td>{{ $assessment->middle_name ?? $assessment->student->middle_name ?? '-' }}</td>
-                                    <td>{{ $assessment->surname ?? $assessment->student->surname }}</td>
                                     <td>
                                         @if($assessment->student && $assessment->student->campus)
                                             <span class="badge bg-info text-dark">{{ $assessment->student->campus->name }}</span>
@@ -119,10 +113,8 @@
                                             -
                                         @endif
                                     </td>
-                                    <td>{{ $assessment->student->email ?? '-' }}</td>
                                     <td>{{ $assessment->contact_number ?? $assessment->student->phone }}</td>
                                     <td>{{ $assessment->study_destination ?? '-' }}</td>
-                                    <td>{{ $assessment->updated_at->format('d M Y, h:i A') }}</td>
                                     <td class="text-end">
                                         <a href="{{ route('admin.pre.assessments.show', $assessment->id) }}" 
                                            class="btn btn-sm btn-info" 
@@ -169,7 +161,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center py-4">
+                                    <td colspan="5" class="text-center py-4">
                                         <i class="fas fa-inbox fa-2x text-muted mb-2 d-block"></i>
                                         No assessments found.
                                     </td>

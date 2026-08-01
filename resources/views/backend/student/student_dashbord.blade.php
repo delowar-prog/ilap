@@ -265,23 +265,102 @@
                 <h5 class="mb-0 fw-bold text-primary"><i class="fas fa-receipt text-primary me-2"></i> Fees Summary</h5>
             </div>
             <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-                    <span class="text-dark fw-bold">Course Fee</span>
+                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                    <span class="text-dark fw-bold">Grand Total Fee</span>
                     <span class="text-primary fw-bold fs-4">{{ number_format($application->total_fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
                 </div>
-
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Base Course Fee</span>
+                    <span class="fw-semibold text-dark">{{ number_format($application->course->fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                </div>
+                @if(($application->scholarship_amount ?? 0) > 0)
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-success"><i class="fas fa-gift me-1"></i> Scholarship</span>
+                    <span class="fw-bold text-success">-{{ number_format($application->scholarship_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Course Fee</span>
+                    <span class="fw-semibold text-primary">{{ number_format($application->net_course_fee ?? ($application->course->fee - $application->scholarship_amount), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                </div>
+                @endif
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Additional Costs Total</span>
+                    <span class="fw-semibold text-dark">{{ number_format($application->additionalCosts->sum('amount'), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                </div>
+                <hr>
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted">Total Paid</span>
                     <span class="fw-semibold text-success">{{ number_format($application->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
                 </div>
                 <div class="d-flex justify-content-between">
                     <span class="text-muted">Balance Due</span>
-                    <span class="fw-semibold text-danger">{{ number_format($application->total_fee - $application->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                    <span class="fw-semibold text-danger">{{ number_format(max(0, $application->total_fee - $application->paid_amount), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@if($application->additionalCosts->count() > 0)
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white border-bottom py-3">
+                <h5 class="mb-0 fw-bold text-primary"><i class="fas fa-tags text-primary me-2"></i> Additional Costs (One-time Full Payments)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Cost Item / Description</th>
+                                <th>Amount</th>
+                                <th class="text-center">Status</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($application->additionalCosts as $cost)
+                                <tr>
+                                    <td class="ps-4 fw-semibold text-dark">{{ $cost->cost_name }}</td>
+                                    <td class="fw-bold text-primary">{{ number_format($cost->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
+                                    <td class="text-center">
+                                        @if($cost->status === 'paid')
+                                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Paid</span>
+                                        @else
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pending</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        @if($cost->status !== 'paid')
+                                            <button type="button" class="btn btn-sm btn-success st-pay-cost-btn"
+                                                    data-id="{{ $cost->id }}"
+                                                    data-name="{{ $cost->cost_name }}"
+                                                    data-amount="{{ number_format($cost->amount, 2) }}"
+                                                    data-currency="{{ $application->course->currency ?? 'GBP' }}">
+                                                <i class="fas fa-credit-card me-1"></i> Pay Now (Full)
+                                            </button>
+                                        @else
+                                            <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i> Fully Paid</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th class="ps-4 text-end">Total Additional Costs:</th>
+                                <th class="fw-bold text-primary">{{ number_format($application->additionalCosts->sum('amount'), 2) }} {{ $application->course->currency ?? 'GBP' }}</th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
 @endif
 
 <div class="row">
@@ -302,4 +381,64 @@
         </div>
     </div>
 </div>
+
+<!-- Student Additional Cost Pay Modal -->
+<div class="modal fade" id="studentPayCostModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="" method="POST" id="studentPayCostForm">
+            @csrf
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title text-white"><i class="fas fa-credit-card me-2"></i> Pay Additional Fee</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 font-13">
+                        <i class="fas fa-info-circle me-1"></i> Additional costs are required to be paid in full (one-time payment).
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Fee Item / Description</label>
+                        <input type="text" id="st_modal_cost_name" class="form-control bg-light" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Full Payment Amount</label>
+                        <input type="text" id="st_modal_cost_amount" class="form-control bg-light fw-bold text-success" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Payment Method</label>
+                        <select name="payment_method" class="form-select" required>
+                            <option value="Online Payment">Online Payment / Debit Card</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-4"><i class="fas fa-lock me-1"></i> Confirm & Pay</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $(document).on('click', '.st-pay-cost-btn', function() {
+        const costId = $(this).data('id');
+        const costName = $(this).data('name');
+        const amount = $(this).data('amount');
+        const currency = $(this).data('currency');
+
+        $('#st_modal_cost_name').val(costName);
+        $('#st_modal_cost_amount').val(amount + ' ' + currency);
+
+        const actionUrl = "{{ url('/student/additional-cost') }}/" + costId + "/pay";
+        $('#studentPayCostForm').attr('action', actionUrl);
+
+        $('#studentPayCostModal').modal('show');
+    });
+});
+</script>
+@endpush

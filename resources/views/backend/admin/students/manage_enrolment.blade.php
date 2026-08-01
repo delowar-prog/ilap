@@ -9,12 +9,42 @@
             <h5 class="mb-0 text-primary fw-semibold">
                 <i class="fas fa-file-invoice-dollar me-2"></i> Manage Enrolment & Fees: {{ $student->first_name }} {{ $student->surname }}
             </h5>
-            <a href="{{ route('admin.students.index', ['status' => 'approved']) }}" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i> Back to List
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.students.show', $student->id) }}" class="btn btn-sm btn-outline-info">
+                    <i class="fas fa-file-invoice me-1"></i> Student Profile & Invoices
+                </a>
+                @if($student->enrolment_status === 'enrolled')
+                    <a href="{{ route('admin.students.enrolled') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                    </a>
+                @else
+                    <a href="{{ route('admin.students.index', ['status' => 'approved']) }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                    </a>
+                @endif
+            </div>
         </div>
         <div class="card-body p-4">
-            <form action="{{ route('admin.students.enrolment.save', $student->id) }}" method="POST" id="enrolmentForm">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas fa-check-circle me-1"></i> {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                    <h6 class="alert-heading fw-bold mb-1"><i class="fas fa-exclamation-circle me-1"></i> Please fix the following errors before saving:</h6>
+                    <ul class="mb-0 ps-3">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            <form action="{{ route('admin.students.enrolment.save', $student->id) }}" method="POST" id="enrolmentForm" novalidate>
                 @csrf
 
                 <!-- Step 1: Course Assignment -->
@@ -25,9 +55,9 @@
                         </h6>
                         <hr class="mt-1 mb-3">
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-4">
                         <label class="form-label fw-medium">Assign Course <span class="text-danger">*</span></label>
-                        <select name="course_id" id="course_id" class="form-select select2-init" required>
+                        <select name="course_id" id="course_id" class="form-select select2-init">
                             <option value="">Select Course</option>
                             @foreach($courses as $course)
                                 <option value="{{ $course->id }}" 
@@ -37,7 +67,7 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-medium">Base Course Fee</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light fw-bold" id="currency_symbol">
@@ -46,57 +76,124 @@
                             <input type="text" id="course_fee_display" class="form-control bg-light" readonly value="0.00">
                         </div>
                     </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-medium text-success"><i class="fas fa-gift me-1"></i> Scholarship Amount</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light fw-bold currency-label">
+                                {{ $application->course->currency ?? 'GBP' }}
+                            </span>
+                            <input type="number" name="scholarship_amount" id="scholarship_amount" class="form-control fw-bold text-success" step="0.01" min="0" value="{{ old('scholarship_amount', $application->scholarship_amount ?? 0) }}" placeholder="0.00">
+                        </div>
+                        <small class="text-muted">Net Course Fee (Total after Scholarship): <strong class="text-primary" id="net_course_fee_display">0.00</strong></small>
+                    </div>
                 </div>
 
-                <!-- Step 2: Additional Costs -->
+                <!-- Step 2: Installments Scheduling (Course Base Fee Only) -->
                 <div class="row mb-4">
-                    <div class="col-12 mb-3 d-flex justify-content-between align-items-center">
+                    <div class="col-12 mb-3">
                         <h6 class="text-uppercase text-muted fw-semibold mb-0" style="font-size: 0.75rem; letter-spacing: 0.05em;">
-                            2. Additional Costs
+                            2. Payment Setup & Installments Schedule (Net Course Fee)
                         </h6>
-                        <button type="button" class="btn btn-xs btn-outline-primary" id="add_cost_btn">
-                            <i class="fas fa-plus me-1"></i> Add Cost
+                        <hr class="mt-1 mb-3">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Payment Setup Type <span class="text-danger">*</span></label>
+                        <select id="payment_setup_type" class="form-select form-select-sm" required>
+                            <option value="full_due">Full Due (Pay Course Fee via Custom Installments)</option>
+                            <option value="full_paid">Full Payment (Pay Course Fee in Full Upfront)</option>
+                            <option value="partial_upfront">Partial Upfront + Custom Installments</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3 d-none" id="upfront_amount_container">
+                        <label class="form-label fw-bold">Upfront Payment Amount (<span class="currency-label">GBP</span>) <span class="text-danger">*</span></label>
+                        <input type="number" id="upfront_amount" class="form-control form-control-sm" step="0.01" min="0.01" value="0.00">
+                    </div>
+                    
+                    <div class="col-12 mb-3 d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Configure payment installments schedule for Net Course Fee below:</span>
+                        <button type="button" class="btn btn-xs btn-outline-primary" id="add_installment_btn">
+                            <i class="fas fa-plus me-1"></i> Add Installment
                         </button>
                     </div>
+
                     <div class="col-12">
-                        <hr class="mt-0 mb-3">
+                        <div class="alert alert-warning py-2 px-3 d-none mb-3 shadow-none border-0 align-items-center gap-2" id="installment_validation_warning" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="installment_warning_text">Installment total must match the Net Course Fee!</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm align-middle" id="installments_table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 15%;">Installment No.</th>
+                                        <th style="width: 25%;">Amount</th>
+                                        <th style="width: 20%;">Due Date</th>
+                                        <th style="width: 15%;">Status</th>
+                                        <th style="width: 20%;">Paid Amount</th>
+                                        <th style="width: 5%;" class="text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="installments_tbody">
+                                    <!-- Dynamic Rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Additional Costs (Outside Installments) -->
+                <div class="row mb-4">
+                    <div class="col-12 mb-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-uppercase text-muted fw-semibold mb-0" style="font-size: 0.75rem; letter-spacing: 0.05em;">
+                                3. Additional Costs (Outside Installments - One-time Full Payment)
+                            </h6>
+                            <small class="text-muted">Fees here will NOT be included in installments and must be paid in full separately.</small>
+                        </div>
+                        <button type="button" class="btn btn-xs btn-outline-primary" id="add_cost_btn">
+                            <i class="fas fa-plus me-1"></i> Add Additional Cost Item
+                        </button>
+                    </div>
+
+                    <div class="col-12">
                         <div class="table-responsive">
                             <table class="table table-bordered table-sm align-middle" id="additional_costs_table">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 55%;">Cost Item / Type</th>
-                                        <th style="width: 35%;">Amount</th>
+                                        <th style="width: 50%;">Cost Item / Description</th>
+                                        <th style="width: 40%;">Amount</th>
                                         <th style="width: 10%;" class="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="additional_costs_tbody">
-                                    @php
-                                        $oldCosts = old('additional_costs', $application->additionalCosts ?? []);
-                                    @endphp
-                                    @forelse($oldCosts as $index => $cost)
-                                        <tr>
-                                            <td>
-                                                <select name="additional_costs[{{ $index }}][cost_name]" class="form-select form-select-sm" required>
-                                                    <option value="">Select Cost Type</option>
-                                                    @foreach($costTypes as $type)
-                                                        <option value="{{ $type }}" {{ ($cost['cost_name'] ?? $cost->cost_name) == $type ? 'selected' : '' }}>
-                                                            {{ $type }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <input type="number" name="additional_costs[{{ $index }}][amount]" class="form-control form-control-sm cost-amount" step="0.01" min="0" required value="{{ $cost['amount'] ?? $cost->amount }}">
-                                            </td>
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-xs btn-danger remove-row-btn">
-                                                    <i class="fas fa-trash-alt"></i>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <!-- Will load empty state via JS if no saved records -->
-                                    @endforelse
+                                    @if(old('additional_costs', $application->additionalCosts ?? []))
+                                        @foreach(old('additional_costs', $application->additionalCosts ?? []) as $index => $cost)
+                                            @php
+                                                $costName = is_array($cost) ? ($cost['cost_name'] ?? '') : $cost->cost_name;
+                                                $amount = is_array($cost) ? ($cost['amount'] ?? 0) : $cost->amount;
+                                            @endphp
+                                            <tr>
+                                                <td>
+                                                    <select name="additional_costs[{{ $index }}][cost_name]" class="form-select form-select-sm" required>
+                                                        <option value="">Select Cost Type</option>
+                                                        @foreach($costTypes as $type)
+                                                            <option value="{{ $type }}" {{ $costName == $type ? 'selected' : '' }}>{{ $type }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <input type="number" name="additional_costs[{{ $index }}][amount]" class="form-control form-control-sm cost-amount" step="0.01" min="0" required value="{{ number_format($amount, 2, '.', '') }}">
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-xs btn-danger remove-row-btn">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @endif
                                 </tbody>
                             </table>
                         </div>
@@ -110,7 +207,19 @@
                             <div class="text-muted fw-semibold">Total Fee Calculation Summary</div>
                             <div class="d-flex align-items-center gap-4">
                                 <div class="text-end">
-                                    <small class="text-muted d-block">Additional Cost Total</small>
+                                    <small class="text-muted d-block">Base Fee</small>
+                                    <span class="fw-bold" id="base_fee_summary_display">0.00</span>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-success d-block">Scholarship</small>
+                                    <span class="fw-bold text-success" id="scholarship_summary_display">-0.00</span>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted d-block">Course Fee</small>
+                                    <span class="fw-bold text-primary" id="net_fee_summary_display">0.00</span>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted d-block">Additional Costs</small>
                                     <span class="fw-bold" id="additional_cost_total_display">0.00</span>
                                 </div>
                                 <div class="text-end">
@@ -119,61 +228,6 @@
                                     </h5>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Step 3: Installments Scheduling -->
-                <div class="row mb-4">
-                    <div class="col-12 mb-3">
-                        <h6 class="text-uppercase text-muted fw-semibold mb-0" style="font-size: 0.75rem; letter-spacing: 0.05em;">
-                            3. Payment Setup & Installments Schedule
-                        </h6>
-                        <hr class="mt-1 mb-3">
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Payment Setup Type <span class="text-danger">*</span></label>
-                        <select id="payment_setup_type" class="form-select form-select-sm" required>
-                            <option value="full_due">Full Due (Pay via Custom Installments)</option>
-                            <option value="full_paid">Full Payment (Paid in Full Upfront)</option>
-                            <option value="partial_upfront">Partial Upfront + Custom Installments</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6 mb-3 d-none" id="upfront_amount_container">
-                        <label class="form-label fw-bold">Upfront Payment Amount (<span class="currency-label">GBP</span>) <span class="text-danger">*</span></label>
-                        <input type="number" id="upfront_amount" class="form-control form-control-sm" step="0.01" min="0.01" value="0.00">
-                    </div>
-                    
-                    <div class="col-12 mb-3 d-flex justify-content-between align-items-center">
-                        <span class="text-muted small">Configure payment installments schedule below:</span>
-                        <button type="button" class="btn btn-xs btn-outline-primary" id="add_installment_btn">
-                            <i class="fas fa-plus me-1"></i> Add Installment
-                        </button>
-                    </div>
-
-                    <div class="col-12">
-                        <div class="alert alert-warning py-2 px-3 d-none mb-3 shadow-none border-0 align-items-center gap-2" id="installment_validation_warning" role="alert">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span id="installment_warning_text">Installment total must match the Grand Total!</span>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-sm align-middle" id="installments_table">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 15%;">Installment No.</th>
-                                        <th style="width: 25%;">Amount</th>
-                                        <th style="width: 25%;">Due Date</th>
-                                        <th style="width: 20%;">Payment Status</th>
-                                        <th style="width: 15%;">Paid Amount</th>
-                                        <th style="width: 10%;" class="text-center">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="installments_tbody">
-                                    <!-- Dynamic rows loaded via Javascript -->
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
@@ -252,6 +306,17 @@
                 $('#course_fee_display').val('0.00');
             }
             calculateTotals();
+            if ($('#payment_setup_type').val() === 'full_paid') {
+                renderInstallments();
+            }
+        });
+
+        // Trigger calculation on scholarship amount change
+        $('#scholarship_amount').on('input', function() {
+            calculateTotals();
+            if ($('#payment_setup_type').val() === 'full_paid') {
+                renderInstallments();
+            }
         });
 
         // Dynamic rows generation for Additional Costs
@@ -285,7 +350,7 @@
 
         // Dynamic rows generation for Installments
         $('#add_installment_btn').on('click', function() {
-            $('#installments_tbody').append(createInstallmentRowHtml(instCount, 0.00, '', 'pending', 0.00));
+            $('#installments_tbody').append(createInstallmentRowHtml(instCount, '', '', 'pending', 0.00));
             instCount++;
             updateInstallmentLabels();
             calculateTotals();
@@ -316,11 +381,8 @@
             instCount = 0;
 
             const baseFee = parseFloat($('#course_fee_display').val()) || 0;
-            let additionalCostsTotal = 0;
-            $('.cost-amount').each(function() {
-                additionalCostsTotal += parseFloat($(this).val()) || 0;
-            });
-            const grandTotal = baseFee + additionalCostsTotal;
+            const scholarship = parseFloat($('#scholarship_amount').val()) || 0;
+            const netCourseFee = Math.max(0, baseFee - scholarship);
 
             if (setupType === 'full_paid') {
                 $('#add_installment_btn').addClass('d-none');
@@ -333,17 +395,17 @@
                             Full Payment
                         </td>
                         <td>
-                            <input type="number" name="installments[0][amount]" class="form-control form-control-sm installment-amount" step="0.01" value="${grandTotal.toFixed(2)}" readonly required>
+                            <input type="number" name="installments[0][amount]" class="form-control form-control-sm installment-amount" step="0.01" value="${netCourseFee.toFixed(2)}" readonly>
                         </td>
                         <td>
-                            <input type="date" name="installments[0][due_date]" class="form-control form-control-sm" value="${today}" readonly required>
+                            <input type="date" name="installments[0][due_date]" class="form-control form-control-sm" value="${today}">
                         </td>
                         <td>
                             <input type="hidden" name="installments[0][status]" value="paid">
                             <span class="badge bg-success">Fully Paid</span>
                         </td>
                         <td>
-                            <input type="number" name="installments[0][paid_amount]" class="form-control form-control-sm installment-paid" value="${grandTotal.toFixed(2)}" readonly required>
+                            <input type="number" name="installments[0][paid_amount]" class="form-control form-control-sm installment-paid" value="${netCourseFee.toFixed(2)}" readonly>
                         </td>
                         <td class="text-center text-muted">-</td>
                     </tr>
@@ -364,17 +426,17 @@
                             Upfront Payment
                         </td>
                         <td>
-                            <input type="number" name="installments[0][amount]" class="form-control form-control-sm installment-amount" step="0.01" value="${upfrontAmount.toFixed(2)}" readonly required>
+                            <input type="number" name="installments[0][amount]" class="form-control form-control-sm installment-amount" step="0.01" value="${upfrontAmount.toFixed(2)}" readonly>
                         </td>
                         <td>
-                            <input type="date" name="installments[0][due_date]" class="form-control form-control-sm" value="${today}" readonly required>
+                            <input type="date" name="installments[0][due_date]" class="form-control form-control-sm" value="${today}">
                         </td>
                         <td>
                             <input type="hidden" name="installments[0][status]" value="paid">
                             <span class="badge bg-success">Fully Paid</span>
                         </td>
                         <td>
-                            <input type="number" name="installments[0][paid_amount]" class="form-control form-control-sm installment-paid" value="${upfrontAmount.toFixed(2)}" readonly required>
+                            <input type="number" name="installments[0][paid_amount]" class="form-control form-control-sm installment-paid" value="${upfrontAmount.toFixed(2)}" readonly>
                         </td>
                         <td class="text-center text-muted">-</td>
                     </tr>
@@ -388,7 +450,7 @@
                         instCount++;
                     });
                 } else {
-                    tbody.append(createInstallmentRowHtml(instCount, 0.00, '', 'pending', 0.00));
+                    tbody.append(createInstallmentRowHtml(instCount, '', '', 'pending', 0.00));
                     instCount++;
                 }
             } 
@@ -402,7 +464,7 @@
                         instCount++;
                     });
                 } else {
-                    tbody.append(createInstallmentRowHtml(instCount, 0.00, '', 'pending', 0.00));
+                    tbody.append(createInstallmentRowHtml(instCount, '', '', 'pending', 0.00));
                     instCount++;
                 }
             }
@@ -412,26 +474,27 @@
         }
 
         function createInstallmentRowHtml(index, amount, dueDate, status, paidAmount) {
+            const amountVal = (amount !== undefined && amount !== null && amount !== '') ? parseFloat(amount).toFixed(2) : '';
             return `
                 <tr>
                     <td class="fw-semibold ps-3 py-2 text-muted inst-label">
                         Installment
                     </td>
                     <td>
-                        <input type="number" name="installments[${index}][amount]" class="form-control form-control-sm installment-amount" step="0.01" min="0.01" required value="${parseFloat(amount).toFixed(2)}">
+                        <input type="number" name="installments[${index}][amount]" class="form-control form-control-sm installment-amount" step="0.01" min="0.01" value="${amountVal}" placeholder="Enter amount">
                     </td>
                     <td>
-                        <input type="date" name="installments[${index}][due_date]" class="form-control form-control-sm" required value="${dueDate}">
+                        <input type="date" name="installments[${index}][due_date]" class="form-control form-control-sm" value="${dueDate || ''}">
                     </td>
                     <td>
-                        <select name="installments[${index}][status]" class="form-select form-select-sm installment-status" required>
+                        <select name="installments[${index}][status]" class="form-select form-select-sm installment-status">
                             <option value="pending" ${status === 'pending' ? 'selected' : ''}>Due (Pending)</option>
                             <option value="partially_paid" ${status === 'partially_paid' ? 'selected' : ''}>Partially Paid</option>
                             <option value="paid" ${status === 'paid' ? 'selected' : ''}>Fully Paid</option>
                         </select>
                     </td>
                     <td>
-                        <input type="number" name="installments[${index}][paid_amount]" class="form-control form-control-sm installment-paid" step="0.01" min="0" required value="${parseFloat(paidAmount).toFixed(2)}" ${status !== 'partially_paid' ? 'readonly' : ''}>
+                        <input type="number" name="installments[${index}][paid_amount]" class="form-control form-control-sm installment-paid" step="0.01" min="0" value="${parseFloat(paidAmount || 0).toFixed(2)}" ${status !== 'partially_paid' ? 'readonly' : ''}>
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-xs btn-danger remove-row-btn">
@@ -497,10 +560,102 @@
             calculateTotals();
         });
 
+        // Form Submit Handler (Custom Validation & Re-indexing)
+        $('#enrolmentForm').on('submit', function(e) {
+            let isValid = true;
+            let firstErrorEl = null;
+
+            // 1. Validate course_id
+            const courseId = $('#course_id').val();
+            if (!courseId) {
+                isValid = false;
+                $('.select2-selection').css('border', '1px solid #dc3545');
+                if (!firstErrorEl) firstErrorEl = $('.select2-selection');
+            } else {
+                $('.select2-selection').css('border', '');
+            }
+
+            // 2. Validate additional costs
+            $('#additional_costs_tbody tr').each(function() {
+                const costSelect = $(this).find('select');
+                if (costSelect.length && !costSelect.val()) {
+                    isValid = false;
+                    costSelect.addClass('is-invalid');
+                    if (!firstErrorEl) firstErrorEl = costSelect;
+                } else {
+                    costSelect.removeClass('is-invalid');
+                }
+            });
+
+            // 3. Validate installments
+            $('#installments_tbody tr').each(function() {
+                const amtInput = $(this).find('.installment-amount');
+                const dateInput = $(this).find('input[type="date"]');
+
+                if (amtInput.length && (parseFloat(amtInput.val()) || 0) <= 0) {
+                    isValid = false;
+                    amtInput.addClass('is-invalid');
+                    if (!firstErrorEl) firstErrorEl = amtInput;
+                } else {
+                    amtInput.removeClass('is-invalid');
+                }
+
+                if (dateInput.length && !dateInput.val()) {
+                    isValid = false;
+                    dateInput.addClass('is-invalid');
+                    if (!firstErrorEl) firstErrorEl = dateInput;
+                } else {
+                    dateInput.removeClass('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                e.preventDefault();
+                if (firstErrorEl) {
+                    $('html, body').animate({
+                        scrollTop: firstErrorEl.offset().top - 150
+                    }, 300);
+                }
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Please select a course and fill in all required fields.');
+                }
+                return false;
+            }
+
+            // Re-index additional costs inputs
+            $('#additional_costs_tbody tr').each(function(idx) {
+                $(this).find('select, input').each(function() {
+                    const name = $(this).attr('name');
+                    if (name) {
+                        $(this).attr('name', name.replace(/additional_costs\[\d+\]/, `additional_costs[${idx}]`));
+                    }
+                });
+            });
+
+            // Re-index installments inputs
+            $('#installments_tbody tr').each(function(idx) {
+                $(this).find('select, input').each(function() {
+                    const name = $(this).attr('name');
+                    if (name) {
+                        $(this).attr('name', name.replace(/installments\[\d+\]/, `installments[${idx}]`));
+                    }
+                });
+            });
+
+            return true;
+        });
+
         // Perform calculation updates and grand validation in real-time
         function calculateTotals() {
-            // Calculate base fee
+            // Calculate base fee & scholarship
             const baseFee = parseFloat($('#course_fee_display').val()) || 0;
+            const scholarship = parseFloat($('#scholarship_amount').val()) || 0;
+            const netCourseFee = Math.max(0, baseFee - scholarship);
+
+            $('#net_course_fee_display').text(netCourseFee.toFixed(2));
+            $('#base_fee_summary_display').text(baseFee.toFixed(2));
+            $('#scholarship_summary_display').text('-' + scholarship.toFixed(2));
+            $('#net_fee_summary_display').text(netCourseFee.toFixed(2));
 
             // Calculate additional costs total
             let additionalCostsTotal = 0;
@@ -510,15 +665,15 @@
             $('#additional_cost_total_display').text(additionalCostsTotal.toFixed(2));
 
             // Calculate Grand Total
-            const grandTotal = baseFee + additionalCostsTotal;
+            const grandTotal = netCourseFee + additionalCostsTotal;
             $('#grand_total_display').text(grandTotal.toFixed(2));
 
             // Force update upfront row value if setup type is Full Paid
             const setupType = $('#payment_setup_type').val();
             if (setupType === 'full_paid') {
                 const tbody = $('#installments_tbody');
-                tbody.find('tr:first-child .installment-amount').val(grandTotal.toFixed(2));
-                tbody.find('tr:first-child .installment-paid').val(grandTotal.toFixed(2));
+                tbody.find('tr:first-child .installment-amount').val(netCourseFee.toFixed(2));
+                tbody.find('tr:first-child .installment-paid').val(netCourseFee.toFixed(2));
             }
 
             // Calculate installments sum
@@ -526,16 +681,15 @@
             $('.installment-amount').each(function() {
                 installmentsTotal += parseFloat($(this).val()) || 0;
             });
+            $('#installments_total_display').text(installmentsTotal.toFixed(2));
 
-            // Perform matching check
+            // Informational check against netCourseFee (does not block form submission)
             const errorWarning = $('#installment_validation_warning');
-            if (installmentsTotal.toFixed(2) !== grandTotal.toFixed(2)) {
+            if (Math.abs(installmentsTotal - netCourseFee) > 0.01) {
                 errorWarning.removeClass('d-none').addClass('d-flex');
-                $('#installment_warning_text').html(`<strong>Validation Warning:</strong> Total payment installments amount (<strong>${installmentsTotal.toFixed(2)}</strong>) does not match the Grand Total (<strong>${grandTotal.toFixed(2)}</strong>). Please adjust installments.`);
-                $('#submitFormBtn').prop('disabled', true);
+                $('#installment_warning_text').html(`<strong>Note:</strong> Total payment installments amount (<strong>${installmentsTotal.toFixed(2)}</strong>) differs from Net Course Fee (<strong>${netCourseFee.toFixed(2)}</strong>).`);
             } else {
                 errorWarning.removeClass('d-flex').addClass('d-none');
-                $('#submitFormBtn').prop('disabled', false);
             }
         }
 
@@ -556,8 +710,15 @@
             });
         }
 
-        // Initialize: Trigger detection and render initial state
-        $('#course_id').trigger('change');
+        // Initial trigger to render installments on load
+        if ($('#course_id').val()) {
+            const courseId = $('#course_id').val();
+            if (courses[courseId]) {
+                $('#course_fee_display').val(parseFloat(courses[courseId].fee).toFixed(2));
+                $('#currency_symbol').text(courses[courseId].currency);
+                $('.currency-label').text(courses[courseId].currency);
+            }
+        }
         renderInstallments();
     });
 </script>

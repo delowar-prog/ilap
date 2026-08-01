@@ -120,7 +120,7 @@
                 </div>
             </div>
 
-            @if($student->enrolment_status === 'enrolled')
+            @if(in_array($student->enrolment_status, ['enrolled', 'approved']))
             <div class="action-bar border-bottom p-3 bg-light d-flex gap-2 align-items-center flex-wrap">
                 <a href="{{ route('admin.students.profile.pdf', $student->id) }}" class="btn btn-primary btn-sm rounded-pill shadow-sm px-3">
                     <i class="fas fa-file-pdf me-1"></i> Profile PDF
@@ -174,6 +174,7 @@
 
             <!-- Enrolment Details -->
             @php
+                $canAssignCourse = ($student->preAssessment && $student->preAssessment->assessment_status === 'approved' && $student->enrolment_status !== 'pending');
                 $application = $student->applications()->with(['course', 'additionalCosts', 'installments'])->first();
             @endphp
             @if($application)
@@ -194,9 +195,15 @@
                             <span class="badge px-3 py-2 rounded-pill font-13 fw-bold" style="background-color: rgba(44, 62, 122, 0.1); color: #2c3e7a; border: 1px solid rgba(44, 62, 122, 0.2); font-size: 0.9rem;">
                                 <i class="fas fa-barcode me-1"></i> {{ $application->course->course_code }}
                             </span>
-                            <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-sm btn-primary py-2 px-3 rounded-pill shadow-sm">
-                                <i class="fas fa-edit me-1"></i> Edit Enrolment
-                            </a>
+                            @if($student->preAssessment && $student->preAssessment->assessment_status === 'approved')
+                                <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-sm btn-primary py-2 px-3 rounded-pill shadow-sm">
+                                    <i class="fas fa-edit me-1"></i> Edit Enrolment
+                                </a>
+                            @else
+                                <button type="button" class="btn btn-sm btn-secondary py-2 px-3 rounded-pill shadow-sm" disabled title="Approve Pre-Enrolment first">
+                                    <i class="fas fa-lock me-1"></i> Edit Enrolment (Pending Approval)
+                                </button>
+                            @endif
                         </div>
                     </div>
 
@@ -259,11 +266,17 @@
                     <div class="row g-4 pt-3 border-top">
                         <!-- Payment Installments -->
                         <div class="col-lg-8">
-                            <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.5px;"><i class="fas fa-calendar-alt text-primary me-2"></i> Payment Installments Schedule</h6>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 0.5px;"><i class="fas fa-calendar-alt text-primary me-2"></i> Payment Installments Schedule</h6>
+                                <button type="button" id="generateInvoiceSelectedBtn" class="btn btn-sm btn-outline-success rounded-pill px-3 d-none" data-bs-toggle="modal" data-bs-target="#generateInvoiceModal" onclick="prepareInvoiceModal()">
+                                    <i class="fas fa-file-invoice me-1"></i> Generate Invoice (<span id="selectedItemCount">0</span> selected)
+                                </button>
+                            </div>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-sm align-middle" style="font-size: 0.85rem;">
                                     <thead class="table-light">
                                         <tr>
+                                            <th style="width:36px;"><input type="checkbox" id="selectAllInstallments" class="form-check-input" title="Select All Installments"></th>
                                             <th>Installment</th>
                                             <th>Due Date</th>
                                             <th class="text-end">Amount</th>
@@ -275,7 +288,13 @@
                                     <tbody>
                                         @foreach($application->installments as $inst)
                                             <tr>
-                                                <td class="fw-semibold text-muted">Installment {{ $inst->installment_number }}</td>
+                                                <td><input type="checkbox" class="form-check-input installment-checkbox" value="{{ $inst->id }}" onchange="updateSelectedCount()"></td>
+                                                <td class="fw-semibold text-muted">
+                                                    Installment {{ $inst->installment_number }}
+                                                    @if($inst->is_invoiced)
+                                                        <span class="badge bg-info ms-1" title="Invoiced on {{ $inst->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-file-invoice me-1"></i>Invoiced</span>
+                                                    @endif
+                                                </td>
                                                 <td>{{ $inst->due_date ? $inst->due_date->format('d M, Y') : '-' }}</td>
                                                 <td class="text-end fw-bold">{{ number_format($inst->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
                                                 <td class="text-end text-success">{{ number_format($inst->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
@@ -321,19 +340,130 @@
                         <div class="col-lg-4">
                             <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.5px;"><i class="fas fa-receipt text-primary me-2"></i> Fees Summary</h6>
                             <div class="p-3 border rounded bg-light">
-                                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                                    <span class="text-dark fw-bold">Course Fee</span>
+                                <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
+                                    <span class="text-dark fw-bold">Grand Total Fee</span>
                                     <span class="text-primary fw-bold fs-5">{{ number_format($application->total_fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-1 font-13">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="checkbox" class="form-check-input fee-summary-checkbox" value="base_fee" onchange="updateSelectedCount()" title="Include Base Course Fee in invoice">
+                                        <span class="text-muted">Base Course Fee</span>
+                                    </div>
+                                    <span class="fw-semibold text-dark">{{ number_format($application->course->fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                </div>
+                                @if(($application->scholarship_amount ?? 0) > 0)
+                                <div class="d-flex justify-content-between align-items-center mb-1 font-13">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="checkbox" class="form-check-input fee-summary-checkbox" value="scholarship" onchange="updateSelectedCount()" title="Include Scholarship in invoice">
+                                        <span class="text-success"><i class="fas fa-gift me-1"></i> Scholarship</span>
+                                    </div>
+                                    <span class="fw-bold text-success">-{{ number_format($application->scholarship_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-1 font-13">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="checkbox" class="form-check-input fee-summary-checkbox" value="net_course_fee" onchange="updateSelectedCount()" title="Include Net Course Fee in invoice">
+                                        <span class="text-muted">Course Fee</span>
+                                    </div>
+                                    <span class="fw-semibold text-primary">{{ number_format($application->net_course_fee ?? ($application->course->fee - $application->scholarship_amount), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                </div>
+                                @endif
+                                <div class="d-flex justify-content-between mb-2 font-13">
+                                    <span class="text-muted">Additional Costs Total</span>
+                                    <span class="fw-semibold text-dark">{{ number_format($application->additionalCosts->sum('amount'), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                </div>
+                                <hr class="my-2">
+                                <div class="d-flex justify-content-between mb-1 font-13">
                                     <span class="text-muted">Total Paid</span>
                                     <span class="fw-semibold text-success">{{ number_format($application->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
                                 </div>
-                                <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-between font-13">
                                     <span class="text-muted">Balance Due</span>
-                                    <span class="fw-semibold text-danger">{{ number_format($application->total_fee - $application->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                    <span class="fw-semibold text-danger">{{ number_format(max(0, $application->total_fee - $application->paid_amount), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Costs Row (Outside Installments) -->
+                    <div class="row g-4 pt-3 border-top mt-2">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                                    <i class="fas fa-tags text-primary me-2"></i> Additional Costs (One-time Full Payments)
+                                </h6>
+                                @if($canAssignCourse)
+                                    <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-xs btn-outline-primary">
+                                        <i class="fas fa-plus me-1"></i> Add / Edit Additional Costs
+                                    </a>
+                                @endif
+                            </div>
+
+                            @if($application->additionalCosts->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm align-middle mb-0" style="font-size: 0.85rem;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:36px;"><input type="checkbox" id="selectAllCosts" class="form-check-input" title="Select All Additional Costs"></th>
+                                                <th>Cost Item / Description</th>
+                                                <th class="text-end">Amount</th>
+                                                <th class="text-center">Status</th>
+                                                <th class="text-center">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($application->additionalCosts as $cost)
+                                                <tr>
+                                                    <td><input type="checkbox" class="form-check-input cost-checkbox" value="{{ $cost->id }}" onchange="updateSelectedCount()"></td>
+                                                    <td class="fw-semibold text-dark">
+                                                        <i class="fas fa-tag text-secondary me-2"></i> {{ $cost->cost_name }}
+                                                        @if($cost->is_invoiced)
+                                                            <span class="badge bg-info ms-1" title="Invoiced on {{ $cost->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-file-invoice me-1"></i>Invoiced</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end fw-bold text-primary">{{ number_format($cost->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
+                                                    <td class="text-center">
+                                                        @if($cost->status === 'paid')
+                                                            <span class="badge bg-success">Paid</span>
+                                                            @if($cost->paid_at)
+                                                                <small class="d-block text-muted" style="font-size: 10px;">{{ $cost->paid_at->format('d M, Y') }}</small>
+                                                            @endif
+                                                        @else
+                                                            <span class="badge bg-warning text-dark">Pending</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if($cost->status !== 'paid')
+                                                            <button type="button" 
+                                                                    class="btn btn-xs btn-outline-success record-cost-payment-btn" 
+                                                                    data-id="{{ $cost->id }}" 
+                                                                    data-name="{{ $cost->cost_name }}" 
+                                                                    data-amount="{{ $cost->amount }}" 
+                                                                    data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                    data-bs-toggle="tooltip" 
+                                                                    title="Record Full Payment">
+                                                                <i class="fas fa-coins me-1"></i> Record Payment
+                                                            </button>
+                                                        @else
+                                                            <span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Paid</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                        <tfoot class="table-light">
+                                            <tr>
+                                                <th class="text-end">Total Additional Costs:</th>
+                                                <th class="text-end text-primary fw-bold">{{ number_format($application->additionalCosts->sum('amount'), 2) }} {{ $application->course->currency ?? 'GBP' }}</th>
+                                                <th colspan="2"></th>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="alert alert-light border py-2 px-3 small text-muted mb-0">
+                                    <i class="fas fa-info-circle me-1"></i> No additional costs assigned for this enrolment. Click <strong><a href="{{ route('admin.students.enrolment', $student->id) }}">Manage Enrolment & Fees</a></strong> to add items.
+                                </div>
+                            @endif
                         </div>
                     </div>
 
@@ -345,17 +475,58 @@
             <div class="info-section">
                 <div class="info-section-title"><i class="fas fa-user-circle"></i> Personal Information</div>
                 <div class="info-grid">
-                    <div class="info-item"><label>First Name</label><span>{{ $student->first_name }}</span></div>
-                    <div class="info-item"><label>Middle Name</label><span>{{ $student->middle_name ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Last Name (Surname)</label><span>{{ $student->surname }}</span></div>
-                    <div class="info-item"><label>Preferred Institute</label><span><span class="badge bg-primary">{{ $student->institute ? $student->institute->name : 'N/A' }}</span></span></div>
-                    <div class="info-item"><label>Date of Birth</label><span>{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</span></div>
-                    <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Nationality</label><span>{{ $student->nationality ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Country of Residence</label><span>{{ $student->country ? $student->country->name : 'N/A' }}</span></div>
-                    <div class="info-item"><label>Phone</label><span>{{ $student->phone ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Skype ID</label><span>{{ $student->skype_id ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>First Name</label><span>{{ $student->first_name ?? $preAssessment->first_name }}</span></div>
+                    <div class="info-item"><label>Middle Name</label><span>{{ $student->middle_name ?? $preAssessment->middle_name ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Last Name (Surname)</label><span>{{ $student->surname ?? $preAssessment->surname }}</span></div>
+                    <div class="info-item">
+                        <label>Preferred Institute</label>
+                        <span>
+                            <span class="badge bg-primary">
+                                @if($student->institute)
+                                    {{ $student->institute->name }}
+                                @elseif($preAssessment->institute_name)
+                                    {{ $preAssessment->institute_name }}
+                                @else
+                                    N/A
+                                @endif
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <label>Date of Birth</label>
+                        <span>
+                            @php
+                                $dobVal = $student->dob ?? $preAssessment->dob;
+                            @endphp
+                            {{ $dobVal ? ($dobVal instanceof \DateTimeInterface ? $dobVal->format('d M Y') : date('d M Y', strtotime($dobVal))) : 'N/A' }}
+                        </span>
+                    </div>
+                    <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? $preAssessment->gender ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Country of Nationality</label><span>{{ $student->nationality ?? $preAssessment->nationality ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? $preAssessment->country ?? 'N/A' }}</span></div>
+                    <div class="info-item">
+                        <label>Country of Residence</label>
+                        <span>
+                            @if($student->country)
+                                {{ $student->country->name }}
+                            @elseif($preAssessment->country)
+                                {{ $preAssessment->country }}
+                            @else
+                                N/A
+                            @endif
+                        </span>
+                    </div>
+                    <div class="info-item"><label>Phone</label><span>{{ $student->phone ?? $preAssessment->contact_number ?? 'N/A' }}</span></div>
+                    <div class="info-item">
+                        <label>WhatsApp Status</label>
+                        <span>
+                            @if($student->has_whatsapp)
+                                <span class="badge bg-success"><i class="fab fa-whatsapp me-1"></i> Available on {{ $student->phone }}</span>
+                            @else
+                                <span class="badge bg-secondary">Not Marked</span>
+                            @endif
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -366,17 +537,47 @@
                     <div class="col-md-6">
                         <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem;">Permanent Address</h6>
                         <div class="info-grid" style="grid-template-columns: 1fr;">
-                            <div class="info-item"><label>Address</label><span>{{ $student->permanent_address ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>City & Postcode</label><span>{{ $student->permanent_city }} {{ $student->permanent_postcode }}</span></div>
-                            <div class="info-item"><label>Country</label><span>{{ $student->permanent_country ?? 'N/A' }}</span></div>
+                            <div class="info-item"><label>Address</label><span>{{ $student->permanent_address ?? $preAssessment->contact_address ?? 'N/A' }}</span></div>
+                            <div class="info-item">
+                                <label>City & Postcode</label>
+                                <span>
+                                    @php
+                                        $permAddr = trim(($student->permanent_city ?? '').' '.($student->permanent_postcode ?? ''));
+                                        $preAddr = implode(', ', array_filter([$preAssessment->city, $preAssessment->state, $preAssessment->postal_code]));
+                                    @endphp
+                                    @if($permAddr !== '')
+                                        {{ $permAddr }}
+                                    @elseif($preAddr !== '')
+                                        {{ $preAddr }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="info-item"><label>Country</label><span>{{ $student->permanent_country ?? $preAssessment->country ?? 'N/A' }}</span></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem;">Current Address</h6>
                         <div class="info-grid" style="grid-template-columns: 1fr;">
-                            <div class="info-item"><label>Address</label><span>{{ $student->current_address ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>City & Postcode</label><span>{{ $student->current_city }} {{ $student->current_postcode }}</span></div>
-                            <div class="info-item"><label>Country</label><span>{{ $student->current_country ?? 'N/A' }}</span></div>
+                            <div class="info-item"><label>Address</label><span>{{ $student->current_address ?? $preAssessment->contact_address ?? 'N/A' }}</span></div>
+                            <div class="info-item">
+                                <label>City & Postcode</label>
+                                <span>
+                                    @php
+                                        $currAddr = trim(($student->current_city ?? '').' '.($student->current_postcode ?? ''));
+                                        $preAddr = implode(', ', array_filter([$preAssessment->city, $preAssessment->state, $preAssessment->postal_code]));
+                                    @endphp
+                                    @if($currAddr !== '')
+                                        {{ $currAddr }}
+                                    @elseif($preAddr !== '')
+                                        {{ $preAddr }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="info-item"><label>Country</label><span>{{ $student->current_country ?? $preAssessment->country ?? 'N/A' }}</span></div>
                         </div>
                     </div>
                 </div>
@@ -387,16 +588,16 @@
                 <div class="info-section-title"><i class="fas fa-passport"></i> Passport & Travel History</div>
                 <div class="info-grid mb-4">
                     <div class="info-item"><label>Name in Passport</label><span>{{ $student->name_in_passport ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Passport Number</label><span>{{ $student->passport_number ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Passport Number</label><span>{{ $student->passport_number ?? $preAssessment->passport_number ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Issue Date</label><span>{{ $student->passport_issue_date ? $student->passport_issue_date->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Expiry Date</label><span>{{ $student->passport_expiry_date ? $student->passport_expiry_date->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Issue Location</label><span>{{ $student->passport_issue_location ?? 'N/A' }}</span></div>
                 </div>
                 
                 @php
-                    $travelHistory = $student->travel_history ?? [];
-                    $immigrationHistory = $student->immigration_history ?? [];
-                    $visaRefusals = $student->visa_refusals ?? [];
+                    $travelHistory = $student->travel_history ?? $preAssessment->travel_history ?? [];
+                    $immigrationHistory = $student->immigration_history ?? $preAssessment->immigration_history ?? [];
+                    $visaRefusals = $student->visa_refusals ?? $preAssessment->visa_refusals ?? [];
                     $takenTbTest = $student->taken_tb_test ?? 'N/A';
                 @endphp
                 <h6 class="text-muted text-uppercase mb-3 mt-4" style="font-size: 0.8rem;">Travel & Immigration History</h6>
@@ -409,16 +610,25 @@
                                 {{ strtoupper($travelHistory['has_history'] ?? 'No') }}
                             </span>
                             @if(($travelHistory['has_history'] ?? '') === 'yes')
-                                <div class="mt-2 ps-3 border-start border-3 border-primary">
-                                    <div class="row g-2">
-                                        <div class="col-md-6"><strong>Country:</strong> {{ $travelHistory['country'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $travelHistory['visa_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Purpose:</strong> {{ $travelHistory['purpose_of_visit'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Arrival Date:</strong> {{ $travelHistory['arrival_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Departure Date:</strong> {{ $travelHistory['departure_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Validity:</strong> {{ $travelHistory['visa_start_date'] ?? 'N/A' }} to {{ $travelHistory['visa_expiry_date'] ?? 'N/A' }}</div>
+                                @php
+                                    $tEntries = $travelHistory['entries'] ?? [];
+                                    if (empty($tEntries) && (!empty($travelHistory['country']) || !empty($travelHistory['arrival_date']))) {
+                                        $tEntries = [$travelHistory];
+                                    }
+                                @endphp
+                                @foreach($tEntries as $idx => $tEntry)
+                                    <div class="mt-2 ps-3 border-start border-3 border-primary mb-2">
+                                        @if(count($tEntries) > 1)<div class="fw-bold text-primary mb-1 font-12">Travel Entry #{{ $idx + 1 }}</div>@endif
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><strong>Country:</strong> {{ $tEntry['country'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Type:</strong> {{ $tEntry['visa_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Purpose:</strong> {{ $tEntry['purpose_of_visit'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Arrival Date:</strong> {{ $tEntry['arrival_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Departure Date:</strong> {{ $tEntry['departure_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Validity:</strong> {{ $tEntry['visa_start_date'] ?? 'N/A' }} to {{ $tEntry['visa_expiry_date'] ?? 'N/A' }}</div>
+                                        </div>
                                     </div>
-                                </div>
+                                @endforeach
                             @endif
                         </div>
                     </div>
@@ -448,15 +658,24 @@
                                 {{ strtoupper($visaRefusals['has_refusal'] ?? 'No') }}
                             </span>
                             @if(($visaRefusals['has_refusal'] ?? '') === 'yes')
-                                <div class="mt-2 ps-3 border-start border-3 border-danger">
-                                    <div class="row g-2">
-                                        <div class="col-md-6"><strong>Country:</strong> {{ $visaRefusals['country'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $visaRefusals['visa_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Refusal Type:</strong> {{ $visaRefusals['refusal_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $visaRefusals['refusal_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-12"><strong>Details/Reason:</strong> {{ $visaRefusals['details'] ?? 'N/A' }}</div>
+                                @php
+                                    $rEntries = $visaRefusals['entries'] ?? [];
+                                    if (empty($rEntries) && (!empty($visaRefusals['country']) || !empty($visaRefusals['refusal_type']))) {
+                                        $rEntries = [$visaRefusals];
+                                    }
+                                @endphp
+                                @foreach($rEntries as $idx => $rEntry)
+                                    <div class="mt-2 ps-3 border-start border-3 border-danger mb-2">
+                                        @if(count($rEntries) > 1)<div class="fw-bold text-danger mb-1 font-12">Refusal Entry #{{ $idx + 1 }}</div>@endif
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><strong>Country:</strong> {{ $rEntry['country'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Type:</strong> {{ $rEntry['visa_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Refusal Type:</strong> {{ $rEntry['refusal_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $rEntry['refusal_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-12"><strong>Details/Reason:</strong> {{ $rEntry['details'] ?? 'N/A' }}</div>
+                                        </div>
                                     </div>
-                                </div>
+                                @endforeach
                             @endif
                         </div>
                     </div>
@@ -671,6 +890,131 @@
                 @endif
             </div>
 
+            <!-- Course Enrolment & Fee Installments Section -->
+            @php
+                $canAssignCourse = ($student->preAssessment && $student->preAssessment->assessment_status === 'approved' && $student->enrolment_status !== 'pending');
+            @endphp
+            <div class="info-section mt-4">
+                <div class="info-section-title d-flex justify-content-between align-items-center mb-3">
+                    <span><i class="fas fa-file-invoice-dollar text-primary me-2"></i> Course Enrolment & Fee Installments</span>
+                    @if($canAssignCourse)
+                        <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                            <i class="fas fa-edit me-1"></i> Manage Enrolment & Fees
+                        </a>
+                    @else
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" disabled title="Approve Pre-Enrolment first to assign course">
+                            <i class="fas fa-lock me-1"></i> Manage Enrolment & Fees (Pending Approval)
+                        </button>
+                    @endif
+                </div>
+
+                @if(isset($application) && $application->course)
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border">
+                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Assigned Course</small>
+                            <span class="fw-bold text-dark fs-6">{{ $application->course->name }}</span>
+                            <small class="d-block text-muted">[{{ $application->course->course_code }}]</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border">
+                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Total Fee Calculation</small>
+                            <span class="fw-bold text-primary fs-6">{{ $application->course->currency ?? 'GBP' }} {{ number_format($application->total_fee, 2) }}</span>
+                            <small class="d-block text-muted">Base: {{ number_format($application->course->fee, 2) }} | Additional: {{ number_format($application->additionalCosts->sum('amount'), 2) }}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border">
+                            <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 11px;">Payment Progress</small>
+                            <span class="fw-bold text-success fs-6">Paid: {{ $application->course->currency ?? 'GBP' }} {{ number_format($application->paid_amount, 2) }}</span>
+                            @php $remainingDue = max(0, $application->total_fee - $application->paid_amount); @endphp
+                            <small class="d-block text-danger fw-bold">Due: {{ $application->course->currency ?? 'GBP' }} {{ number_format($remainingDue, 2) }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                @if($application->installments->count() > 0)
+                <div class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Installment</th>
+                                <th>Due Date</th>
+                                <th>Scheduled Amount</th>
+                                <th>Paid Amount</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($application->installments->sortBy('installment_number') as $inst)
+                            <tr>
+                                <td>
+                                    <strong class="text-dark">
+                                        {{ $inst->installment_number == 1 ? '1st Installment' : ('Installment #' . $inst->installment_number) }}
+                                    </strong>
+                                </td>
+                                <td>{{ $inst->due_date ? $inst->due_date->format('d M, Y') : 'N/A' }}</td>
+                                <td class="fw-bold">{{ $application->course->currency ?? 'GBP' }} {{ number_format($inst->amount, 2) }}</td>
+                                <td class="text-success fw-bold">{{ $application->course->currency ?? 'GBP' }} {{ number_format($inst->paid_amount, 2) }}</td>
+                                <td>
+                                    @if($inst->status === 'paid')
+                                        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Paid</span>
+                                    @elseif($inst->status === 'partially_paid')
+                                        <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Partially Paid</span>
+                                    @else
+                                        <span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i> Due</span>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    @if($inst->status !== 'paid')
+                                    <button type="button" class="btn btn-xs btn-outline-success record-payment-btn me-1"
+                                            data-id="{{ $inst->id }}"
+                                            data-inst="{{ $inst->installment_number }}"
+                                            data-due="{{ $inst->due_date ? $inst->due_date->format('d M, Y') : 'N/A' }}"
+                                            data-amount="{{ $inst->amount }}"
+                                            data-paid="{{ $inst->paid_amount }}"
+                                            data-currency="{{ $application->course->currency ?? 'GBP' }}">
+                                        <i class="fas fa-hand-holding-usd me-1"></i> Record Payment
+                                    </button>
+                                    @endif
+                                    <button type="button" class="btn btn-xs btn-primary" onclick="openInvoiceModalForInstallment({{ $inst->id }})">
+                                        <i class="fas fa-file-invoice me-1"></i> Generate Invoice / Receipt
+                                    </button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                @endif
+
+                @else
+                    @if($canAssignCourse)
+                        <div class="alert alert-info mb-0 d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-info-circle me-2"></i> No course or fee schedule has been assigned to this student yet.
+                            </div>
+                            <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i> Assign Course & Fee
+                            </a>
+                        </div>
+                    @else
+                        <div class="alert alert-warning mb-0 d-flex align-items-center justify-content-between">
+                            <div>
+                                <i class="fas fa-exclamation-triangle me-2"></i> Pre-Enrolment / Pre-Assessment is currently <strong>Pending</strong>. Course & fees can only be assigned after approving the Pre-Enrolment.
+                            </div>
+                            @if($student->enrolment_status === 'pending')
+                                <button type="button" class="btn btn-sm btn-success btn-approve-enrol" data-id="{{ $student->id }}" data-name="{{ $student->first_name }} {{ $student->surname }}">
+                                    <i class="fas fa-check me-1"></i> Approve Pre-Enrolment
+                                </button>
+                            @endif
+                        </div>
+                    @endif
+                @endif
+            </div>
+
             <!-- Generated Invoices History Section -->
             <div class="info-section mt-4">
                 <div class="info-section-title d-flex justify-content-between align-items-center">
@@ -838,88 +1182,97 @@
   </div>
 </div>
 
+<!-- Floating Sticky Bar for Invoice Generation -->
+<div id="floatingInvoiceBar" class="position-fixed bottom-0 start-50 translate-middle-x mb-4 shadow-lg p-3 bg-dark text-white rounded-pill d-none" style="z-index: 1050; border: 2px solid #28a745; transition: all 0.3s ease;">
+    <div class="d-flex align-items-center gap-3 px-2">
+        <span><i class="fas fa-check-circle text-success fs-5"></i> <strong><span id="floatingSelectedItemCount">0</span> item(s) selected</strong> for invoice</span>
+        <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" data-bs-toggle="modal" data-bs-target="#generateInvoiceModal" onclick="prepareInvoiceModal()">
+            <i class="fas fa-magic me-1"></i> Make Invoice Now
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-light rounded-circle" title="Clear selection" onclick="clearAllInvoiceSelections()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+
 <!-- ==================== Generate Invoice Modal ==================== -->
 <div class="modal fade" id="generateInvoiceModal" tabindex="-1" aria-labelledby="generateInvoiceModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <form action="{{ route('admin.students.invoices.generate', $student->id) }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('admin.students.invoices.generate', $student->id) }}" method="POST" enctype="multipart/form-data" id="generateInvoiceForm">
         @csrf
         <input type="hidden" name="invoice_action" id="invoice_action_input" value="download">
-        <div class="modal-content">
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title fw-bold text-white" id="generateInvoiceModalLabel">
-                <i class="fas fa-file-invoice-dollar me-2"></i> Generate Invoice for {{ $student->first_name }} {{ $student->surname }}
+        <input type="hidden" name="generation_type" id="generation_type_input" value="template">
+        <div id="hidden_installment_ids_container"></div>
+        <div id="hidden_cost_ids_container"></div>
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white py-3">
+            <h5 class="modal-title fw-bold text-white mb-0" id="generateInvoiceModalLabel">
+                <i class="fas fa-file-invoice-dollar me-2"></i> Make Invoice for {{ $student->first_name }} {{ $student->surname }}
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
 
           <div class="modal-body p-4">
-             <!-- Mode Switch -->
-             <div class="card bg-light border-0 mb-4 p-3">
-                 <label class="form-label fw-bold me-3">Choose Generation Method:</label>
-                 <div class="d-flex gap-4">
-                     <div class="form-check">
-                         <input class="form-check-input" type="radio" name="generation_type" id="inv_gen_type_template" value="template" checked onclick="toggleInvGenMode('template')">
-                         <label class="form-check-label fw-semibold" for="inv_gen_type_template">
-                            <i class="fas fa-list-alt text-success me-1"></i> Select Built-in Template
-                         </label>
-                     </div>
-                     <div class="form-check">
-                         <input class="form-check-input" type="radio" name="generation_type" id="inv_gen_type_file" value="file_upload" onclick="toggleInvGenMode('file')">
-                         <label class="form-check-label fw-semibold" for="inv_gen_type_file">
-                            <i class="fas fa-cloud-upload-alt text-primary me-1"></i> Upload File (DOCX / PDF / Image)
-                         </label>
+             <!-- Selected Items Summary Banner -->
+             <div id="selectedItemsIndicator" class="d-none alert alert-success border-0 py-3 px-3 mb-3 rounded-3 shadow-sm">
+                 <div class="d-flex align-items-center">
+                     <i class="fas fa-check-circle me-2 fs-5 text-success"></i>
+                     <div>
+                         <strong class="text-success"><span id="selectedItemsCount">0</span> Fee Item(s) Selected:</strong>
+                         <span id="selectedItemsDesc" class="ms-1 text-dark fw-semibold"></span>
                      </div>
                  </div>
              </div>
 
-             <!-- Template Block -->
-             <div id="inv_block_template">
-                 <div class="mb-3">
-                     <label class="form-label fw-bold">Select Template <span class="text-danger">*</span></label>
-                     <select name="invoice_template_id" id="modal_invoice_template_id" class="form-select form-select-lg" onchange="fetchInvoiceTemplatePreview(this.value)">
-                          <option value="">-- Choose an Invoice Template --</option>
-                          @if(isset($invoiceTemplates))
-                              @foreach($invoiceTemplates as $tpl)
-                                  <option value="{{ $tpl->id }}">{{ $tpl->title }} ({{ strtoupper($tpl->type) }})</option>
-                              @endforeach
-                          @endif
-                     </select>
-                 </div>
+             <!-- Template Choice (Primary Flow) -->
+             <div class="mb-4">
+                 <label class="form-label fw-bold fs-6 text-dark mb-1"><i class="fas fa-file-alt text-primary me-1"></i> Step 1: Choose Invoice Template <span class="text-danger">*</span></label>
+                 <select name="invoice_template_id" id="modal_invoice_template_id" class="form-select form-select-lg border-primary shadow-sm" onchange="fetchInvoiceTemplatePreview(this.value)" required>
+                      <option value="">-- Click to Select Invoice Template --</option>
+                      @if(isset($invoiceTemplates))
+                          @foreach($invoiceTemplates as $tpl)
+                              <option value="{{ $tpl->id }}">{{ $tpl->title }} ({{ strtoupper($tpl->type) }})</option>
+                          @endforeach
+                      @endif
+                 </select>
+                 <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle me-1"></i> Selecting a template will automatically build the invoice with student details and selected items.</small>
+             </div>
 
-                 <!-- Live Preview Box -->
-                 <div id="inv_preview_container" class="d-none">
-                     <div class="d-flex justify-content-between align-items-center mb-2">
-                          <label class="form-label fw-bold text-success mb-0"><i class="fas fa-eye me-1"></i> Live Preview (Editable before generating):</label>
-                          <span class="badge bg-success bg-opacity-10 text-success small">Auto-filled with student data</span>
-                     </div>
-                     <div class="border rounded shadow-sm bg-white">
-                          <textarea name="custom_content" id="modal_invoice_custom_content" class="form-control"></textarea>
-                     </div>
+             <!-- Live Preview Box -->
+             <div id="inv_preview_container" class="d-none mb-3">
+                 <div class="d-flex justify-content-between align-items-center mb-2">
+                      <label class="form-label fw-bold text-success mb-0"><i class="fas fa-eye me-1"></i> Step 2: Live Invoice Preview (Editable if needed):</label>
+                      <span class="badge bg-success bg-opacity-10 text-success px-2 py-1"><i class="fas fa-magic me-1"></i> Auto-populated</span>
+                 </div>
+                 <div class="border rounded-3 shadow-sm bg-white p-1">
+                      <textarea name="custom_content" id="modal_invoice_custom_content" class="form-control"></textarea>
                  </div>
              </div>
 
-             <!-- File Upload Block -->
-             <div id="inv_block_file" class="d-none">
-                 <div class="mb-3">
-                     <label class="form-label fw-bold">Upload Custom Invoice File (.docx, .pdf, .jpg, .png)</label>
-                     <input type="file" name="uploaded_file" class="form-control form-control-lg" accept=".docx,.pdf,.jpg,.jpeg,.png">
-                     <div class="form-text mt-2">
-                        <i class="fas fa-info-circle text-info"></i> For <strong>Microsoft Word (.docx)</strong> templates, include placeholders such as <code>${student_name}</code>, <code>${passport_number}</code>, <code>${today_date}</code> inside your doc file to auto-populate student data.
+             <!-- Optional File Upload Toggle -->
+             <div class="border-top pt-3 mt-3">
+                 <a class="text-muted small text-decoration-none" data-bs-toggle="collapse" href="#inv_file_upload_collapse" role="button" aria-expanded="false">
+                     <i class="fas fa-paperclip me-1"></i> Need to upload a custom DOCX/PDF file instead? Click here
+                 </a>
+                 <div class="collapse mt-2" id="inv_file_upload_collapse">
+                     <div class="card card-body bg-light border-0">
+                         <label class="form-label fw-bold">Upload Custom File (.docx, .pdf, .jpg, .png)</label>
+                         <input type="file" name="uploaded_file" class="form-control" accept=".docx,.pdf,.jpg,.jpeg,.png" onchange="document.getElementById('generation_type_input').value = this.value ? 'file_upload' : 'template'">
                      </div>
                  </div>
              </div>
 
           </div>
 
-          <div class="modal-footer bg-light d-flex justify-content-between align-items-center">
+          <div class="modal-footer bg-light py-3 d-flex justify-content-between align-items-center">
             <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">
-                <i class="fas fa-times me-1"></i> Close
+                <i class="fas fa-times me-1"></i> Cancel
             </button>
             <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-outline-success rounded-pill px-4" onclick="document.getElementById('invoice_action_input').value='download'">
+                <button type="submit" class="btn btn-outline-success rounded-pill px-4 fw-semibold" onclick="document.getElementById('invoice_action_input').value='download'">
                     <i class="fas fa-file-download me-1"></i> Download PDF
                 </button>
-                <button type="submit" class="btn btn-success rounded-pill px-4" onclick="document.getElementById('invoice_action_input').value='send'">
+                <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" onclick="document.getElementById('invoice_action_input').value='send'">
                     <i class="fas fa-paper-plane me-1"></i> Send to Student
                 </button>
             </div>
@@ -973,13 +1326,143 @@ function toggleInvGenMode(mode) {
     }
 }
 
+// ---- Checkbox / Selected Items Logic ----
+function updateSelectedCount() {
+    const installmentBoxes = document.querySelectorAll('.installment-checkbox:checked');
+    const costBoxes        = document.querySelectorAll('.cost-checkbox:checked');
+    const summaryBoxes     = document.querySelectorAll('.fee-summary-checkbox:checked');
+    const total = installmentBoxes.length + costBoxes.length + summaryBoxes.length;
+
+    if (document.getElementById('selectedItemCount')) {
+        document.getElementById('selectedItemCount').textContent = total;
+    }
+    if (document.getElementById('floatingSelectedItemCount')) {
+        document.getElementById('floatingSelectedItemCount').textContent = total;
+    }
+
+    const btn = document.getElementById('generateInvoiceSelectedBtn');
+    const floatBar = document.getElementById('floatingInvoiceBar');
+
+    if (total > 0) {
+        if (btn) btn.classList.remove('d-none');
+        if (floatBar) floatBar.classList.remove('d-none');
+    } else {
+        if (btn) btn.classList.add('d-none');
+        if (floatBar) floatBar.classList.add('d-none');
+    }
+}
+
+function clearAllInvoiceSelections() {
+    document.querySelectorAll('.installment-checkbox, .cost-checkbox, .fee-summary-checkbox, #selectAllInstallments, #selectAllCosts').forEach(cb => cb.checked = false);
+    updateSelectedCount();
+}
+
+function prepareInvoiceModal() {
+    const installmentBoxes = document.querySelectorAll('.installment-checkbox:checked');
+    const costBoxes        = document.querySelectorAll('.cost-checkbox:checked');
+    const summaryBoxes     = document.querySelectorAll('.fee-summary-checkbox:checked');
+
+    // Clear existing hidden inputs
+    document.getElementById('hidden_installment_ids_container').innerHTML = '';
+    document.getElementById('hidden_cost_ids_container').innerHTML = '';
+
+    let installmentDescParts = [];
+    installmentBoxes.forEach(cb => {
+        const input = document.createElement('input');
+        input.type  = 'hidden';
+        input.name  = 'installment_ids[]';
+        input.value = cb.value;
+        document.getElementById('hidden_installment_ids_container').appendChild(input);
+        const row = cb.closest('tr');
+        if (row) {
+            const label = row.querySelector('td:nth-child(2)');
+            if (label) installmentDescParts.push(label.textContent.trim().replace(/\s+/g, ' ').split('\n')[0]);
+        }
+    });
+
+    let costDescParts = [];
+    costBoxes.forEach(cb => {
+        const input = document.createElement('input');
+        input.type  = 'hidden';
+        input.name  = 'additional_cost_ids[]';
+        input.value = cb.value;
+        document.getElementById('hidden_cost_ids_container').appendChild(input);
+        const row = cb.closest('tr');
+        if (row) {
+            const label = row.querySelector('td:nth-child(2)');
+            if (label) costDescParts.push(label.textContent.trim().replace(/\s+/g, ' ').split('\n')[0]);
+        }
+    });
+
+    let summaryDescParts = [];
+    summaryBoxes.forEach(cb => {
+        const input = document.createElement('input');
+        input.type  = 'hidden';
+        input.name  = 'fee_summary_items[]';
+        input.value = cb.value;
+        document.getElementById('hidden_cost_ids_container').appendChild(input);
+        const titleMap = {
+            'base_fee': 'Base Course Fee',
+            'scholarship': 'Scholarship',
+            'net_course_fee': 'Course Fee'
+        };
+        if (titleMap[cb.value]) summaryDescParts.push(titleMap[cb.value]);
+    });
+
+    const total = installmentBoxes.length + costBoxes.length + summaryBoxes.length;
+    const indicator = document.getElementById('selectedItemsIndicator');
+    const descEl    = document.getElementById('selectedItemsDesc');
+    document.getElementById('selectedItemsCount').textContent = total;
+    const allDesc = [...installmentDescParts, ...costDescParts, ...summaryDescParts].join(', ');
+    descEl.textContent = allDesc ? '(' + allDesc + ')' : '';
+
+    if (total > 0) {
+        indicator.classList.remove('d-none');
+    } else {
+        indicator.classList.add('d-none');
+    }
+}
+
+// Select All Installments
+const selectAllInstallments = document.getElementById('selectAllInstallments');
+if (selectAllInstallments) {
+    selectAllInstallments.addEventListener('change', function() {
+        document.querySelectorAll('.installment-checkbox').forEach(cb => cb.checked = this.checked);
+        updateSelectedCount();
+    });
+}
+
+// Select All Costs
+const selectAllCosts = document.getElementById('selectAllCosts');
+if (selectAllCosts) {
+    selectAllCosts.addEventListener('change', function() {
+        document.querySelectorAll('.cost-checkbox').forEach(cb => cb.checked = this.checked);
+        updateSelectedCount();
+    });
+}
+
 function fetchInvoiceTemplatePreview(templateId) {
     if (!templateId) {
         document.getElementById('inv_preview_container').classList.add('d-none');
         return;
     }
 
-    const url = "{{ route('admin.students.invoices.preview_modal', $student->id) }}?template_id=" + templateId;
+    let params = new URLSearchParams();
+    params.append('template_id', templateId);
+
+    document.querySelectorAll('.installment-checkbox:checked').forEach(cb => {
+        params.append('installment_ids[]', cb.value);
+    });
+
+    document.querySelectorAll('.cost-checkbox:checked').forEach(cb => {
+        params.append('additional_cost_ids[]', cb.value);
+    });
+
+    document.querySelectorAll('.fee-summary-checkbox:checked').forEach(cb => {
+        params.append('fee_summary_items[]', cb.value);
+    });
+
+    const url = "{{ route('admin.students.invoices.preview_modal', $student->id) }}?" + params.toString();
     fetch(url)
         .then(response => response.json())
         .then(data => {
@@ -990,6 +1473,17 @@ function fetchInvoiceTemplatePreview(templateId) {
             }
         })
         .catch(err => console.error('Error fetching invoice preview:', err));
+}
+
+function openInvoiceModalForInstallment(installmentId) {
+    if (document.getElementById('modal_invoice_installment_id')) {
+        document.getElementById('modal_invoice_installment_id').value = installmentId;
+    }
+    var modal = new bootstrap.Modal(document.getElementById('generateInvoiceModal'));
+    modal.show();
+    if (document.getElementById('modal_invoice_template_id').value) {
+        fetchInvoiceTemplatePreview(document.getElementById('modal_invoice_template_id').value);
+    }
 }
 </script>
 
@@ -1056,6 +1550,21 @@ $(document).ready(function() {
         
         $('#recordPaymentModal').modal('show');
     });
+
+    $(document).on('click', '.record-cost-payment-btn', function() {
+        const costId = $(this).data('id');
+        const costName = $(this).data('name');
+        const amount = parseFloat($(this).data('amount')).toFixed(2);
+        const currency = $(this).data('currency');
+
+        $('#modal_cost_name').val(costName);
+        $('#modal_cost_amount').val(amount + ' ' + currency);
+
+        const actionUrl = "{{ url('/admin/additional-costs') }}/" + costId + "/record-payment";
+        $('#recordCostPaymentForm').attr('action', actionUrl);
+
+        $('#recordCostPaymentModal').modal('show');
+    });
 });
 </script>
 @endpush
@@ -1102,6 +1611,49 @@ $(document).ready(function() {
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Record Additional Cost Payment Modal -->
+<div class="modal fade" id="recordCostPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form action="" method="POST" id="recordCostPaymentForm">
+            @csrf
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title text-white"><i class="fas fa-hand-holding-usd me-2"></i> Record Additional Cost Payment</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-3 text-muted small"><i class="fas fa-info-circle me-1"></i> Additional cost payments are paid in full (one-time payment, no installments).</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cost Item / Description</label>
+                        <input type="text" id="modal_cost_name" class="form-control bg-light" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Full Payment Amount</label>
+                        <input type="text" id="modal_cost_amount" class="form-control bg-light fw-bold text-success" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Payment Method</label>
+                        <select name="payment_method" class="form-select" required>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Online Payment">Online Payment</option>
+                            <option value="Cheque">Cheque</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Transaction Reference / TXN ID (Optional)</label>
+                        <input type="text" name="transaction_id" class="form-control" placeholder="Enter Reference No. or TXN ID">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success btn-sm"><i class="fas fa-check-circle me-1"></i> Confirm Full Payment</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 

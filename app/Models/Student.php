@@ -12,7 +12,7 @@ class Student extends Model
     protected $fillable = [
         'campus_id', 'user_id', 'agent_id', 'student_id', 'promo_code', 'title',
         'first_name', 'middle_name', 'surname', 'dob', 'nationality', 'country_id', 'email',
-        'phone', 'password', 'status', 'institute_id',
+        'phone', 'has_whatsapp', 'password', 'status', 'institute_id',
         // New profile fields
         'profile_picture', 'skype_id', 'gender', 'country_of_birth', 'native_language',
         'name_in_passport', 'passport_number', 'passport_issue_location', 'passport_issue_date', 'passport_expiry_date',
@@ -31,6 +31,7 @@ class Student extends Model
 
     protected $casts = [
         'dob' => 'date',
+        'has_whatsapp' => 'boolean',
         'passport_issue_date' => 'date',
         'passport_expiry_date' => 'date',
         'applied_leave_to_remain_uk' => 'boolean',

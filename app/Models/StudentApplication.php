@@ -10,10 +10,12 @@ class StudentApplication extends Model
     use HasFactory;
 
     protected $fillable = [
-        'student_id', 'course_id', 'assigned_agent_id', 'stage', 'total_fee', 'paid_amount'
+        'student_id', 'course_id', 'assigned_agent_id', 'stage', 'scholarship_amount', 'net_course_fee', 'total_fee', 'paid_amount'
     ];
 
     protected $casts = [
+        'scholarship_amount' => 'decimal:2',
+        'net_course_fee' => 'decimal:2',
         'total_fee' => 'decimal:2',
         'paid_amount' => 'decimal:2',
     ];

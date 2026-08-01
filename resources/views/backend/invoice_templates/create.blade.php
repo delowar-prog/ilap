@@ -74,6 +74,11 @@
                         <textarea name="content_body" id="editor" class="form-control @error('content_body') is-invalid @enderror" rows="12" required>{{ old('content_body') }}</textarea>
                     </div>
 
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="status" id="templateStatus" value="1" checked>
+                        <label class="form-check-label fw-bold" for="templateStatus"><i class="fas fa-toggle-on text-success me-1"></i> Active Template (Available for Invoice Generation)</label>
+                    </div>
+
                     <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 mt-3">
                         <i class="fas fa-save me-1"></i> Save Invoice Template
                     </button>
@@ -115,7 +120,7 @@
                                     <code><?php echo '{{gender}}'; ?></code> - Gender
                                 </button>
                                 <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{nationality}}'; ?>')">
-                                    <code><?php echo '{{nationality}}'; ?></code> - Nationality
+                                    <code><?php echo '{{nationality}}'; ?></code> - Country of Nationality
                                 </button>
                                 <button type="button" class="btn btn-outline-dark btn-sm text-start bg-white" onclick="insertTag('<?php echo '{{institute_name}}'; ?>')">
                                     <code><?php echo '{{institute_name}}'; ?></code> - Institute Name

@@ -156,7 +156,7 @@
                 <td class="value">{{ $student->gender ?? 'N/A' }}</td>
             </tr>
             <tr>
-                <td class="label">Nationality:</td>
+                <td class="label">Country of Nationality:</td>
                 <td class="value">{{ $student->nationality ?? 'N/A' }}</td>
                 <td class="label">Country of Birth:</td>
                 <td class="value">{{ $student->country_of_birth ?? 'N/A' }}</td>
@@ -168,8 +168,8 @@
                 <td class="value">{{ $student->phone ?? 'N/A' }}</td>
             </tr>
             <tr>
-                <td class="label">Skype ID:</td>
-                <td class="value">{{ $student->skype_id ?? 'N/A' }}</td>
+                <td class="label">WhatsApp Available:</td>
+                <td class="value">{{ $student->has_whatsapp ? 'Yes' : 'No' }}</td>
                 <td class="label">Native Language:</td>
                 <td class="value">{{ $student->native_language ?? 'N/A' }}</td>
             </tr>

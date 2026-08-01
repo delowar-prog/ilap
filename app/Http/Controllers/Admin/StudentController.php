@@ -82,6 +82,11 @@ class StudentController extends Controller
         $invoiceTemplates = \App\Models\InvoiceTemplate::where('status', 1)->get();
         $invoiceHistory = \App\Models\GeneratedInvoice::where('student_id', $student->id)->with('generator')->latest()->get();
 
+        $application = \App\Models\StudentApplication::with(['course', 'additionalCosts', 'installments'])
+            ->where('student_id', $student->id)
+            ->latest()
+            ->first();
+
         return view('backend.admin.students.show', compact(
             'student',
             'preAssessment',
@@ -93,7 +98,8 @@ class StudentController extends Controller
             'letterTemplates',
             'letterHistory',
             'invoiceTemplates',
-            'invoiceHistory'
+            'invoiceHistory',
+            'application'
         ));
     }
 
@@ -146,7 +152,7 @@ class StudentController extends Controller
         }
         $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
 
-        $studentsQuery = Student::with(['campus', 'user', 'preAssessment'])
+        $studentsQuery = Student::with(['campus', 'user', 'preAssessment', 'applications.course'])
             ->where('enrolment_status', 'enrolled');
 
         if ($search) {
@@ -283,6 +289,13 @@ class StudentController extends Controller
     public function manageEnrolmentDetails($studentId)
     {
         $student = Student::findOrFail($studentId);
+
+        $preAssessment = $student->preAssessment;
+        if (!$preAssessment || $preAssessment->assessment_status !== 'approved' || $student->enrolment_status === 'pending') {
+            return redirect()->route('admin.students.show', $student->id)
+                ->with('error', 'Course cannot be assigned while Pre-Enrolment / Pre-Assessment is Pending. Please approve it first.');
+        }
+
         $courses = \App\Models\Course::where('status', 'active')->get();
         $costTypes = \App\Models\DropdownOption::active('additional_cost');
         
@@ -303,9 +316,16 @@ class StudentController extends Controller
     public function saveEnrolmentDetails(Request $request, $studentId)
     {
         $student = Student::findOrFail($studentId);
+
+        $preAssessment = $student->preAssessment;
+        if (!$preAssessment || $preAssessment->assessment_status !== 'approved' || $student->enrolment_status === 'pending') {
+            return redirect()->route('admin.students.show', $student->id)
+                ->with('error', 'Course cannot be assigned while Pre-Enrolment / Pre-Assessment is Pending. Please approve it first.');
+        }
         
         $request->validate([
             'course_id' => 'required|exists:courses,id',
+            'scholarship_amount' => 'nullable|numeric|min:0',
             'additional_costs' => 'nullable|array',
             'additional_costs.*.cost_name' => 'required|string',
             'additional_costs.*.amount' => 'required|numeric|min:0',
@@ -317,12 +337,19 @@ class StudentController extends Controller
         ]);
 
         \DB::transaction(function() use ($request, $student) {
+            $course = \App\Models\Course::findOrFail($request->course_id);
+            $scholarship = floatval($request->scholarship_amount ?? 0);
+            $baseFee = floatval($course->fee);
+            $netCourseFee = max(0, $baseFee - $scholarship);
+
             $application = \App\Models\StudentApplication::updateOrCreate(
                 ['student_id' => $student->id],
                 [
                     'course_id' => $request->course_id,
                     'assigned_agent_id' => $student->agent_id,
                     'stage' => 'accepted',
+                    'scholarship_amount' => $scholarship,
+                    'net_course_fee' => $netCourseFee,
                     'total_fee' => 0, // Set temporarily
                     'paid_amount' => 0,
                 ]
@@ -340,8 +367,7 @@ class StudentController extends Controller
                 }
             }
 
-            $course = \App\Models\Course::findOrFail($request->course_id);
-            $grandTotal = $course->fee + $additionalCostsTotal;
+            $grandTotal = $netCourseFee + $additionalCostsTotal;
 
             $application->installments()->delete();
             $totalApplicationPaid = 0;
@@ -366,14 +392,21 @@ class StudentController extends Controller
             }
 
             $application->update([
+                'scholarship_amount' => $scholarship,
+                'net_course_fee' => $netCourseFee,
                 'total_fee' => $grandTotal,
                 'paid_amount' => $totalApplicationPaid,
                 'stage' => ($totalApplicationPaid >= $grandTotal) ? 'payment_made' : 'accepted'
             ]);
         });
 
-        return redirect()->route('admin.students.index', ['status' => 'approved'])
-            ->with('success', 'Enrolment details saved successfully.');
+        if ($student->enrolment_status === 'enrolled') {
+            return redirect()->route('admin.students.enrolled')
+                ->with('success', 'Enrolment & fee details saved successfully.');
+        }
+
+        return redirect()->route('admin.students.index', ['status' => 'assigned'])
+            ->with('success', 'Enrolment & fee details saved successfully.');
     }
 
     public function recordInstallmentPayment(Request $request, $installmentId)
@@ -397,8 +430,9 @@ class StudentController extends Controller
             }
             $installment->save();
 
-            $totalPaid = $application->installments()->sum('paid_amount');
-            $application->paid_amount = $totalPaid;
+            $totalPaidInstallments = $application->installments()->sum('paid_amount');
+            $totalPaidCosts = $application->additionalCosts()->where('status', 'paid')->sum('paid_amount');
+            $application->paid_amount = $totalPaidInstallments + $totalPaidCosts;
             
             if ($application->paid_amount >= $application->total_fee) {
                 $application->stage = 'payment_made';
@@ -407,5 +441,31 @@ class StudentController extends Controller
         });
 
         return back()->with('success', 'Payment of ' . number_format($request->amount_paid, 2) . ' ' . ($application->course->currency ?? 'GBP') . ' recorded successfully.');
+    }
+
+    public function recordAdditionalCostPayment(Request $request, $costId)
+    {
+        $cost = \App\Models\StudentApplicationAdditionalCost::findOrFail($costId);
+        $application = $cost->application;
+
+        \DB::transaction(function() use ($request, $cost, $application) {
+            $cost->status = 'paid';
+            $cost->paid_amount = $cost->amount;
+            $cost->paid_at = now();
+            $cost->payment_method = $request->payment_method ?? 'Cash/Direct';
+            $cost->transaction_id = $request->transaction_id ?? null;
+            $cost->save();
+
+            $totalPaidInstallments = $application->installments()->sum('paid_amount');
+            $totalPaidCosts = $application->additionalCosts()->where('status', 'paid')->sum('paid_amount');
+            $application->paid_amount = $totalPaidInstallments + $totalPaidCosts;
+
+            if ($application->paid_amount >= $application->total_fee) {
+                $application->stage = 'payment_made';
+            }
+            $application->save();
+        });
+
+        return back()->with('success', 'Full payment of ' . number_format($cost->amount, 2) . ' ' . ($application->course->currency ?? 'GBP') . ' for "' . $cost->cost_name . '" recorded successfully.');
     }
 }

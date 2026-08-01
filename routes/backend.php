@@ -66,6 +66,7 @@ Route::middleware(['auth', 'role:Student', 'pre.assessment'])->prefix('student')
     Route::post('/profile/preferences', [StudentProfileController::class, 'updatePreferences'])->name('profile.preferences');
     Route::post('/profile/referees', [StudentProfileController::class, 'updateReferees'])->name('profile.referees');
     Route::post('/profile/upload', [StudentProfileController::class, 'uploadDocument'])->name('profile.upload');
+    Route::post('/additional-cost/{cost}/pay', [StudentProfileController::class, 'payAdditionalCost'])->name('additional_cost.pay');
 });
 
 // ==================== Pre-Assessment Admin Routes ====================
@@ -95,6 +96,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/students/{student}/enrolment', [StudentController::class, 'manageEnrolmentDetails'])->name('students.enrolment');
     Route::post('/students/{student}/enrolment', [StudentController::class, 'saveEnrolmentDetails'])->name('students.enrolment.save');
     Route::post('/installments/{installment}/record-payment', [StudentController::class, 'recordInstallmentPayment'])->name('admin.installments.record_payment');
+    Route::post('/additional-costs/{cost}/record-payment', [StudentController::class, 'recordAdditionalCostPayment'])->name('admin.additional_costs.record_payment');
     Route::resource('students', StudentController::class)->only(['index', 'show']);
 
     // ── Official Signatures & Seals CRUD ──────────────────────────────

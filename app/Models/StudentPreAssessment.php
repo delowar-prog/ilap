@@ -46,6 +46,7 @@ class StudentPreAssessment extends Model
 
     protected $casts = [
         'approved_at' => 'datetime',
+        'dob' => 'date',
         'intake_date' => 'date',
         'mandatory_documents' => 'array',
         'additional_qualifications' => 'array',

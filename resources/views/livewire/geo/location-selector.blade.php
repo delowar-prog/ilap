@@ -1,10 +1,11 @@
 <div>
     <div class="row g-3">
         @php
-            $colClass = $showPostCode ? 'col-md-3' : 'col-md-4';
-            $stateClass = ($stateColClass === 'col-md-4') ? $colClass : $stateColClass;
-            $cityClass = ($cityColClass === 'col-md-4') ? $colClass : $cityColClass;
-            $countryClass = ($countryColClass === 'col-md-4') ? $colClass : $countryColClass;
+            $defaultCol = $showPostCode ? 'col-md-3' : 'col-md-4';
+            $cityClass = ($cityColClass === 'col-md-4') ? $defaultCol : $cityColClass;
+            $postCodeClass = $cityClass;
+            $stateClass = ($stateColClass === 'col-md-4') ? $defaultCol : $stateColClass;
+            $countryClass = ($countryColClass === 'col-md-4') ? $defaultCol : $countryColClass;
         @endphp
 
         {{-- City --}}
@@ -27,13 +28,13 @@
 
         {{-- Post Code --}}
         @if($showPostCode)
-            <div class="{{ $colClass }}" wire:key="post-code-col">
-                <label class="form-label">Post Code</label>
+            <div class="{{ $postCodeClass }}" wire:key="post-code-col">
+                <label class="form-label">Postal / Zip Code</label>
                 <input type="text" 
                        name="{{ $postCodeFieldName }}" 
                        class="form-control" 
                        value="{{ $postCode }}"
-                       placeholder="e.g. 1234">
+                       placeholder="Postal / Zip Code">
             </div>
         @endif
 

@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -221,6 +222,51 @@
         }
         .form-control option { background: var(--bg2); color: var(--text); }
         .invalid-feedback { font-size: .78rem; color: #fca5a5; margin-top: .2rem; }
+
+        /* Select2 Custom Styling */
+        .select2-container--default .select2-selection--single {
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 10px;
+            height: 44px;
+            padding-left: 2.2rem;
+            display: flex;
+            align-items: center;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text);
+            padding-left: .2rem;
+            line-height: normal;
+            font-size: .9rem;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 42px;
+            right: .8rem;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--single,
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: var(--primary-light) !important;
+            box-shadow: 0 0 0 3px var(--input-focus) !important;
+            outline: none;
+        }
+        .select2-dropdown {
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+            z-index: 9999;
+        }
+        .select2-search--dropdown .select2-search__field {
+            border-radius: 8px;
+            border: 1px solid var(--input-border);
+            padding: .5rem .8rem;
+            font-size: .88rem;
+            outline: none;
+        }
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: var(--primary) !important;
+        }
 
         /* Input with icon */
         .input-wrap { position: relative; }
@@ -448,16 +494,18 @@
                     <div class="form-group">
                         <label for="country_id">Country of Residence <span class="req">*</span></label>
                         <div class="input-wrap" style="position: relative;">
-                            <i class="fas fa-globe icon"></i>
-                            <select name="country_id" id="country_id" class="form-control @error('country_id') is-invalid @enderror" style="padding-right: 2rem;" required onchange="updatePhoneCode()">
-                                <option value="" data-code="">— Select country —</option>
+                            <i class="fas fa-globe icon" style="z-index: 2;"></i>
+                            <select name="country_id" id="country_id" class="form-control select2-tags @error('country_id') is-invalid @enderror" data-placeholder="Select or type country name..." required>
+                                <option value=""></option>
                                 @foreach($countries as $country)
                                     <option value="{{ $country->id }}" data-code="{{ $country->phone_code }}" {{ old('country_id') == $country->id ? 'selected' : '' }}>
                                         {{ $country->name }}
                                     </option>
                                 @endforeach
+                                @if(old('country_id') && !is_numeric(old('country_id')))
+                                    <option value="{{ old('country_id') }}" selected>{{ old('country_id') }}</option>
+                                @endif
                             </select>
-                            <i class="fas fa-chevron-down" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); font-size: .8rem; color: var(--muted); pointer-events: none;"></i>
                         </div>
                         @error('country_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
@@ -645,10 +693,13 @@
     // Sync country code with phone code
     function updatePhoneCode() {
         const countrySelect = document.getElementById('country_id');
+        if (!countrySelect) return;
         const selectedOption = countrySelect.options[countrySelect.selectedIndex];
-        const code = selectedOption.getAttribute('data-code');
-        if (code) {
-            document.getElementById('phone_code').value = code;
+        if (selectedOption) {
+            const code = selectedOption.getAttribute('data-code');
+            if (code) {
+                document.getElementById('phone_code').value = code;
+            }
         }
     }
 
@@ -658,9 +709,26 @@
         btn.disabled   = true;
         btn.innerHTML  = '<i class="fas fa-spinner fa-spin"></i> Creating Account…';
     });
+</script>
 
-    // Auto-verify if prefilled from invite link
-    window.addEventListener('DOMContentLoaded', () => {
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2-tags').each(function() {
+            const el = $(this);
+            el.select2({
+                tags: true,
+                placeholder: el.attr('data-placeholder') || "Select or type to add if not found...",
+                allowClear: true,
+                width: '100%'
+            }).on('change', function() {
+                updatePhoneCode();
+            });
+        });
+
+        updatePhoneCode();
+
         if (document.getElementById('campus_code').value.trim() !== '') {
             verifyCampus();
         }

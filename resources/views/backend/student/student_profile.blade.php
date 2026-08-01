@@ -184,12 +184,36 @@
                     </select>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Nationality <span class="text-danger">*</span></label>
-                    <input class="form-control" type="text" name="nationality" value="{{ $student->nationality }}">
+                    <label class="form-label">Country of Nationality <span class="text-danger">*</span></label>
+                    <select class="form-select select2-tags" name="nationality" data-placeholder="Select or type country of nationality..." required>
+                      <option value="">Select...</option>
+                      @php
+                        $activeCountries = \App\Models\Country::where('status', 'active')->orderBy('name')->get();
+                        $natVal = old('nationality', $student->nationality ?? '');
+                      @endphp
+                      @foreach($activeCountries as $c)
+                        <option value="{{ $c->name }}" {{ $natVal == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                      @endforeach
+                      @if($natVal && !$activeCountries->contains('name', $natVal))
+                        <option value="{{ $natVal }}" selected>{{ $natVal }}</option>
+                      @endif
+                    </select>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Country of Birth</label>
-                    <input class="form-control" type="text" name="country_of_birth" value="{{ $student->country_of_birth }}">
+                    <select class="form-select select2-tags" name="country_of_birth" data-placeholder="Select or type country of birth...">
+                      <option value="">Select...</option>
+                      @php
+                        $activeCountries = \App\Models\Country::where('status', 'active')->orderBy('name')->get();
+                        $cobVal = old('country_of_birth', $student->country_of_birth ?? '');
+                      @endphp
+                      @foreach($activeCountries as $c)
+                        <option value="{{ $c->name }}" {{ $cobVal == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                      @endforeach
+                      @if($cobVal && !$activeCountries->contains('name', $cobVal))
+                        <option value="{{ $cobVal }}" selected>{{ $cobVal }}</option>
+                      @endif
+                    </select>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Country of Residence</label>
@@ -206,13 +230,15 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Phone Number <span class="text-danger">*</span></label>
-                    <input class="form-control" type="text" name="phone" value="{{ $student->phone }}">
+                    <input class="form-control" type="text" name="phone" value="{{ $student->phone }}" required>
+                    <div class="form-check mt-2">
+                      <input class="form-check-input" type="checkbox" name="has_whatsapp" value="1" id="hasWhatsappChk" {{ old('has_whatsapp', $student->has_whatsapp ?? false) ? 'checked' : '' }}>
+                      <label class="form-check-label font-13 text-muted fw-medium" for="hasWhatsappChk">
+                        <i class="fab fa-whatsapp text-success me-1 font-16"></i> WhatsApp available on this number
+                      </label>
+                    </div>
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Skype ID</label>
-                    <input class="form-control" type="text" name="skype_id" value="{{ $student->skype_id }}">
-                  </div>
-                  <div class="col-md-8">
+                  <div class="col-md-6">
                     <label class="form-label">Profile Picture</label>
                     <input class="form-control" type="file" name="profile_picture" accept="image/*">
                     @if($student->profile_picture)
@@ -252,45 +278,81 @@
             <div class="tab-section d-none" id="tab-1">
               <form id="form-address">
                 @csrf
-                <div class="section-title"><i class="fas fa-map-marker-alt text-primary"></i> Permanent Address</div>
-                <div class="row g-3">
-                  <div class="col-md-8">
-                    <label class="form-label">Full Address <span class="text-danger">*</span></label>
-                    <input class="form-control" type="text" name="permanent_address" value="{{ $student->permanent_address }}">
+                <div class="row g-4">
+                  <!-- LEFT COLUMN: Current Address -->
+                  <div class="col-lg-6">
+                    <div class="card h-100 border shadow-sm" style="border-radius: 8px;">
+                      <div class="card-header bg-light py-3 border-bottom">
+                        <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-home me-2"></i> Current / Present Address</h6>
+                      </div>
+                      <div class="card-body">
+                        <div class="row g-3">
+                          <div class="col-12">
+                            <label class="form-label">Full Address</label>
+                            <input class="form-control" type="text" name="current_address" value="{{ old('current_address', $student->current_address ?? $preAssessment->contact_address) }}" placeholder="Street address...">
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">Postcode</label>
+                            <input class="form-control" type="text" name="current_postcode" value="{{ old('current_postcode', $student->current_postcode ?? $preAssessment->postal_code) }}" placeholder="Postal / Zip Code">
+                          </div>
+                          <div class="col-12">
+                            <livewire:geo.location-selector 
+                                :initialCountry="old('current_country', $student->current_country ?? $preAssessment->country)" 
+                                :initialState="old('current_state', $student->current_state ?? $preAssessment->state ?? '')" 
+                                :initialCity="old('current_city', $student->current_city ?? $preAssessment->city)" 
+                                countryField="current_country"
+                                stateField="current_state"
+                                cityField="current_city" 
+                                countryColClass="col-12"
+                                stateColClass="col-md-6"
+                                cityColClass="col-md-6" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Postcode <span class="text-danger">*</span></label>
-                    <input class="form-control" type="text" name="permanent_postcode" value="{{ $student->permanent_postcode }}">
-                  </div>
-                  <div class="col-12">
-                    <livewire:geo.location-selector 
-                        :initialCountry="old('permanent_country', $student->permanent_country)" 
-                        :initialState="old('permanent_state', $student->permanent_state ?? '')" 
-                        :initialCity="old('permanent_city', $student->permanent_city)" 
-                        countryField="permanent_country"
-                        stateField="permanent_state"
-                        cityField="permanent_city" />
-                  </div>
-                </div>
 
-                <div class="section-title mt-4"><i class="fas fa-home text-primary"></i> Current Address <small class="text-muted fw-normal text-lowercase">(if different from permanent)</small></div>
-                <div class="row g-3">
-                  <div class="col-md-8">
-                    <label class="form-label">Full Address</label>
-                    <input class="form-control" type="text" name="current_address" value="{{ $student->current_address }}">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Postcode</label>
-                    <input class="form-control" type="text" name="current_postcode" value="{{ $student->current_postcode }}">
-                  </div>
-                  <div class="col-12">
-                    <livewire:geo.location-selector 
-                        :initialCountry="old('current_country', $student->current_country)" 
-                        :initialState="old('current_state', $student->current_state ?? '')" 
-                        :initialCity="old('current_city', $student->current_city)" 
-                        countryField="current_country"
-                        stateField="current_state"
-                        cityField="current_city" />
+                  <!-- RIGHT COLUMN: Permanent Address -->
+                  <div class="col-lg-6">
+                    <div class="card h-100 border shadow-sm" style="border-radius: 8px;">
+                      <div class="card-header bg-light py-3 border-bottom">
+                        <h6 class="mb-0 fw-bold text-primary"><i class="fas fa-map-marker-alt me-2"></i> Permanent Address</h6>
+                      </div>
+                      <div class="card-body">
+                        <!-- Prominent Checkbox Banner -->
+                        <div class="p-2 px-3 mb-3 border rounded-3 bg-primary bg-opacity-10 border-primary border-opacity-25 d-flex align-items-center justify-content-between">
+                          <div class="form-check font-14 mb-0 d-flex align-items-center">
+                            <input class="form-check-input me-2" type="checkbox" id="sameAsCurrentAddress" style="width: 18px; height: 18px; cursor: pointer;">
+                            <label class="form-check-label text-primary fw-bold font-14 cursor-pointer mb-0" for="sameAsCurrentAddress" style="cursor: pointer; user-select: none;">
+                              <i class="fas fa-copy me-1"></i> Same as Current / Present Address
+                            </label>
+                          </div>
+                        </div>
+
+                        <div class="row g-3">
+                          <div class="col-12">
+                            <label class="form-label">Full Address <span class="text-danger">*</span></label>
+                            <input class="form-control" type="text" name="permanent_address" value="{{ old('permanent_address', $student->permanent_address) }}" placeholder="Street address...">
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">Postcode <span class="text-danger">*</span></label>
+                            <input class="form-control" type="text" name="permanent_postcode" value="{{ old('permanent_postcode', $student->permanent_postcode) }}" placeholder="Postal / Zip Code">
+                          </div>
+                          <div class="col-12">
+                            <livewire:geo.location-selector 
+                                :initialCountry="old('permanent_country', $student->permanent_country)" 
+                                :initialState="old('permanent_state', $student->permanent_state ?? '')" 
+                                :initialCity="old('permanent_city', $student->permanent_city)" 
+                                countryField="permanent_country"
+                                stateField="permanent_state"
+                                cityField="permanent_city" 
+                                countryColClass="col-12"
+                                stateColClass="col-md-6"
+                                cityColClass="col-md-6" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -331,6 +393,44 @@
                     @php
                       $preAssessment = \App\Models\StudentPreAssessment::where('student_id', $student->id)->first();
                       $studyDest = $preAssessment ? $preAssessment->study_destination : 'United Kingdom (UK)';
+
+                      $travelData = old('travel_history', $student->travel_history ?? $preAssessment->travel_history ?? []);
+                      $travelEntries = $travelData['entries'] ?? [];
+                      if (empty($travelEntries) && ($travelData['has_history'] ?? '') === 'yes') {
+                          if (!empty($travelData['country']) || !empty($travelData['arrival_date'])) {
+                              $travelEntries = [
+                                  [
+                                      'arrival_date' => $travelData['arrival_date'] ?? '',
+                                      'departure_date' => $travelData['departure_date'] ?? '',
+                                      'visa_start_date' => $travelData['visa_start_date'] ?? '',
+                                      'visa_expiry_date' => $travelData['visa_expiry_date'] ?? '',
+                                      'purpose_of_visit' => $travelData['purpose_of_visit'] ?? '',
+                                      'country' => $travelData['country'] ?? '',
+                                      'visa_type' => $travelData['visa_type'] ?? '',
+                                  ]
+                              ];
+                          } else {
+                              $travelEntries = [[]];
+                          }
+                      }
+
+                      $refusalData = old('visa_refusals', $student->visa_refusals ?? $preAssessment->visa_refusals ?? []);
+                      $refusalEntries = $refusalData['entries'] ?? [];
+                      if (empty($refusalEntries) && ($refusalData['has_refusal'] ?? '') === 'yes') {
+                          if (!empty($refusalData['country']) || !empty($refusalData['refusal_type'])) {
+                              $refusalEntries = [
+                                  [
+                                      'refusal_type' => $refusalData['refusal_type'] ?? '',
+                                      'refusal_date' => $refusalData['refusal_date'] ?? '',
+                                      'country' => $refusalData['country'] ?? '',
+                                      'visa_type' => $refusalData['visa_type'] ?? '',
+                                      'details' => $refusalData['details'] ?? '',
+                                  ]
+                              ];
+                          } else {
+                              $refusalEntries = [[]];
+                          }
+                      }
                     @endphp
 
                     {{-- Section 1: Travel History --}}
@@ -338,54 +438,75 @@
                       <div class="mb-3">
                         <label class="form-label fw-bold mb-2">Has this student applied for permission to remain in any of the following countries in the past ten years? <span class="text-danger">*</span></label>
                         <div class="d-flex gap-2">
-                          <input type="radio" class="btn-check" name="travel_history[has_history]" id="student_travel_yes" value="yes" {{ (old('travel_history.has_history', $student->travel_history['has_history'] ?? '') == 'yes') ? 'checked' : '' }} onclick="toggleStudentTravelHistoryFields(true)">
+                          <input type="radio" class="btn-check" name="travel_history[has_history]" id="student_travel_yes" value="yes" {{ (old('travel_history.has_history', $travelData['has_history'] ?? '') == 'yes') ? 'checked' : '' }} onclick="toggleStudentTravelHistoryFields(true)">
                           <label class="btn btn-outline-primary px-4 btn-sm" for="student_travel_yes">Yes</label>
 
-                          <input type="radio" class="btn-check" name="travel_history[has_history]" id="student_travel_no" value="no" {{ (old('travel_history.has_history', $student->travel_history['has_history'] ?? 'no') == 'no') ? 'checked' : '' }} onclick="toggleStudentTravelHistoryFields(false)">
+                          <input type="radio" class="btn-check" name="travel_history[has_history]" id="student_travel_no" value="no" {{ (old('travel_history.has_history', $travelData['has_history'] ?? 'no') == 'no') ? 'checked' : '' }} onclick="toggleStudentTravelHistoryFields(false)">
                           <label class="btn btn-outline-secondary px-4 btn-sm" for="student_travel_no">No</label>
                         </div>
                       </div>
 
-                      <div id="student_travel_history_fields" style="display: {{ (old('travel_history.has_history', $student->travel_history['has_history'] ?? '') == 'yes') ? 'block' : 'none' }};">
-                        <div class="row g-3 bg-white p-3 border rounded-3 mb-2">
-                          <div class="col-md-3">
-                            <label class="form-label font-12">Date of Arrival <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="travel_history[arrival_date]" id="student_travel_arrival_date" value="{{ old('travel_history.arrival_date', $student->travel_history['arrival_date'] ?? '') }}">
-                          </div>
-                          <div class="col-md-3">
-                            <label class="form-label font-12">Date of Departure <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="travel_history[departure_date]" id="student_travel_departure_date" value="{{ old('travel_history.departure_date', $student->travel_history['departure_date'] ?? '') }}">
-                          </div>
-                          <div class="col-md-3">
-                            <label class="form-label font-12">Visa Start Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="travel_history[visa_start_date]" id="student_travel_visa_start_date" value="{{ old('travel_history.visa_start_date', $student->travel_history['visa_start_date'] ?? '') }}">
-                          </div>
-                          <div class="col-md-3">
-                            <label class="form-label font-12">Visa Expiry Date <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="travel_history[visa_expiry_date]" id="student_travel_visa_expiry_date" value="{{ old('travel_history.visa_expiry_date', $student->travel_history['visa_expiry_date'] ?? '') }}">
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label font-12">Purpose of Visit <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="travel_history[purpose_of_visit]" id="student_travel_purpose_of_visit" value="{{ old('travel_history.purpose_of_visit', $student->travel_history['purpose_of_visit'] ?? '') }}" placeholder="e.g. Tourism, Study, Work">
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label font-12">Country <span class="text-danger">*</span></label>
-                            <select class="form-select select2-tags" name="travel_history[country]" id="student_travel_country" data-placeholder="Select country">
-                              <option value="">Select Country...</option>
-                              @foreach(\App\Models\Country::orderBy('name')->get() as $c)
-                                <option value="{{ $c->name }}" {{ (old('travel_history.country', $student->travel_history['country'] ?? '') == $c->name) ? 'selected' : '' }}>{{ $c->name }}</option>
-                              @endforeach
-                            </select>
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label font-12">Visa Type <span class="text-danger">*</span></label>
-                            <select class="form-select" name="travel_history[visa_type]" id="student_travel_visa_type">
-                              <option value="">Select Visa Type...</option>
-                              @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
-                                <option value="{{ $vt }}" {{ (old('travel_history.visa_type', $student->travel_history['visa_type'] ?? '') == $vt) ? 'selected' : '' }}>{{ $vt }}</option>
-                              @endforeach
-                            </select>
-                          </div>
+                      <div id="student_travel_history_fields" style="display: {{ (old('travel_history.has_history', $travelData['has_history'] ?? '') == 'yes') ? 'block' : 'none' }};">
+                        <div id="student_travel_history_container">
+                          @foreach($travelEntries as $tIndex => $tEntry)
+                            <div class="student-travel-row bg-white p-3 border rounded-3 mb-3" id="student_travel_row_{{ $tIndex }}">
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0 fw-semibold text-primary"><i class="fas fa-plane me-1"></i> Travel Entry #<span class="student-travel-entry-num">{{ $loop->iteration }}</span></h6>
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-student-travel-btn" onclick="removeStudentTravelRow({{ $tIndex }})" style="{{ count($travelEntries) > 1 ? '' : 'display:none;' }}">
+                                  <i class="fas fa-times me-1"></i> Remove
+                                </button>
+                              </div>
+                              <div class="row g-3">
+                                <div class="col-md-3">
+                                  <label class="form-label font-12">Date of Arrival <span class="text-danger">*</span></label>
+                                  <input type="date" class="form-control" name="travel_history[entries][{{ $tIndex }}][arrival_date]" value="{{ $tEntry['arrival_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                  <label class="form-label font-12">Date of Departure <span class="text-danger">*</span></label>
+                                  <input type="date" class="form-control" name="travel_history[entries][{{ $tIndex }}][departure_date]" value="{{ $tEntry['departure_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                  <label class="form-label font-12">Visa Start Date <span class="text-danger">*</span></label>
+                                  <input type="date" class="form-control" name="travel_history[entries][{{ $tIndex }}][visa_start_date]" value="{{ $tEntry['visa_start_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-3">
+                                  <label class="form-label font-12">Visa Expiry Date <span class="text-danger">*</span></label>
+                                  <input type="date" class="form-control" name="travel_history[entries][{{ $tIndex }}][visa_expiry_date]" value="{{ $tEntry['visa_expiry_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label font-12">Purpose of Visit <span class="text-danger">*</span></label>
+                                  <input type="text" class="form-control" name="travel_history[entries][{{ $tIndex }}][purpose_of_visit]" value="{{ $tEntry['purpose_of_visit'] ?? '' }}" placeholder="e.g. Tourism, Study, Work">
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label font-12">Country <span class="text-danger">*</span></label>
+                                  <select class="form-select select2-tags" name="travel_history[entries][{{ $tIndex }}][country]" data-placeholder="Select country">
+                                    <option value="">Select Country...</option>
+                                    @foreach(\App\Models\Country::where('status', 'active')->orderBy('name')->get() as $c)
+                                      <option value="{{ $c->name }}" {{ ($tEntry['country'] ?? '') == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                                    @endforeach
+                                    @if(!empty($tEntry['country']) && !\App\Models\Country::where('name', $tEntry['country'])->exists())
+                                      <option value="{{ $tEntry['country'] }}" selected>{{ $tEntry['country'] }}</option>
+                                    @endif
+                                  </select>
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label font-12">Visa Type <span class="text-danger">*</span></label>
+                                  <select class="form-select" name="travel_history[entries][{{ $tIndex }}][visa_type]">
+                                    <option value="">Select Visa Type...</option>
+                                    @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
+                                      <option value="{{ $vt }}" {{ ($tEntry['visa_type'] ?? '') == $vt ? 'selected' : '' }}>{{ $vt }}</option>
+                                    @endforeach
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          @endforeach
+                        </div>
+
+                        <div class="mb-2">
+                          <button type="button" class="btn btn-outline-primary btn-sm" onclick="addStudentTravelRow()">
+                            <i class="fas fa-plus me-1"></i> Add Another Travel Entry
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -396,13 +517,16 @@
                         <label class="form-label fw-bold mb-2">Does this student need a visa to stay in any of the following countries? Please tick all that apply. <span class="text-danger">*</span></label>
                         <div class="d-flex gap-4 mt-2">
                           <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="immigration_history[countries][]" value="{{ $studyDest }}" id="student_imm_country_chk" onclick="toggleStudentImmigrationNone(false)" {{ (in_array($studyDest, old('immigration_history.countries', $student->immigration_history['countries'] ?? []))) ? 'checked' : '' }}>
+                            @php
+                              $immCountries = old('immigration_history.countries', $student->immigration_history['countries'] ?? $preAssessment->immigration_history['countries'] ?? []);
+                            @endphp
+                            <input class="form-check-input" type="checkbox" name="immigration_history[countries][]" value="{{ $studyDest }}" id="student_imm_country_chk" onclick="toggleStudentImmigrationNone(false)" {{ (in_array($studyDest, $immCountries)) ? 'checked' : '' }}>
                             <label class="form-check-label fw-semibold font-13" for="student_imm_country_chk">
                               {{ $studyDest }}
                             </label>
                           </div>
                           <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="immigration_history[countries][]" value="None" id="student_imm_none_chk" onclick="toggleStudentImmigrationNone(true)" {{ (in_array('None', old('immigration_history.countries', $student->immigration_history['countries'] ?? ['None']))) ? 'checked' : '' }}>
+                            <input class="form-check-input" type="checkbox" name="immigration_history[countries][]" value="None" id="student_imm_none_chk" onclick="toggleStudentImmigrationNone(true)" {{ (in_array('None', $immCountries) || empty($immCountries)) ? 'checked' : '' }}>
                             <label class="form-check-label fw-semibold font-13" for="student_imm_none_chk">None</label>
                           </div>
                         </div>
@@ -414,51 +538,72 @@
                       <div class="mb-3">
                         <label class="form-label fw-bold mb-2">For any country has this student ever been refused permission to stay or remain, refused asylum or deported? <span class="text-danger">*</span></label>
                         <div class="d-flex gap-2">
-                          <input type="radio" class="btn-check" name="visa_refusals[has_refusal]" id="student_refusal_yes" value="yes" {{ (old('visa_refusals.has_refusal', $student->visa_refusals['has_refusal'] ?? '') == 'yes') ? 'checked' : '' }} onclick="toggleStudentVisaRefusalFields(true)">
+                          <input type="radio" class="btn-check" name="visa_refusals[has_refusal]" id="student_refusal_yes" value="yes" {{ (old('visa_refusals.has_refusal', $refusalData['has_refusal'] ?? '') == 'yes') ? 'checked' : '' }} onclick="toggleStudentVisaRefusalFields(true)">
                           <label class="btn btn-outline-danger px-4 btn-sm" for="student_refusal_yes">Yes</label>
 
-                          <input type="radio" class="btn-check" name="visa_refusals[has_refusal]" id="student_refusal_no" value="no" {{ (old('visa_refusals.has_refusal', $student->visa_refusals['has_refusal'] ?? 'no') == 'no') ? 'checked' : '' }} onclick="toggleStudentVisaRefusalFields(false)">
+                          <input type="radio" class="btn-check" name="visa_refusals[has_refusal]" id="student_refusal_no" value="no" {{ (old('visa_refusals.has_refusal', $refusalData['has_refusal'] ?? 'no') == 'no') ? 'checked' : '' }} onclick="toggleStudentVisaRefusalFields(false)">
                           <label class="btn btn-outline-secondary px-4 btn-sm" for="student_refusal_no">No</label>
                         </div>
                       </div>
 
-                      <div id="student_visa_refusal_fields" style="display: {{ (old('visa_refusals.has_refusal', $student->visa_refusals['has_refusal'] ?? '') == 'yes') ? 'block' : 'none' }};">
-                        <div class="row g-3 bg-white p-3 border rounded-3 mb-2">
-                          <div class="col-md-4">
-                            <label class="form-label font-12">Refusal Type <span class="text-danger">*</span></label>
-                            <select class="form-select" name="visa_refusals[refusal_type]" id="student_refusal_type">
-                              <option value="">Select Refusal Type...</option>
-                              @foreach(['Visa Refusal','Refused Entry','Deported','Refused Leave to Remain','Refused Asylum'] as $rt)
-                                <option value="{{ $rt }}" {{ (old('visa_refusals.refusal_type', $student->visa_refusals['refusal_type'] ?? '') == $rt) ? 'selected' : '' }}>{{ $rt }}</option>
-                              @endforeach
-                            </select>
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label font-12">Date of Refusal <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="visa_refusals[refusal_date]" id="student_refusal_date" value="{{ old('visa_refusals.refusal_date', $student->visa_refusals['refusal_date'] ?? '') }}">
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label font-12">Country <span class="text-danger">*</span></label>
-                            <select class="form-select select2-tags" name="visa_refusals[country]" id="student_refusal_country" data-placeholder="Select country">
-                              <option value="">Select Country...</option>
-                              @foreach(\App\Models\Country::orderBy('name')->get() as $c)
-                                <option value="{{ $c->name }}" {{ (old('visa_refusals.country', $student->visa_refusals['country'] ?? '') == $c->name) ? 'selected' : '' }}>{{ $c->name }}</option>
-                              @endforeach
-                            </select>
-                          </div>
-                          <div class="col-md-4">
-                            <label class="form-label font-12">Visa Type <span class="text-danger">*</span></label>
-                            <select class="form-select" name="visa_refusals[visa_type]" id="student_refusal_visa_type">
-                              <option value="">Select Visa Type...</option>
-                              @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
-                                <option value="{{ $vt }}" {{ (old('visa_refusals.visa_type', $student->visa_refusals['visa_type'] ?? '') == $vt) ? 'selected' : '' }}>{{ $vt }}</option>
-                              @endforeach
-                            </select>
-                          </div>
-                          <div class="col-md-8">
-                            <label class="form-label font-12">Details / Reason <span class="text-danger">*</span></label>
-                            <textarea class="form-control" name="visa_refusals[details]" id="student_refusal_details" rows="2" placeholder="Provide details or reason for refusal...">{{ old('visa_refusals.details', $student->visa_refusals['details'] ?? '') }}</textarea>
-                          </div>
+                      <div id="student_visa_refusal_fields" style="display: {{ (old('visa_refusals.has_refusal', $refusalData['has_refusal'] ?? '') == 'yes') ? 'block' : 'none' }};">
+                        <div id="student_visa_refusal_container">
+                          @foreach($refusalEntries as $rIndex => $rEntry)
+                            <div class="student-refusal-row bg-white p-3 border rounded-3 mb-3" id="student_refusal_row_{{ $rIndex }}">
+                              <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0 fw-semibold text-danger"><i class="fas fa-ban me-1"></i> Refusal Entry #<span class="student-refusal-entry-num">{{ $loop->iteration }}</span></h6>
+                                <button type="button" class="btn btn-outline-danger btn-sm remove-student-refusal-btn" onclick="removeStudentRefusalRow({{ $rIndex }})" style="{{ count($refusalEntries) > 1 ? '' : 'display:none;' }}">
+                                  <i class="fas fa-times me-1"></i> Remove
+                                </button>
+                              </div>
+                              <div class="row g-3">
+                                <div class="col-md-4">
+                                  <label class="form-label font-12">Refusal Type <span class="text-danger">*</span></label>
+                                  <select class="form-select" name="visa_refusals[entries][{{ $rIndex }}][refusal_type]">
+                                    <option value="">Select Refusal Type...</option>
+                                    @foreach(['Visa Refusal','Refused Entry','Deported','Refused Leave to Remain','Refused Asylum'] as $rt)
+                                      <option value="{{ $rt }}" {{ ($rEntry['refusal_type'] ?? '') == $rt ? 'selected' : '' }}>{{ $rt }}</option>
+                                    @endforeach
+                                  </select>
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label font-12">Date of Refusal <span class="text-danger">*</span></label>
+                                  <input type="date" class="form-control" name="visa_refusals[entries][{{ $rIndex }}][refusal_date]" value="{{ $rEntry['refusal_date'] ?? '' }}">
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label font-12">Country <span class="text-danger">*</span></label>
+                                  <select class="form-select select2-tags" name="visa_refusals[entries][{{ $rIndex }}][country]" data-placeholder="Select country">
+                                    <option value="">Select Country...</option>
+                                    @foreach(\App\Models\Country::where('status', 'active')->orderBy('name')->get() as $c)
+                                      <option value="{{ $c->name }}" {{ ($rEntry['country'] ?? '') == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                                    @endforeach
+                                    @if(!empty($rEntry['country']) && !\App\Models\Country::where('name', $rEntry['country'])->exists())
+                                      <option value="{{ $rEntry['country'] }}" selected>{{ $rEntry['country'] }}</option>
+                                    @endif
+                                  </select>
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label font-12">Visa Type <span class="text-danger">*</span></label>
+                                  <select class="form-select" name="visa_refusals[entries][{{ $rIndex }}][visa_type]">
+                                    <option value="">Select Visa Type...</option>
+                                    @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
+                                      <option value="{{ $vt }}" {{ ($rEntry['visa_type'] ?? '') == $vt ? 'selected' : '' }}>{{ $vt }}</option>
+                                    @endforeach
+                                  </select>
+                                </div>
+                                <div class="col-md-8">
+                                  <label class="form-label font-12">Details / Reason <span class="text-danger">*</span></label>
+                                  <textarea class="form-control" name="visa_refusals[entries][{{ $rIndex }}][details]" rows="2" placeholder="Provide details or reason for refusal...">{{ $rEntry['details'] ?? '' }}</textarea>
+                                </div>
+                              </div>
+                            </div>
+                          @endforeach
+                        </div>
+
+                        <div class="mb-2">
+                          <button type="button" class="btn btn-outline-danger btn-sm" onclick="addStudentRefusalRow()">
+                            <i class="fas fa-plus me-1"></i> Add Another Refusal Entry
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -652,7 +797,19 @@
                 <div class="row g-3">
                   <div class="col-md-4">
                     <label class="form-label">Country of Choice</label>
-                    <input class="form-control" type="text" name="country_of_choice" value="{{ $preAssessment->country_of_choice }}">
+                    <select class="form-select select2-tags" name="country_of_choice" data-placeholder="Select or type country of choice...">
+                      <option value="">Select...</option>
+                      @php
+                        $activeCountries = \App\Models\Country::where('status', 'active')->orderBy('name')->get();
+                        $cocVal = old('country_of_choice', $preAssessment->country_of_choice ?? '');
+                      @endphp
+                      @foreach($activeCountries as $c)
+                        <option value="{{ $c->name }}" {{ $cocVal == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                      @endforeach
+                      @if($cocVal && !$activeCountries->contains('name', $cocVal))
+                        <option value="{{ $cocVal }}" selected>{{ $cocVal }}</option>
+                      @endif
+                    </select>
                   </div>
                   <div class="col-md-4">
                     <label class="form-label">Intake Date</label>
@@ -680,33 +837,47 @@
                       @endforeach
                     </select>
                   </div>
+                  @php
+                    $allCourseList = collect();
+                    if (isset($courses)) {
+                        foreach ($courses as $cItem) {
+                            $allCourseList->push($cItem->name);
+                        }
+                    }
+                    if (!empty($preAssessment->intended_course)) $allCourseList->push($preAssessment->intended_course);
+                    if (!empty($preAssessment->preferred_course_2)) $allCourseList->push($preAssessment->preferred_course_2);
+                    if (!empty($preAssessment->preferred_course_3)) $allCourseList->push($preAssessment->preferred_course_3);
+                    $allCourseList = $allCourseList->filter()->unique()->values();
+
+                    $val_uni_1 = $preAssessment->institute_name ?: ($student->institute->name ?? '');
+                    $allInstituteList = collect();
+                    if (isset($institutes)) {
+                        foreach ($institutes as $iItem) {
+                            $allInstituteList->push($iItem->name);
+                        }
+                    }
+                    if (!empty($val_uni_1)) $allInstituteList->push($val_uni_1);
+                    if (!empty($preAssessment->preferred_university_2)) $allInstituteList->push($preAssessment->preferred_university_2);
+                    if (!empty($preAssessment->preferred_university_3)) $allInstituteList->push($preAssessment->preferred_university_3);
+                    $allInstituteList = $allInstituteList->filter()->unique()->values();
+                  @endphp
+
                   <div class="col-md-6">
                     <label class="form-label">Preferred Course 1</label>
-                    <select class="form-control select2-tags" name="intended_course">
+                    <select class="form-control select2-tags" name="intended_course" data-placeholder="Select or type course">
                         <option value=""></option>
-                        @if($preAssessment->intended_course && (!isset($courses) || !$courses->contains('name', $preAssessment->intended_course)))
-                            <option value="{{ $preAssessment->intended_course }}" selected>{{ $preAssessment->intended_course }}</option>
-                        @endif
-                        @if(isset($courses))
-                            @foreach($courses as $course)
-                                <option value="{{ $course->name }}" {{ $preAssessment->intended_course == $course->name ? 'selected' : '' }}>{{ $course->name }}</option>
-                            @endforeach
-                        @endif
+                        @foreach($allCourseList as $cName)
+                            <option value="{{ $cName }}" {{ ($preAssessment->intended_course ?? '') == $cName ? 'selected' : '' }}>{{ $cName }}</option>
+                        @endforeach
                     </select>
                   </div>
                   <div class="col-md-6">
-                    @php $val_uni_1 = $preAssessment->institute_name ?: ($student->institute->name ?? ''); @endphp
                     <label class="form-label">Preferred University 1</label>
-                    <select class="form-control select2-tags" name="institute_name" data-placeholder="Select institute" required>
+                    <select class="form-control select2-tags" name="institute_name" data-placeholder="Select or type university" required>
                         <option value=""></option>
-                        @if($val_uni_1 && (!isset($institutes) || !$institutes->contains('name', $val_uni_1)))
-                            <option value="{{ $val_uni_1 }}" selected>{{ $val_uni_1 }}</option>
-                        @endif
-                        @if(isset($institutes))
-                            @foreach($institutes as $institute)
-                                <option value="{{ $institute->name }}" {{ $val_uni_1 == $institute->name ? 'selected' : '' }}>{{ $institute->name }}</option>
-                            @endforeach
-                        @endif
+                        @foreach($allInstituteList as $iName)
+                            <option value="{{ $iName }}" {{ $val_uni_1 == $iName ? 'selected' : '' }}>{{ $iName }}</option>
+                        @endforeach
                     </select>
                   </div>
                   <div class="col-md-12">
@@ -715,30 +886,20 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Preferred Course 2</label>
-                    <select class="form-control select2-tags" name="preferred_course_2">
+                    <select class="form-control select2-tags" name="preferred_course_2" data-placeholder="Select or type course">
                         <option value=""></option>
-                        @if($preAssessment->preferred_course_2 && (!isset($courses) || !$courses->contains('name', $preAssessment->preferred_course_2)))
-                            <option value="{{ $preAssessment->preferred_course_2 }}" selected>{{ $preAssessment->preferred_course_2 }}</option>
-                        @endif
-                        @if(isset($courses))
-                            @foreach($courses as $course)
-                                <option value="{{ $course->name }}" {{ $preAssessment->preferred_course_2 == $course->name ? 'selected' : '' }}>{{ $course->name }}</option>
-                            @endforeach
-                        @endif
+                        @foreach($allCourseList as $cName)
+                            <option value="{{ $cName }}" {{ ($preAssessment->preferred_course_2 ?? '') == $cName ? 'selected' : '' }}>{{ $cName }}</option>
+                        @endforeach
                     </select>
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Preferred University 2</label>
-                    <select class="form-control select2-tags" name="preferred_university_2" data-placeholder="Select university">
+                    <select class="form-control select2-tags" name="preferred_university_2" data-placeholder="Select or type university">
                         <option value=""></option>
-                        @if($preAssessment->preferred_university_2 && (!isset($institutes) || !$institutes->contains('name', $preAssessment->preferred_university_2)))
-                            <option value="{{ $preAssessment->preferred_university_2 }}" selected>{{ $preAssessment->preferred_university_2 }}</option>
-                        @endif
-                        @if(isset($institutes))
-                            @foreach($institutes as $institute)
-                                <option value="{{ $institute->name }}" {{ $preAssessment->preferred_university_2 == $institute->name ? 'selected' : '' }}>{{ $institute->name }}</option>
-                            @endforeach
-                        @endif
+                        @foreach($allInstituteList as $iName)
+                            <option value="{{ $iName }}" {{ ($preAssessment->preferred_university_2 ?? '') == $iName ? 'selected' : '' }}>{{ $iName }}</option>
+                        @endforeach
                     </select>
                   </div>
                   <div class="col-md-12">
@@ -747,30 +908,20 @@
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Preferred Course 3</label>
-                    <select class="form-control select2-tags" name="preferred_course_3">
+                    <select class="form-control select2-tags" name="preferred_course_3" data-placeholder="Select or type course">
                         <option value=""></option>
-                        @if($preAssessment->preferred_course_3 && (!isset($courses) || !$courses->contains('name', $preAssessment->preferred_course_3)))
-                            <option value="{{ $preAssessment->preferred_course_3 }}" selected>{{ $preAssessment->preferred_course_3 }}</option>
-                        @endif
-                        @if(isset($courses))
-                            @foreach($courses as $course)
-                                <option value="{{ $course->name }}" {{ $preAssessment->preferred_course_3 == $course->name ? 'selected' : '' }}>{{ $course->name }}</option>
-                            @endforeach
-                        @endif
+                        @foreach($allCourseList as $cName)
+                            <option value="{{ $cName }}" {{ ($preAssessment->preferred_course_3 ?? '') == $cName ? 'selected' : '' }}>{{ $cName }}</option>
+                        @endforeach
                     </select>
                   </div>
                   <div class="col-md-6">
                     <label class="form-label">Preferred University 3</label>
-                    <select class="form-control select2-tags" name="preferred_university_3" data-placeholder="Select university">
+                    <select class="form-control select2-tags" name="preferred_university_3" data-placeholder="Select or type university">
                         <option value=""></option>
-                        @if($preAssessment->preferred_university_3 && (!isset($institutes) || !$institutes->contains('name', $preAssessment->preferred_university_3)))
-                            <option value="{{ $preAssessment->preferred_university_3 }}" selected>{{ $preAssessment->preferred_university_3 }}</option>
-                        @endif
-                        @if(isset($institutes))
-                            @foreach($institutes as $institute)
-                                <option value="{{ $institute->name }}" {{ $preAssessment->preferred_university_3 == $institute->name ? 'selected' : '' }}>{{ $institute->name }}</option>
-                            @endforeach
-                        @endif
+                        @foreach($allInstituteList as $iName)
+                            <option value="{{ $iName }}" {{ ($preAssessment->preferred_university_3 ?? '') == $iName ? 'selected' : '' }}>{{ $iName }}</option>
+                        @endforeach
                     </select>
                   </div>
                   <div class="col-md-12">
@@ -1634,6 +1785,187 @@ function toggleStudentImmigrationNone(isNoneChecked) {
     }
 }
 
+let studentTravelIndex = {{ count($travelEntries) }};
+function addStudentTravelRow() {
+    const container = document.getElementById('student_travel_history_container');
+    if (!container) return;
+
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'student-travel-row bg-white p-3 border rounded-3 mb-3';
+    rowDiv.id = `student_travel_row_${studentTravelIndex}`;
+
+    const countriesOptions = `@foreach(\App\Models\Country::where('status', 'active')->orderBy('name')->get() as $c)<option value="{{ $c->name }}">{{ $c->name }}</option>@endforeach`;
+
+    rowDiv.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0 fw-semibold text-primary"><i class="fas fa-plane me-1"></i> Travel Entry #<span class="student-travel-entry-num"></span></h6>
+            <button type="button" class="btn btn-outline-danger btn-sm remove-student-travel-btn" onclick="removeStudentTravelRow(${studentTravelIndex})">
+                <i class="fas fa-times me-1"></i> Remove
+            </button>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label font-12">Date of Arrival <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="travel_history[entries][${studentTravelIndex}][arrival_date]">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label font-12">Date of Departure <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="travel_history[entries][${studentTravelIndex}][departure_date]">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label font-12">Visa Start Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="travel_history[entries][${studentTravelIndex}][visa_start_date]">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label font-12">Visa Expiry Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="travel_history[entries][${studentTravelIndex}][visa_expiry_date]">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label font-12">Purpose of Visit <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="travel_history[entries][${studentTravelIndex}][purpose_of_visit]" placeholder="e.g. Tourism, Study, Work">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label font-12">Country <span class="text-danger">*</span></label>
+                <select class="form-select select2-tags" name="travel_history[entries][${studentTravelIndex}][country]" data-placeholder="Select country">
+                    <option value="">Select Country...</option>
+                    ${countriesOptions}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label font-12">Visa Type <span class="text-danger">*</span></label>
+                <select class="form-select" name="travel_history[entries][${studentTravelIndex}][visa_type]">
+                    <option value="">Select Visa Type...</option>
+                    <option value="Tourist Visa">Tourist Visa</option>
+                    <option value="Student Visa">Student Visa</option>
+                    <option value="Work Visa">Work Visa</option>
+                    <option value="Business Visa">Business Visa</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(rowDiv);
+    studentTravelIndex++;
+    updateStudentTravelRowIndices();
+    
+    $(rowDiv).find('.select2-tags').select2({
+        tags: true,
+        placeholder: "Select country",
+        width: '100%'
+    });
+}
+
+function removeStudentTravelRow(index) {
+    const row = document.getElementById(`student_travel_row_${index}`);
+    if (row) {
+        row.remove();
+        updateStudentTravelRowIndices();
+    }
+}
+
+function updateStudentTravelRowIndices() {
+    const rows = document.querySelectorAll('.student-travel-row');
+    rows.forEach((row, i) => {
+        const numSpan = row.querySelector('.student-travel-entry-num');
+        if (numSpan) numSpan.textContent = i + 1;
+        const removeBtn = row.querySelector('.remove-student-travel-btn');
+        if (removeBtn) {
+            removeBtn.style.display = rows.length > 1 ? 'inline-block' : 'none';
+        }
+    });
+}
+
+let studentRefusalIndex = {{ count($refusalEntries) }};
+function addStudentRefusalRow() {
+    const container = document.getElementById('student_visa_refusal_container');
+    if (!container) return;
+
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'student-refusal-row bg-white p-3 border rounded-3 mb-3';
+    rowDiv.id = `student_refusal_row_${studentRefusalIndex}`;
+
+    const countriesOptions = `@foreach(\App\Models\Country::where('status', 'active')->orderBy('name')->get() as $c)<option value="{{ $c->name }}">{{ $c->name }}</option>@endforeach`;
+
+    rowDiv.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0 fw-semibold text-danger"><i class="fas fa-ban me-1"></i> Refusal Entry #<span class="student-refusal-entry-num"></span></h6>
+            <button type="button" class="btn btn-outline-danger btn-sm remove-student-refusal-btn" onclick="removeStudentRefusalRow(${studentRefusalIndex})">
+                <i class="fas fa-times me-1"></i> Remove
+            </button>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label font-12">Refusal Type <span class="text-danger">*</span></label>
+                <select class="form-select" name="visa_refusals[entries][${studentRefusalIndex}][refusal_type]">
+                    <option value="">Select Refusal Type...</option>
+                    <option value="Visa Refusal">Visa Refusal</option>
+                    <option value="Refused Entry">Refused Entry</option>
+                    <option value="Deported">Deported</option>
+                    <option value="Refused Leave to Remain">Refused Leave to Remain</option>
+                    <option value="Refused Asylum">Refused Asylum</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label font-12">Date of Refusal <span class="text-danger">*</span></label>
+                <input type="date" class="form-control" name="visa_refusals[entries][${studentRefusalIndex}][refusal_date]">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label font-12">Country <span class="text-danger">*</span></label>
+                <select class="form-select select2-tags" name="visa_refusals[entries][${studentRefusalIndex}][country]" data-placeholder="Select country">
+                    <option value="">Select Country...</option>
+                    ${countriesOptions}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label font-12">Visa Type <span class="text-danger">*</span></label>
+                <select class="form-select" name="visa_refusals[entries][${studentRefusalIndex}][visa_type]">
+                    <option value="">Select Visa Type...</option>
+                    <option value="Tourist Visa">Tourist Visa</option>
+                    <option value="Student Visa">Student Visa</option>
+                    <option value="Work Visa">Work Visa</option>
+                    <option value="Business Visa">Business Visa</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label font-12">Details / Reason <span class="text-danger">*</span></label>
+                <textarea class="form-control" name="visa_refusals[entries][${studentRefusalIndex}][details]" rows="2" placeholder="Provide details or reason for refusal..."></textarea>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(rowDiv);
+    studentRefusalIndex++;
+    updateStudentRefusalRowIndices();
+
+    $(rowDiv).find('.select2-tags').select2({
+        tags: true,
+        placeholder: "Select country",
+        width: '100%'
+    });
+}
+
+function removeStudentRefusalRow(index) {
+    const row = document.getElementById(`student_refusal_row_${index}`);
+    if (row) {
+        row.remove();
+        updateStudentRefusalRowIndices();
+    }
+}
+
+function updateStudentRefusalRowIndices() {
+    const rows = document.querySelectorAll('.student-refusal-row');
+    rows.forEach((row, i) => {
+        const numSpan = row.querySelector('.student-refusal-entry-num');
+        if (numSpan) numSpan.textContent = i + 1;
+        const removeBtn = row.querySelector('.remove-student-refusal-btn');
+        if (removeBtn) {
+            removeBtn.style.display = rows.length > 1 ? 'inline-block' : 'none';
+        }
+    });
+}
+
 // Initial state checks on load
 document.addEventListener('DOMContentLoaded', function() {
     const travelYes = document.getElementById('student_travel_yes');
@@ -1698,6 +2030,84 @@ $(document).ready(function() {
             allowClear: true,
             width: '100%'
         });
+    });
+
+    // Real-time option sync across Preferred Courses 1, 2, 3
+    $(document).on('select2:select', 'select[name="intended_course"], select[name="preferred_course_2"], select[name="preferred_course_3"]', function(e) {
+        const val = e.params && e.params.data ? e.params.data.id : null;
+        if (!val) return;
+        ['intended_course', 'preferred_course_2', 'preferred_course_3'].forEach(name => {
+            const $target = $(`select[name="${name}"]`);
+            if ($target.length && !$target.find(`option[value="${CSS.escape(val)}"]`).length) {
+                const opt = new Option(val, val, false, false);
+                $target.append(opt).trigger('change.select2');
+            }
+        });
+    });
+
+    // Real-time option sync across Preferred Universities 1, 2, 3
+    $(document).on('select2:select', 'select[name="institute_name"], select[name="preferred_university_2"], select[name="preferred_university_3"]', function(e) {
+        const val = e.params && e.params.data ? e.params.data.id : null;
+        if (!val) return;
+        ['institute_name', 'preferred_university_2', 'preferred_university_3'].forEach(name => {
+            const $target = $(`select[name="${name}"]`);
+            if ($target.length && !$target.find(`option[value="${CSS.escape(val)}"]`).length) {
+                const opt = new Option(val, val, false, false);
+                $target.append(opt).trigger('change.select2');
+            }
+        });
+    });
+
+    $(document).on('change', '#sameAsCurrentAddress', function() {
+        const permAddrInput = $('input[name="permanent_address"]');
+        const permPostInput = $('input[name="permanent_postcode"]');
+        const permCountrySelect = $('select[name="permanent_country"]');
+        const permStateSelect = $('select[name="permanent_state"]');
+        const permCitySelect = $('select[name="permanent_city"]');
+
+        if (this.checked) {
+            const currAddr = $('input[name="current_address"]').val() || '';
+            const currPost = $('input[name="current_postcode"]').val() || '';
+            const currCountry = $('select[name="current_country"]').val() || '';
+            const currState = $('select[name="current_state"]').val() || '';
+            const currCity = $('select[name="current_city"]').val() || '';
+
+            permAddrInput.val(currAddr);
+            permPostInput.val(currPost);
+
+            if (permCountrySelect.length && currCountry) {
+                permCountrySelect.val(currCountry).trigger('change');
+                if (permCountrySelect[0]) permCountrySelect[0].dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            setTimeout(function() {
+                if (permStateSelect.length && currState) {
+                    permStateSelect.val(currState).trigger('change');
+                    if (permStateSelect[0]) permStateSelect[0].dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                setTimeout(function() {
+                    if (permCitySelect.length && currCity) {
+                        permCitySelect.val(currCity).trigger('change');
+                        if (permCitySelect[0]) permCitySelect[0].dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }, 350);
+            }, 350);
+        } else {
+            permAddrInput.val('');
+            permPostInput.val('');
+
+            if (permCountrySelect.length) {
+                permCountrySelect.val('').trigger('change');
+                if (permCountrySelect[0]) permCountrySelect[0].dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            if (permStateSelect.length) {
+                permStateSelect.val('').trigger('change');
+                if (permStateSelect[0]) permStateSelect[0].dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            if (permCitySelect.length) {
+                permCitySelect.val('').trigger('change');
+                if (permCitySelect[0]) permCitySelect[0].dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
     });
 });
 </script>

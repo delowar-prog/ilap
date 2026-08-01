@@ -213,7 +213,7 @@ class StudentProfileController extends Controller
 
         $studentFields = [
             'title', 'first_name', 'middle_name', 'surname', 'dob', 'gender', 'nationality',
-            'country_of_birth', 'country_id', 'email', 'phone', 'skype_id',
+            'country_of_birth', 'country_id', 'email', 'phone', 'skype_id', 'has_whatsapp',
             'name_in_passport', 'passport_number', 'passport_issue_location',
             'passport_issue_date', 'passport_expiry_date',
             'permanent_address', 'permanent_city', 'permanent_state', 'permanent_postcode', 'permanent_country',
@@ -224,6 +224,7 @@ class StudentProfileController extends Controller
         ];
 
         $data = $request->only($studentFields);
+        $data['has_whatsapp'] = $request->has('has_whatsapp');
 
         if ($request->hasFile('profile_picture')) {
             $file = $request->file('profile_picture');
@@ -274,22 +275,24 @@ class StudentProfileController extends Controller
         $request->validate([
             'travel_history' => 'required|array',
             'travel_history.has_history' => 'required|in:yes,no',
-            'travel_history.arrival_date' => 'required_if:travel_history.has_history,yes|nullable|date',
-            'travel_history.departure_date' => 'required_if:travel_history.has_history,yes|nullable|date',
-            'travel_history.visa_start_date' => 'required_if:travel_history.has_history,yes|nullable|date',
-            'travel_history.visa_expiry_date' => 'required_if:travel_history.has_history,yes|nullable|date',
-            'travel_history.purpose_of_visit' => 'required_if:travel_history.has_history,yes|nullable|string',
-            'travel_history.country' => 'required_if:travel_history.has_history,yes|nullable|string',
-            'travel_history.visa_type' => 'required_if:travel_history.has_history,yes|nullable|string',
+            'travel_history.entries' => 'nullable|array',
+            'travel_history.entries.*.arrival_date' => 'nullable|date',
+            'travel_history.entries.*.departure_date' => 'nullable|date',
+            'travel_history.entries.*.visa_start_date' => 'nullable|date',
+            'travel_history.entries.*.visa_expiry_date' => 'nullable|date',
+            'travel_history.entries.*.purpose_of_visit' => 'nullable|string',
+            'travel_history.entries.*.country' => 'nullable|string',
+            'travel_history.entries.*.visa_type' => 'nullable|string',
             'immigration_history' => 'required|array',
             'immigration_history.countries' => 'required|array|min:1',
             'visa_refusals' => 'required|array',
             'visa_refusals.has_refusal' => 'required|in:yes,no',
-            'visa_refusals.refusal_type' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
-            'visa_refusals.refusal_date' => 'required_if:visa_refusals.has_refusal,yes|nullable|date',
-            'visa_refusals.country' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
-            'visa_refusals.visa_type' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
-            'visa_refusals.details' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
+            'visa_refusals.entries' => 'nullable|array',
+            'visa_refusals.entries.*.refusal_type' => 'nullable|string',
+            'visa_refusals.entries.*.refusal_date' => 'nullable|date',
+            'visa_refusals.entries.*.country' => 'nullable|string',
+            'visa_refusals.entries.*.visa_type' => 'nullable|string',
+            'visa_refusals.entries.*.details' => 'nullable|string',
             'taken_tb_test' => 'nullable|string',
         ]);
 
@@ -400,5 +403,35 @@ class StudentProfileController extends Controller
         }
 
         return response()->json(['success' => false, 'message' => 'No valid files provided or upload failed.'], 400);
+    }
+
+    public function payAdditionalCost(Request $request, $costId)
+    {
+        $student = Auth::user()->student;
+        $cost = \App\Models\StudentApplicationAdditionalCost::whereHas('application', function($q) use ($student) {
+            $q->where('student_id', $student->id);
+        })->findOrFail($costId);
+
+        $application = $cost->application;
+
+        \DB::transaction(function() use ($request, $cost, $application) {
+            $cost->status = 'paid';
+            $cost->paid_amount = $cost->amount;
+            $cost->paid_at = now();
+            $cost->payment_method = $request->payment_method ?? 'Online Payment';
+            $cost->transaction_id = $request->transaction_id ?? ('TXN-' . strtoupper(\Str::random(8)));
+            $cost->save();
+
+            $totalPaidInstallments = $application->installments()->sum('paid_amount');
+            $totalPaidCosts = $application->additionalCosts()->where('status', 'paid')->sum('paid_amount');
+            $application->paid_amount = $totalPaidInstallments + $totalPaidCosts;
+
+            if ($application->paid_amount >= $application->total_fee) {
+                $application->stage = 'payment_made';
+            }
+            $application->save();
+        });
+
+        return back()->with('success', 'Full payment of ' . number_format($cost->amount, 2) . ' ' . ($application->course->currency ?? 'GBP') . ' for "' . $cost->cost_name . '" processed successfully.');
     }
 }

@@ -27,7 +27,7 @@ class RegisteredUserController extends Controller
     public function create($userid = null): View
     {
         $campuses  = Campus::active()->orderBy('name')->get();
-        $countries = Country::orderBy('name')->get();
+        $countries = Country::where('status', 'active')->orderBy('name')->get();
 
         $refCampusCode = null;
         $refPromoCode = null;
@@ -55,17 +55,37 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'first_name'  => ['required', 'string', 'max:100'],
-            'middle_name' => ['nullable', 'string', 'max:100'],
-            'surname'     => ['required', 'string', 'max:100'],
-            'email'       => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email', 'confirmed'],
-            'phone_code'  => ['required', 'string'],
-            'phone'       => ['required', 'string', 'max:20'],
-            'password'    => ['required', 'confirmed', Rules\Password::defaults()],
-            'campus_code' => ['required', 'string', 'exists:campuses,campus_code'],
-            'country_id'  => ['required', 'exists:countries,id'],
+            'first_name'     => ['required', 'string', 'max:100'],
+            'middle_name'    => ['nullable', 'string', 'max:100'],
+            'surname'        => ['required', 'string', 'max:100'],
+            'email'          => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email', 'confirmed'],
+            'phone_code'     => ['required', 'string'],
+            'phone'          => ['required', 'string', 'max:20'],
+            'password'       => ['required', 'confirmed', Rules\Password::defaults()],
+            'campus_code'    => ['required', 'string', 'exists:campuses,campus_code'],
+            'country_id'  => ['required', 'string', 'max:100'],
             'promo_code'  => ['required', 'string', 'max:50'],
         ]);
+
+        $countryInput = trim($request->country_id);
+        $country = null;
+
+        if (is_numeric($countryInput)) {
+            $country = Country::find($countryInput);
+        }
+        
+        if (!$country) {
+            $country = Country::where('name', $countryInput)->first();
+        }
+
+        if (!$country) {
+            $country = Country::create([
+                'name'   => $countryInput,
+                'status' => 'active',
+            ]);
+        }
+
+        $countryId = $country->id;
 
         $fullPhone = $request->phone_code . ' ' . $request->phone;
 
@@ -80,9 +100,8 @@ class RegisteredUserController extends Controller
         // Resolve campus via campus_code
         $campus = Campus::where('campus_code', strtoupper($request->campus_code))->firstOrFail();
         $campusId = $campus->id;
-        $campusCodeStr = $campus->campus_code;
 
-        DB::transaction(function () use ($request, $fullPhone, $agentId, $campusId, $campusCodeStr) {
+        DB::transaction(function () use ($request, $fullPhone, $agentId, $campusId, $countryId) {
             // Generate unique referral code for the new user
             $myReferralCode = 'PRM' . strtoupper(Str::random(6)) . mt_rand(10, 99);
 
@@ -110,7 +129,7 @@ class RegisteredUserController extends Controller
             $student = Student::create([
                 'user_id'     => $user->id,
                 'campus_id'   => $campusId,
-                'country_id'  => $request->country_id,
+                'country_id'  => $countryId,
                 'agent_id'    => $agentId,
                 'student_id'  => $studentId,
                 'promo_code'  => $request->promo_code ? strtoupper($request->promo_code) : null,

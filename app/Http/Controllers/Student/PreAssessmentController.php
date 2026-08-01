@@ -118,22 +118,24 @@ class PreAssessmentController extends Controller
             'financial_source' => 'required|string',
             'travel_history' => 'required|array',
             'travel_history.has_history' => 'required|in:yes,no',
-            'travel_history.arrival_date' => 'required_if:travel_history.has_history,yes|nullable|date',
-            'travel_history.departure_date' => 'required_if:travel_history.has_history,yes|nullable|date',
-            'travel_history.visa_start_date' => 'required_if:travel_history.has_history,yes|nullable|date',
-            'travel_history.visa_expiry_date' => 'required_if:travel_history.has_history,yes|nullable|date',
-            'travel_history.purpose_of_visit' => 'required_if:travel_history.has_history,yes|nullable|string',
-            'travel_history.country' => 'required_if:travel_history.has_history,yes|nullable|string',
-            'travel_history.visa_type' => 'required_if:travel_history.has_history,yes|nullable|string',
+            'travel_history.entries' => 'nullable|array',
+            'travel_history.entries.*.arrival_date' => 'nullable|date',
+            'travel_history.entries.*.departure_date' => 'nullable|date',
+            'travel_history.entries.*.visa_start_date' => 'nullable|date',
+            'travel_history.entries.*.visa_expiry_date' => 'nullable|date',
+            'travel_history.entries.*.purpose_of_visit' => 'nullable|string',
+            'travel_history.entries.*.country' => 'nullable|string',
+            'travel_history.entries.*.visa_type' => 'nullable|string',
             'immigration_history' => 'required|array',
             'immigration_history.countries' => 'required|array|min:1',
             'visa_refusals' => 'required|array',
             'visa_refusals.has_refusal' => 'required|in:yes,no',
-            'visa_refusals.refusal_type' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
-            'visa_refusals.refusal_date' => 'required_if:visa_refusals.has_refusal,yes|nullable|date',
-            'visa_refusals.country' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
-            'visa_refusals.visa_type' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
-            'visa_refusals.details' => 'required_if:visa_refusals.has_refusal,yes|nullable|string',
+            'visa_refusals.entries' => 'nullable|array',
+            'visa_refusals.entries.*.refusal_type' => 'nullable|string',
+            'visa_refusals.entries.*.refusal_date' => 'nullable|date',
+            'visa_refusals.entries.*.country' => 'nullable|string',
+            'visa_refusals.entries.*.visa_type' => 'nullable|string',
+            'visa_refusals.entries.*.details' => 'nullable|string',
         ]);
 
         if ($request->highest_qualification === 'Other' && $request->filled('highest_qualification_other')) {
@@ -186,6 +188,26 @@ class PreAssessmentController extends Controller
                 'previous_uk_study_history' => $previousStudyText,
             ] // Set back to pending upon edit
         ));
+
+        // Sync personal & current address data to student profile
+        $student->update([
+            'first_name' => $request->first_name,
+            'middle_name' => $request->middle_name,
+            'surname' => $request->surname,
+            'phone' => $request->contact_number,
+            'dob' => $request->dob,
+            'gender' => $request->gender,
+            'nationality' => $request->nationality,
+            'passport_number' => $request->passport_number,
+            'current_address' => $student->current_address ?: $request->contact_address,
+            'current_city' => $student->current_city ?: $request->city,
+            'current_state' => $student->current_state ?: $request->state,
+            'current_postcode' => $student->current_postcode ?: $request->postal_code,
+            'current_country' => $student->current_country ?: $request->country,
+            'travel_history' => $travelHistory,
+            'immigration_history' => $immigrationHistory,
+            'visa_refusals' => $visaRefusals,
+        ]);
 
         return redirect()->route('pre.assessment.index')->with('success', 'Your pre-assessment form has been submitted and is under review.');
     }

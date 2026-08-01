@@ -15,6 +15,25 @@
             
             <div class="card-body p-4">
                 
+                @if ($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                        <div class="d-flex align-items-center">
+                            <i class="mdi mdi-alert-circle font-22 me-2"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1 fw-bold">Form Submission Failed!</h6>
+                                <p class="mb-1 font-13">Please correct the following errors and try submitting again:</p>
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <ul class="mb-0 ps-3 font-13">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+                
                 <form method="POST" action="{{ route('pre.assessment.update') }}" id="assessForm">
                     @csrf
                     @method('PUT')
@@ -28,13 +47,13 @@
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link disabled" id="step2-tab" data-bs-toggle="tab" data-bs-target="#step2" type="button" role="tab" aria-controls="step2" aria-selected="false">
+                            <button class="nav-link {{ ($assessment->exists ?? false) ? '' : 'disabled' }}" id="step2-tab" data-bs-toggle="tab" data-bs-target="#step2" type="button" role="tab" aria-controls="step2" aria-selected="false">
                                 <span class="d-block d-sm-none"><i class="mdi mdi-school"></i></span>
                                 <span class="d-none d-sm-block">2. Academic Background</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link disabled" id="step3-tab" data-bs-toggle="tab" data-bs-target="#step3" type="button" role="tab" aria-controls="step3" aria-selected="false">
+                            <button class="nav-link {{ ($assessment->exists ?? false) ? '' : 'disabled' }}" id="step3-tab" data-bs-toggle="tab" data-bs-target="#step3" type="button" role="tab" aria-controls="step3" aria-selected="false">
                                 <span class="d-block d-sm-none"><i class="mdi mdi-earth"></i></span>
                                 <span class="d-none d-sm-block">3. Study Plan</span>
                             </button>
@@ -76,7 +95,16 @@
 
                                 <div class="col-md-6 mb-3">
                                     <label for="dob" class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" name="dob" id="dob" value="{{ old('dob', optional($assessment->dob ?? $student->dob)->format('Y-m-d')) }}" required />
+                                    @php
+                                        $dobValue = old('dob');
+                                        if (!$dobValue) {
+                                            $rawDob = $assessment->dob ?? $student->dob;
+                                            if (!empty($rawDob)) {
+                                                $dobValue = $rawDob instanceof \DateTimeInterface ? $rawDob->format('Y-m-d') : date('Y-m-d', strtotime($rawDob));
+                                            }
+                                        }
+                                    @endphp
+                                    <input type="date" class="form-control" name="dob" id="dob" value="{{ $dobValue }}" required />
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -95,8 +123,20 @@
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <label for="nationality" class="form-label">Nationality <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="nationality" id="nationality" value="{{ old('nationality', $assessment->nationality ?? $student->nationality) }}" placeholder="e.g. British" required />
+                                    <label for="nationality" class="form-label">Country of Nationality <span class="text-danger">*</span></label>
+                                    <select class="form-select select2-tags" name="nationality" id="nationality" data-placeholder="Select or type country of nationality..." required>
+                                        <option value=""></option>
+                                        @php
+                                            $activeCountries = \App\Models\Country::where('status', 'active')->orderBy('name')->get();
+                                            $natVal = old('nationality', $assessment->nationality ?? $student->nationality);
+                                        @endphp
+                                        @foreach($activeCountries as $c)
+                                            <option value="{{ $c->name }}" {{ $natVal == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                                        @endforeach
+                                        @if($natVal && !$activeCountries->contains('name', $natVal))
+                                            <option value="{{ $natVal }}" selected>{{ $natVal }}</option>
+                                        @endif
+                                    </select>
                                 </div>
                                 
                                 <div class="col-md-12 mb-3">
@@ -107,14 +147,16 @@
                                             <input type="text" class="form-control" name="contact_address" id="contact_address" value="{{ old('contact_address', $assessment->contact_address) }}" placeholder="Street Address (e.g. 123 Main St, Apt 4B)" required />
                                         </div>
                                         <div class="col-md-12">
-                                            <label for="postal_code" class="form-label">Postal / Zip Code <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" name="postal_code" id="postal_code" value="{{ old('postal_code', $assessment->postal_code) }}" placeholder="Postal / Zip Code" required />
-                                        </div>
-                                        <div class="col-md-12">
                                             <livewire:geo.location-selector 
                                                 :initialCountry="old('country', $assessment->country ?? $student->country?->name)" 
                                                 :initialState="old('state', $assessment->state)" 
-                                                :initialCity="old('city', $assessment->city)" />
+                                                :initialCity="old('city', $assessment->city)"
+                                                :showPostCode="true"
+                                                :initialPostCode="old('postal_code', $assessment->postal_code)"
+                                                :postCodeField="'postal_code'"
+                                                :cityColClass="'col-md-6'"
+                                                :stateColClass="'col-md-6'"
+                                                :countryColClass="'col-md-6'" />
                                         </div>
                                     </div>
                                 </div>
@@ -240,10 +282,7 @@
                                     <input type="text" class="form-control" name="english_score" id="english_score" value="{{ old('english_score', $assessment->english_score) }}" placeholder="e.g. IELTS 6.5 Overall" />
                                 </div>
 
-                                <div class="col-md-12 mb-3">
-                                    <label for="work_experience" class="form-label">Work Experience <small class="text-muted">(If any - Job Title, Company, Duration)</small></label>
-                                    <textarea class="form-control" name="work_experience" id="work_experience" rows="2" placeholder="e.g. Software Engineer, XYZ Corp, Jan 2023 - Present">{{ old('work_experience', $assessment->work_experience) }}</textarea>
-                                </div>
+
                             </div>
 
                             <div class="d-flex justify-content-between mt-3">
@@ -329,45 +368,88 @@
                                 </div>
 
                                 <div class="col-md-12" id="travel_history_fields" style="display: {{ (old('travel_history.has_history', $assessment->travel_history['has_history'] ?? '') == 'yes') ? 'block' : 'none' }};">
-                                    <div class="row bg-light p-3 border rounded-3 mb-3 m-0">
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Date of Arrival <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control" name="travel_history[arrival_date]" id="travel_arrival_date" value="{{ old('travel_history.arrival_date', $assessment->travel_history['arrival_date'] ?? '') }}">
-                                        </div>
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Date of Departure <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control" name="travel_history[departure_date]" id="travel_departure_date" value="{{ old('travel_history.departure_date', $assessment->travel_history['departure_date'] ?? '') }}">
-                                        </div>
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Visa Start Date <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control" name="travel_history[visa_start_date]" id="travel_visa_start_date" value="{{ old('travel_history.visa_start_date', $assessment->travel_history['visa_start_date'] ?? '') }}">
-                                        </div>
-                                        <div class="col-md-3 mb-3">
-                                            <label class="form-label">Visa Expiry Date <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control" name="travel_history[visa_expiry_date]" id="travel_visa_expiry_date" value="{{ old('travel_history.visa_expiry_date', $assessment->travel_history['visa_expiry_date'] ?? '') }}">
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label">Purpose of Visit <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" name="travel_history[purpose_of_visit]" id="travel_purpose_of_visit" value="{{ old('travel_history.purpose_of_visit', $assessment->travel_history['purpose_of_visit'] ?? '') }}" placeholder="e.g. Tourism, Study, Work">
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label">Country <span class="text-danger">*</span></label>
-                                            <select class="form-select select2-tags" name="travel_history[country]" id="travel_country" data-placeholder="Select country">
-                                                <option value="">Select Country...</option>
-                                                @foreach(\App\Models\Country::orderBy('name')->get() as $c)
-                                                    <option value="{{ $c->name }}" {{ (old('travel_history.country', $assessment->travel_history['country'] ?? '') == $c->name) ? 'selected' : '' }}>{{ $c->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label">Visa Type <span class="text-danger">*</span></label>
-                                            <select class="form-select" name="travel_history[visa_type]" id="travel_visa_type">
-                                                <option value="">Select Visa Type...</option>
-                                                @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
-                                                    <option value="{{ $vt }}" {{ (old('travel_history.visa_type', $assessment->travel_history['visa_type'] ?? '') == $vt) ? 'selected' : '' }}>{{ $vt }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+                                    @php
+                                        $travelData = old('travel_history', $assessment->travel_history ?? []);
+                                        $travelEntries = $travelData['entries'] ?? [];
+                                        if (empty($travelEntries) && ($travelData['has_history'] ?? '') === 'yes') {
+                                            if (!empty($travelData['country']) || !empty($travelData['arrival_date'])) {
+                                                $travelEntries = [
+                                                    [
+                                                        'arrival_date' => $travelData['arrival_date'] ?? '',
+                                                        'departure_date' => $travelData['departure_date'] ?? '',
+                                                        'visa_start_date' => $travelData['visa_start_date'] ?? '',
+                                                        'visa_expiry_date' => $travelData['visa_expiry_date'] ?? '',
+                                                        'purpose_of_visit' => $travelData['purpose_of_visit'] ?? '',
+                                                        'country' => $travelData['country'] ?? '',
+                                                        'visa_type' => $travelData['visa_type'] ?? '',
+                                                    ]
+                                                ];
+                                            } else {
+                                                $travelEntries = [[]];
+                                            }
+                                        }
+                                    @endphp
+
+                                    <div id="travel_history_container">
+                                        @foreach($travelEntries as $tIndex => $tEntry)
+                                            <div class="travel-row bg-light p-3 border rounded-3 mb-3" id="travel_row_{{ $tIndex }}">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0 fw-semibold text-primary"><i class="mdi mdi-plane-car me-1"></i> Travel Entry #<span class="travel-entry-num">{{ $loop->iteration }}</span></h6>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm remove-travel-btn" onclick="removeTravelRow({{ $tIndex }})" style="{{ count($travelEntries) > 1 ? '' : 'display:none;' }}">
+                                                        <i class="mdi mdi-close me-1"></i> Remove
+                                                    </button>
+                                                </div>
+                                                <div class="row g-3">
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Date of Arrival <span class="text-danger">*</span></label>
+                                                        <input type="date" class="form-control" name="travel_history[entries][{{ $tIndex }}][arrival_date]" value="{{ $tEntry['arrival_date'] ?? '' }}" required>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Date of Departure <span class="text-danger">*</span></label>
+                                                        <input type="date" class="form-control" name="travel_history[entries][{{ $tIndex }}][departure_date]" value="{{ $tEntry['departure_date'] ?? '' }}" required>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Visa Start Date <span class="text-danger">*</span></label>
+                                                        <input type="date" class="form-control" name="travel_history[entries][{{ $tIndex }}][visa_start_date]" value="{{ $tEntry['visa_start_date'] ?? '' }}" required>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Visa Expiry Date <span class="text-danger">*</span></label>
+                                                        <input type="date" class="form-control" name="travel_history[entries][{{ $tIndex }}][visa_expiry_date]" value="{{ $tEntry['visa_expiry_date'] ?? '' }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Purpose of Visit <span class="text-danger">*</span></label>
+                                                        <input type="text" class="form-control" name="travel_history[entries][{{ $tIndex }}][purpose_of_visit]" value="{{ $tEntry['purpose_of_visit'] ?? '' }}" placeholder="e.g. Tourism, Study, Work" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Country <span class="text-danger">*</span></label>
+                                                        <select class="form-select select2-tags" name="travel_history[entries][{{ $tIndex }}][country]" data-placeholder="Select country" required>
+                                                            <option value="">Select Country...</option>
+                                                            @foreach(\App\Models\Country::where('status', 'active')->orderBy('name')->get() as $c)
+                                                                <option value="{{ $c->name }}" {{ ($tEntry['country'] ?? '') == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                                                            @endforeach
+                                                            @if(!empty($tEntry['country']) && !\App\Models\Country::where('name', $tEntry['country'])->exists())
+                                                                <option value="{{ $tEntry['country'] }}" selected>{{ $tEntry['country'] }}</option>
+                                                            @endif
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Visa Type <span class="text-danger">*</span></label>
+                                                        <select class="form-select" name="travel_history[entries][{{ $tIndex }}][visa_type]" required>
+                                                            <option value="">Select Visa Type...</option>
+                                                            @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
+                                                                <option value="{{ $vt }}" {{ ($tEntry['visa_type'] ?? '') == $vt ? 'selected' : '' }}>{{ $vt }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addTravelRow()">
+                                            <i class="mdi mdi-plus me-1"></i> Add More Travel Entry
+                                        </button>
                                     </div>
                                 </div>
 
@@ -403,42 +485,83 @@
                                 </div>
 
                                 <div class="col-md-12" id="visa_refusal_fields" style="display: {{ (old('visa_refusals.has_refusal', $assessment->visa_refusals['has_refusal'] ?? '') == 'yes') ? 'block' : 'none' }};">
-                                    <div class="row bg-light p-3 border rounded-3 mb-3 m-0">
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label">Refusal Type <span class="text-danger">*</span></label>
-                                            <select class="form-select" name="visa_refusals[refusal_type]" id="refusal_type">
-                                                <option value="">Select Refusal Type...</option>
-                                                @foreach(['Visa Refusal','Refused Entry','Deported','Refused Leave to Remain','Refused Asylum'] as $rt)
-                                                    <option value="{{ $rt }}" {{ (old('visa_refusals.refusal_type', $assessment->visa_refusals['refusal_type'] ?? '') == $rt) ? 'selected' : '' }}>{{ $rt }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label">Date of Refusal <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control" name="visa_refusals[refusal_date]" id="refusal_date" value="{{ old('visa_refusals.refusal_date', $assessment->visa_refusals['refusal_date'] ?? '') }}">
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label">Country <span class="text-danger">*</span></label>
-                                            <select class="form-select select2-tags" name="visa_refusals[country]" id="refusal_country" data-placeholder="Select country">
-                                                <option value="">Select Country...</option>
-                                                @foreach(\App\Models\Country::orderBy('name')->get() as $c)
-                                                    <option value="{{ $c->name }}" {{ (old('visa_refusals.country', $assessment->visa_refusals['country'] ?? '') == $c->name) ? 'selected' : '' }}>{{ $c->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-4 mb-3">
-                                            <label class="form-label">Visa Type <span class="text-danger">*</span></label>
-                                            <select class="form-select" name="visa_refusals[visa_type]" id="refusal_visa_type">
-                                                <option value="">Select Visa Type...</option>
-                                                @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
-                                                    <option value="{{ $vt }}" {{ (old('visa_refusals.visa_type', $assessment->visa_refusals['visa_type'] ?? '') == $vt) ? 'selected' : '' }}>{{ $vt }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                        <div class="col-md-8 mb-3">
-                                            <label class="form-label">Details / Reason <span class="text-danger">*</span></label>
-                                            <textarea class="form-control" name="visa_refusals[details]" id="refusal_details" rows="2" placeholder="Provide details or reason for refusal...">{{ old('visa_refusals.details', $assessment->visa_refusals['details'] ?? '') }}</textarea>
-                                        </div>
+                                    @php
+                                        $refusalData = old('visa_refusals', $assessment->visa_refusals ?? []);
+                                        $refusalEntries = $refusalData['entries'] ?? [];
+                                        if (empty($refusalEntries) && ($refusalData['has_refusal'] ?? '') === 'yes') {
+                                            if (!empty($refusalData['country']) || !empty($refusalData['refusal_type'])) {
+                                                $refusalEntries = [
+                                                    [
+                                                        'refusal_type' => $refusalData['refusal_type'] ?? '',
+                                                        'refusal_date' => $refusalData['refusal_date'] ?? '',
+                                                        'country' => $refusalData['country'] ?? '',
+                                                        'visa_type' => $refusalData['visa_type'] ?? '',
+                                                        'details' => $refusalData['details'] ?? '',
+                                                    ]
+                                                ];
+                                            } else {
+                                                $refusalEntries = [[]];
+                                            }
+                                        }
+                                    @endphp
+
+                                    <div id="visa_refusals_container">
+                                        @foreach($refusalEntries as $rIndex => $rEntry)
+                                            <div class="refusal-row bg-light p-3 border rounded-3 mb-3" id="refusal_row_{{ $rIndex }}">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0 fw-semibold text-danger"><i class="mdi mdi-alert-circle me-1"></i> Refusal Entry #<span class="refusal-entry-num">{{ $loop->iteration }}</span></h6>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm remove-refusal-btn" onclick="removeRefusalRow({{ $rIndex }})" style="{{ count($refusalEntries) > 1 ? '' : 'display:none;' }}">
+                                                        <i class="mdi mdi-close me-1"></i> Remove
+                                                    </button>
+                                                </div>
+                                                <div class="row g-3">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Refusal Type <span class="text-danger">*</span></label>
+                                                        <select class="form-select" name="visa_refusals[entries][{{ $rIndex }}][refusal_type]" required>
+                                                            <option value="">Select Refusal Type...</option>
+                                                            @foreach(['Visa Refusal','Refused Entry','Deported','Refused Leave to Remain','Refused Asylum'] as $rt)
+                                                                <option value="{{ $rt }}" {{ ($rEntry['refusal_type'] ?? '') == $rt ? 'selected' : '' }}>{{ $rt }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Date of Refusal <span class="text-danger">*</span></label>
+                                                        <input type="date" class="form-control" name="visa_refusals[entries][{{ $rIndex }}][refusal_date]" value="{{ $rEntry['refusal_date'] ?? '' }}" required>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Country <span class="text-danger">*</span></label>
+                                                        <select class="form-select select2-tags" name="visa_refusals[entries][{{ $rIndex }}][country]" data-placeholder="Select country" required>
+                                                            <option value="">Select Country...</option>
+                                                            @foreach(\App\Models\Country::where('status', 'active')->orderBy('name')->get() as $c)
+                                                                <option value="{{ $c->name }}" {{ ($rEntry['country'] ?? '') == $c->name ? 'selected' : '' }}>{{ $c->name }}</option>
+                                                            @endforeach
+                                                            @if(!empty($rEntry['country']) && !\App\Models\Country::where('name', $rEntry['country'])->exists())
+                                                                <option value="{{ $rEntry['country'] }}" selected>{{ $rEntry['country'] }}</option>
+                                                            @endif
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label">Visa Type <span class="text-danger">*</span></label>
+                                                        <select class="form-select" name="visa_refusals[entries][{{ $rIndex }}][visa_type]" required>
+                                                            <option value="">Select Visa Type...</option>
+                                                            @foreach(['Tourist Visa','Student Visa','Work Visa','Business Visa','Other'] as $vt)
+                                                                <option value="{{ $vt }}" {{ ($rEntry['visa_type'] ?? '') == $vt ? 'selected' : '' }}>{{ $vt }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <label class="form-label">Details / Reason <span class="text-danger">*</span></label>
+                                                        <textarea class="form-control" name="visa_refusals[entries][{{ $rIndex }}][details]" rows="2" placeholder="Provide details or reason for refusal..." required>{{ $rEntry['details'] ?? '' }}</textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="addRefusalRow()">
+                                            <i class="mdi mdi-plus me-1"></i> Add More Refusal Entry
+                                        </button>
                                     </div>
                                 </div>
 
@@ -521,9 +644,197 @@
         }
     }
 
+    let travelIndex = {{ count($travelEntries) }};
+    let refusalIndex = {{ count($refusalEntries) }};
+    const activeCountriesList = @json(\App\Models\Country::where('status', 'active')->orderBy('name')->pluck('name')->toArray());
+
+    function addTravelRow() {
+        const container = document.getElementById('travel_history_container');
+        if (!container) return;
+        let countryOptions = '<option value="">Select Country...</option>';
+        activeCountriesList.forEach(c => {
+            countryOptions += `<option value="${c}">${c}</option>`;
+        });
+
+        const rowHtml = `
+            <div class="travel-row bg-light p-3 border rounded-3 mb-3" id="travel_row_${travelIndex}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-semibold text-primary"><i class="mdi mdi-plane-car me-1"></i> Travel Entry #<span class="travel-entry-num">1</span></h6>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-travel-btn" onclick="removeTravelRow(${travelIndex})">
+                        <i class="mdi mdi-close me-1"></i> Remove
+                    </button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Date of Arrival <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="travel_history[entries][${travelIndex}][arrival_date]" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Date of Departure <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="travel_history[entries][${travelIndex}][departure_date]" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Visa Start Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="travel_history[entries][${travelIndex}][visa_start_date]" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Visa Expiry Date <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="travel_history[entries][${travelIndex}][visa_expiry_date]" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Purpose of Visit <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="travel_history[entries][${travelIndex}][purpose_of_visit]" placeholder="e.g. Tourism, Study, Work" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Country <span class="text-danger">*</span></label>
+                        <select class="form-select select2-tags" name="travel_history[entries][${travelIndex}][country]" data-placeholder="Select country" required>
+                            ${countryOptions}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Visa Type <span class="text-danger">*</span></label>
+                        <select class="form-select" name="travel_history[entries][${travelIndex}][visa_type]" required>
+                            <option value="">Select Visa Type...</option>
+                            <option value="Tourist Visa">Tourist Visa</option>
+                            <option value="Student Visa">Student Visa</option>
+                            <option value="Work Visa">Work Visa</option>
+                            <option value="Business Visa">Business Visa</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', rowHtml);
+
+        $(`#travel_row_${travelIndex} .select2-tags`).select2({
+            tags: true,
+            placeholder: "Select country",
+            allowClear: true,
+            width: '100%'
+        });
+
+        travelIndex++;
+        updateTravelRowNumbers();
+    }
+
+    function removeTravelRow(index) {
+        const row = document.getElementById(`travel_row_${index}`);
+        if (row) {
+            row.remove();
+            updateTravelRowNumbers();
+        }
+    }
+
+    function updateTravelRowNumbers() {
+        const rows = document.querySelectorAll('.travel-row');
+        rows.forEach((row, i) => {
+            const numSpan = row.querySelector('.travel-entry-num');
+            if (numSpan) numSpan.textContent = i + 1;
+            const removeBtn = row.querySelector('.remove-travel-btn');
+            if (removeBtn) {
+                removeBtn.style.display = rows.length > 1 ? 'inline-block' : 'none';
+            }
+        });
+    }
+
+    function addRefusalRow() {
+        const container = document.getElementById('visa_refusals_container');
+        if (!container) return;
+        let countryOptions = '<option value="">Select Country...</option>';
+        activeCountriesList.forEach(c => {
+            countryOptions += `<option value="${c}">${c}</option>`;
+        });
+
+        const rowHtml = `
+            <div class="refusal-row bg-light p-3 border rounded-3 mb-3" id="refusal_row_${refusalIndex}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0 fw-semibold text-danger"><i class="mdi mdi-alert-circle me-1"></i> Refusal Entry #<span class="refusal-entry-num">1</span></h6>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-refusal-btn" onclick="removeRefusalRow(${refusalIndex})">
+                        <i class="mdi mdi-close me-1"></i> Remove
+                    </button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Refusal Type <span class="text-danger">*</span></label>
+                        <select class="form-select" name="visa_refusals[entries][${refusalIndex}][refusal_type]" required>
+                            <option value="">Select Refusal Type...</option>
+                            <option value="Visa Refusal">Visa Refusal</option>
+                            <option value="Refused Entry">Refused Entry</option>
+                            <option value="Deported">Deported</option>
+                            <option value="Refused Leave to Remain">Refused Leave to Remain</option>
+                            <option value="Refused Asylum">Refused Asylum</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Date of Refusal <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="visa_refusals[entries][${refusalIndex}][refusal_date]" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Country <span class="text-danger">*</span></label>
+                        <select class="form-select select2-tags" name="visa_refusals[entries][${refusalIndex}][country]" data-placeholder="Select country" required>
+                            ${countryOptions}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Visa Type <span class="text-danger">*</span></label>
+                        <select class="form-select" name="visa_refusals[entries][${refusalIndex}][visa_type]" required>
+                            <option value="">Select Visa Type...</option>
+                            <option value="Tourist Visa">Tourist Visa</option>
+                            <option value="Student Visa">Student Visa</option>
+                            <option value="Work Visa">Work Visa</option>
+                            <option value="Business Visa">Business Visa</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Details / Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" name="visa_refusals[entries][${refusalIndex}][details]" rows="2" placeholder="Provide details or reason for refusal..." required></textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', rowHtml);
+
+        $(`#refusal_row_${refusalIndex} .select2-tags`).select2({
+            tags: true,
+            placeholder: "Select country",
+            allowClear: true,
+            width: '100%'
+        });
+
+        refusalIndex++;
+        updateRefusalRowNumbers();
+    }
+
+    function removeRefusalRow(index) {
+        const row = document.getElementById(`refusal_row_${index}`);
+        if (row) {
+            row.remove();
+            updateRefusalRowNumbers();
+        }
+    }
+
+    function updateRefusalRowNumbers() {
+        const rows = document.querySelectorAll('.refusal-row');
+        rows.forEach((row, i) => {
+            const numSpan = row.querySelector('.refusal-entry-num');
+            if (numSpan) numSpan.textContent = i + 1;
+            const removeBtn = row.querySelector('.remove-refusal-btn');
+            if (removeBtn) {
+                removeBtn.style.display = rows.length > 1 ? 'inline-block' : 'none';
+            }
+        });
+    }
+
     function toggleTravelHistoryFields(show) {
         const fieldsDiv = document.getElementById('travel_history_fields');
         fieldsDiv.style.display = show ? 'block' : 'none';
+        const container = document.getElementById('travel_history_container');
+        
+        if (show && container && container.children.length === 0) {
+            addTravelRow();
+        }
         
         const inputs = fieldsDiv.querySelectorAll('input, select');
         inputs.forEach(input => {
@@ -540,6 +851,11 @@
     function toggleVisaRefusalFields(show) {
         const fieldsDiv = document.getElementById('visa_refusal_fields');
         fieldsDiv.style.display = show ? 'block' : 'none';
+        const container = document.getElementById('visa_refusals_container');
+
+        if (show && container && container.children.length === 0) {
+            addRefusalRow();
+        }
         
         const inputs = fieldsDiv.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
@@ -579,6 +895,16 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Initial sync for travel and visa refusal required attributes
+        const travelYes = document.getElementById('travel_yes');
+        if (travelYes) {
+            toggleTravelHistoryFields(travelYes.checked);
+        }
+        const refusalYes = document.getElementById('refusal_yes');
+        if (refusalYes) {
+            toggleVisaRefusalFields(refusalYes.checked);
+        }
+
         // Toggle highest qualification other on load and change
         const highestQualSelect = document.getElementById('highest_qualification_select');
         if (highestQualSelect) {
@@ -624,7 +950,6 @@
                 const currentPane = this.closest('.tab-pane');
                 let isValid = true;
                 currentPane.querySelectorAll('[required]').forEach(input => {
-                    // Check if parent element is hidden (skip validation for hidden inputs e.g. Other field when not visible)
                     if (input.offsetParent === null) {
                         return;
                     }
@@ -663,12 +988,69 @@
             });
         });
 
-        // Submit loading state
-        document.getElementById('assessForm').addEventListener('submit', function() {
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
-        });
+        // Submit smart validation & loading state
+        const assessForm = document.getElementById('assessForm');
+        if (assessForm) {
+            assessForm.addEventListener('submit', function(e) {
+                let isValid = true;
+                let firstInvalidInput = null;
+                let invalidPaneId = null;
+
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.querySelectorAll('input[required], select[required], textarea[required]').forEach(input => {
+                        if (input.closest('#travel_history_fields[style*="display: none"]') || 
+                            input.closest('#visa_refusal_fields[style*="display: none"]') ||
+                            input.closest('#highest_qualification_other_div[style*="display: none"]')) {
+                            return;
+                        }
+
+                        if (!input.value || input.value.trim() === '') {
+                            isValid = false;
+                            input.classList.add('is-invalid');
+                            if (!firstInvalidInput) {
+                                firstInvalidInput = input;
+                                invalidPaneId = '#' + pane.id;
+                            }
+                        } else {
+                            input.classList.remove('is-invalid');
+                        }
+                    });
+                });
+
+                if (!isValid) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const btn = document.getElementById('submitBtn');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="mdi mdi-send me-1"></i> Submit Assessment';
+                    }
+
+                    if (invalidPaneId) {
+                        const tabBtn = document.querySelector(`[data-bs-target="${invalidPaneId}"]`);
+                        if (tabBtn) {
+                            tabBtn.classList.remove('disabled');
+                            var tab = new bootstrap.Tab(tabBtn);
+                            tab.show();
+                            setTimeout(() => {
+                                if (firstInvalidInput) {
+                                    firstInvalidInput.focus();
+                                    firstInvalidInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }, 200);
+                        }
+                    }
+                    return false;
+                }
+
+                const btn = document.getElementById('submitBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...';
+                }
+            });
+        }
     });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

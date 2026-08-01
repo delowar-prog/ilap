@@ -61,11 +61,8 @@
                                 @endphp
                                 <th>#</th>
                                 <th>{!! enSort('student_id', 'Student ID', $sortBy, $sortDir, $search, $perPage) !!}</th>
-                                <th>{!! enSort('first_name', 'First Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
-                                <th>{!! enSort('middle_name', 'Middle Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
-                                <th>{!! enSort('surname', 'Last Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
+                                <th>{!! enSort('first_name', 'Name', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>Campus</th>
-                                <th>{!! enSort('email', 'Email', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>{!! enSort('phone', 'Phone', $sortBy, $sortDir, $search, $perPage) !!}</th>
                                 <th>Status</th>
                                 <th class="text-center">Action</th>
@@ -77,13 +74,11 @@
                                 <td>{{ $loop->iteration + $students->firstItem() - 1 }}</td>
                                 <td><span class="badge bg-secondary">{{ $student->student_id }}</span></td>
                                 <td>
-                                    <strong>{{ $student->first_name }}</strong>
+                                    <strong>{{ trim($student->first_name.' '.$student->surname) }}</strong>
                                     @if($student->nationality)
                                     <br><small class="text-muted">{{ $student->nationality }}</small>
                                     @endif
                                 </td>
-                                <td>{{ $student->middle_name ?? '-' }}</td>
-                                <td>{{ $student->surname }}</td>
                                 <td>
                                     @if($student->campus)
                                         <span class="badge bg-info text-dark">{{ $student->campus->name }}</span>
@@ -91,7 +86,6 @@
                                         -
                                     @endif
                                 </td>
-                                <td>{{ $student->email }}</td>
                                 <td>{{ $student->phone ?? '-' }}</td>
                                 <td>
                                     <span class="badge bg-success">Enrolled</span>
@@ -105,13 +99,18 @@
                                             <a href="{{ route('admin.students.show', $student->id) }}" class="dropdown-item py-1">
                                                 <i class="fas fa-eye me-2 text-info"></i>View Profile
                                             </a>
+                                            @if($student->applications->isEmpty())
+                                                <a href="{{ route('admin.students.enrolment', $student->id) }}" class="dropdown-item py-1">
+                                                    <i class="fas fa-file-invoice-dollar me-2 text-success"></i>Manage Course & Fees
+                                                </a>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">
+                                <td colspan="7" class="text-center py-4 text-muted">
                                     <i class="fas fa-inbox fa-2x d-block mb-2"></i>No enrolled students found.
                                 </td>
                             </tr>

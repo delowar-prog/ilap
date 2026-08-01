@@ -168,11 +168,20 @@
                     <div class="info-item"><label>Preferred Institute</label><span><span class="badge bg-primary">{{ $student->institute ? $student->institute->name : 'N/A' }}</span></span></div>
                     <div class="info-item"><label>Date of Birth</label><span>{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Nationality</label><span>{{ $student->nationality ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Country of Nationality</label><span>{{ $student->nationality ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Residence</label><span>{{ $student->country ? $student->country->name : 'N/A' }}</span></div>
                     <div class="info-item"><label>Phone</label><span>{{ $student->phone ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Skype ID</label><span>{{ $student->skype_id ?? 'N/A' }}</span></div>
+                    <div class="info-item">
+                        <label>WhatsApp Status</label>
+                        <span>
+                            @if($student->has_whatsapp)
+                                <span class="badge bg-success"><i class="fab fa-whatsapp me-1"></i> Available on {{ $student->phone }}</span>
+                            @else
+                                <span class="badge bg-secondary">Not Marked</span>
+                            @endif
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -226,16 +235,25 @@
                                 {{ strtoupper($travelHistory['has_history'] ?? 'No') }}
                             </span>
                             @if(($travelHistory['has_history'] ?? '') === 'yes')
-                                <div class="mt-2 ps-3 border-start border-3 border-primary">
-                                    <div class="row g-2">
-                                        <div class="col-md-6"><strong>Country:</strong> {{ $travelHistory['country'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $travelHistory['visa_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Purpose:</strong> {{ $travelHistory['purpose_of_visit'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Arrival Date:</strong> {{ $travelHistory['arrival_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Departure Date:</strong> {{ $travelHistory['departure_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Validity:</strong> {{ $travelHistory['visa_start_date'] ?? 'N/A' }} to {{ $travelHistory['visa_expiry_date'] ?? 'N/A' }}</div>
+                                @php
+                                    $tEntries = $travelHistory['entries'] ?? [];
+                                    if (empty($tEntries) && (!empty($travelHistory['country']) || !empty($travelHistory['arrival_date']))) {
+                                        $tEntries = [$travelHistory];
+                                    }
+                                @endphp
+                                @foreach($tEntries as $idx => $tEntry)
+                                    <div class="mt-2 ps-3 border-start border-3 border-primary mb-2">
+                                        @if(count($tEntries) > 1)<div class="fw-bold text-primary mb-1 font-12">Travel Entry #{{ $idx + 1 }}</div>@endif
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><strong>Country:</strong> {{ $tEntry['country'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Type:</strong> {{ $tEntry['visa_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Purpose:</strong> {{ $tEntry['purpose_of_visit'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Arrival Date:</strong> {{ $tEntry['arrival_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Departure Date:</strong> {{ $tEntry['departure_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Validity:</strong> {{ $tEntry['visa_start_date'] ?? 'N/A' }} to {{ $tEntry['visa_expiry_date'] ?? 'N/A' }}</div>
+                                        </div>
                                     </div>
-                                </div>
+                                @endforeach
                             @endif
                         </div>
                     </div>
@@ -265,15 +283,24 @@
                                 {{ strtoupper($visaRefusals['has_refusal'] ?? 'No') }}
                             </span>
                             @if(($visaRefusals['has_refusal'] ?? '') === 'yes')
-                                <div class="mt-2 ps-3 border-start border-3 border-danger">
-                                    <div class="row g-2">
-                                        <div class="col-md-6"><strong>Country:</strong> {{ $visaRefusals['country'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $visaRefusals['visa_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Refusal Type:</strong> {{ $visaRefusals['refusal_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $visaRefusals['refusal_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-12"><strong>Details/Reason:</strong> {{ $visaRefusals['details'] ?? 'N/A' }}</div>
+                                @php
+                                    $rEntries = $visaRefusals['entries'] ?? [];
+                                    if (empty($rEntries) && (!empty($visaRefusals['country']) || !empty($visaRefusals['refusal_type']))) {
+                                        $rEntries = [$visaRefusals];
+                                    }
+                                @endphp
+                                @foreach($rEntries as $idx => $rEntry)
+                                    <div class="mt-2 ps-3 border-start border-3 border-danger mb-2">
+                                        @if(count($rEntries) > 1)<div class="fw-bold text-danger mb-1 font-12">Refusal Entry #{{ $idx + 1 }}</div>@endif
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><strong>Country:</strong> {{ $rEntry['country'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Type:</strong> {{ $rEntry['visa_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Refusal Type:</strong> {{ $rEntry['refusal_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $rEntry['refusal_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-12"><strong>Details/Reason:</strong> {{ $rEntry['details'] ?? 'N/A' }}</div>
+                                        </div>
                                     </div>
-                                </div>
+                                @endforeach
                             @endif
                         </div>
                     </div>

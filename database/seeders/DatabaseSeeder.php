@@ -25,6 +25,8 @@ class DatabaseSeeder extends Seeder
             UserRegisterSeeder::class,
             CampusSeeder::class,
             DropdownOptionSeeder::class,
+            LetterTemplateSeeder::class,
+            InvoiceTemplateSeeder::class,
         ]);
     }
 }

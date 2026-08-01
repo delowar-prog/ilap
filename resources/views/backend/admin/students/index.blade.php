@@ -92,11 +92,8 @@
                                 @endphp
                                 <th>#</th>
                                 <th>{!! stSort('student_id', 'Student ID', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
-                                <th>{!! stSort('first_name', 'First Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
-                                <th>{!! stSort('middle_name', 'Middle Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
-                                <th>{!! stSort('surname', 'Last Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
+                                <th>{!! stSort('first_name', 'Name', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>Campus</th>
-                                <th>{!! stSort('email', 'Email', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>{!! stSort('phone', 'Phone', $sortBy, $sortDir, $status, $search, $perPage) !!}</th>
                                 <th>Status</th>
                                 <th class="text-center">Action</th>
@@ -108,13 +105,11 @@
                                 <td>{{ $loop->iteration + $students->firstItem() - 1 }}</td>
                                 <td><span class="badge bg-secondary">{{ $student->student_id }}</span></td>
                                 <td>
-                                    <strong>{{ $student->first_name }}</strong>
+                                    <strong>{{ trim($student->first_name.' '.$student->surname) }}</strong>
                                     @if($student->nationality)
                                     <br><small class="text-muted">{{ $student->nationality }}</small>
                                     @endif
                                 </td>
-                                <td>{{ $student->middle_name ?? '-' }}</td>
-                                <td>{{ $student->surname }}</td>
                                 <td>
                                     @if($student->campus)
                                         <span class="badge bg-info text-dark">{{ $student->campus->name }}</span>
@@ -122,7 +117,6 @@
                                         -
                                     @endif
                                 </td>
-                                <td>{{ $student->email }}</td>
                                 <td>{{ $student->phone ?? '-' }}</td>
                                 <td>
                                     @if($status === 'assigned')
@@ -150,7 +144,7 @@
                                              </button>
                                          @elseif($student->enrolment_status === 'approved')
                                              @php $completion = $student->getCompletionPercentage(); @endphp
-                                             @if($status === 'approved')
+                                             @if($student->applications->isEmpty())
                                                  <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-xs btn-outline-success" data-bs-toggle="tooltip" title="Manage Course & Fees">
                                                      <i class="fas fa-file-invoice-dollar"></i>
                                                  </a>

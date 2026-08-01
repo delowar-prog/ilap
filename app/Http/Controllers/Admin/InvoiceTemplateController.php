@@ -92,7 +92,7 @@ class InvoiceTemplateController extends Controller
             'type'         => $finalType,
             'subject'      => $request->subject,
             'content_body' => $request->content_body,
-            'status'       => $request->has('status') ? 1 : 0,
+            'status'       => $request->has('status') ? ($request->status ? 1 : 0) : 1,
         ];
 
         if ($request->hasFile('header_image')) {

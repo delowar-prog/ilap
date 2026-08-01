@@ -157,20 +157,56 @@
             @endif
 
             <!-- Personal Info -->
+            <!-- Personal Info -->
             <div class="info-section">
                 <div class="info-section-title"><i class="fas fa-user-circle"></i> Personal Information</div>
                 <div class="info-grid">
-                    <div class="info-item"><label>First Name</label><span>{{ $student->first_name }}</span></div>
-                    <div class="info-item"><label>Middle Name</label><span>{{ $student->middle_name ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Last Name (Surname)</label><span>{{ $student->surname }}</span></div>
-                    <div class="info-item"><label>Preferred Institute</label><span><span class="badge bg-primary">{{ $student->institute ? $student->institute->name : 'N/A' }}</span></span></div>
-                    <div class="info-item"><label>Date of Birth</label><span>{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</span></div>
-                    <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Nationality</label><span>{{ $student->nationality ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Country of Residence</label><span>{{ $student->country ? $student->country->name : 'N/A' }}</span></div>
-                    <div class="info-item"><label>Phone</label><span>{{ $student->phone ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Skype ID</label><span>{{ $student->skype_id ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>First Name</label><span>{{ $assessment->first_name ?? $student->first_name }}</span></div>
+                    <div class="info-item"><label>Middle Name</label><span>{{ $assessment->middle_name ?? $student->middle_name ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Last Name (Surname)</label><span>{{ $assessment->surname ?? $student->surname }}</span></div>
+                    <div class="info-item">
+                        <label>Preferred Institute</label>
+                        <span>
+                            <span class="badge bg-primary">
+                                {{ $assessment->institute_name ?? ($student->institute ? $student->institute->name : 'N/A') }}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <label>Date of Birth</label>
+                        <span>
+                            @php
+                                $dobVal = $assessment->dob ?? $student->dob;
+                            @endphp
+                            {{ $dobVal ? ($dobVal instanceof \DateTimeInterface ? $dobVal->format('d M Y') : date('d M Y', strtotime($dobVal))) : 'N/A' }}
+                        </span>
+                    </div>
+                    <div class="info-item"><label>Gender</label><span>{{ $assessment->gender ?? $student->gender ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Country of Nationality</label><span>{{ $assessment->nationality ?? $student->nationality ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? $assessment->country ?? 'N/A' }}</span></div>
+                    <div class="info-item">
+                        <label>Country of Residence</label>
+                        <span>
+                            @if($assessment->country)
+                                {{ $assessment->country }}
+                            @elseif($student->country)
+                                {{ $student->country->name }}
+                            @else
+                                N/A
+                            @endif
+                        </span>
+                    </div>
+                    <div class="info-item"><label>Phone</label><span>{{ $assessment->contact_number ?? $student->phone ?? 'N/A' }}</span></div>
+                    <div class="info-item">
+                        <label>WhatsApp Status</label>
+                        <span>
+                            @if($student->has_whatsapp)
+                                <span class="badge bg-success"><i class="fab fa-whatsapp me-1"></i> Available on {{ $student->phone }}</span>
+                            @else
+                                <span class="badge bg-secondary">Not Marked</span>
+                            @endif
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -179,19 +215,42 @@
                 <div class="info-section-title"><i class="fas fa-map-marker-alt"></i> Contact & Address</div>
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem;">Permanent Address</h6>
+                        <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem;">Contact Address (Pre-Assessment)</h6>
                         <div class="info-grid" style="grid-template-columns: 1fr;">
-                            <div class="info-item"><label>Address</label><span>{{ $student->permanent_address ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>City & Postcode</label><span>{{ $student->permanent_city }} {{ $student->permanent_postcode }}</span></div>
-                            <div class="info-item"><label>Country</label><span>{{ $student->permanent_country ?? 'N/A' }}</span></div>
+                            <div class="info-item"><label>Address</label><span>{{ $assessment->contact_address ?? $student->permanent_address ?? 'N/A' }}</span></div>
+                            <div class="info-item">
+                                <label>City, State & Postcode</label>
+                                <span>
+                                    @php
+                                        $addrParts = array_filter([$assessment->city, $assessment->state, $assessment->postal_code]);
+                                        $permCityZip = trim(($student->permanent_city ?? '').' '.($student->permanent_postcode ?? ''));
+                                    @endphp
+                                    @if(!empty($addrParts))
+                                        {{ implode(', ', $addrParts) }}
+                                    @elseif($permCityZip !== '')
+                                        {{ $permCityZip }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="info-item"><label>Country</label><span>{{ $assessment->country ?? $student->permanent_country ?? 'N/A' }}</span></div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem;">Current Address</h6>
+                        <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem;">Permanent / Current Address (Student Profile)</h6>
                         <div class="info-grid" style="grid-template-columns: 1fr;">
-                            <div class="info-item"><label>Address</label><span>{{ $student->current_address ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>City & Postcode</label><span>{{ $student->current_city }} {{ $student->current_postcode }}</span></div>
-                            <div class="info-item"><label>Country</label><span>{{ $student->current_country ?? 'N/A' }}</span></div>
+                            <div class="info-item"><label>Address</label><span>{{ $student->current_address ?? $student->permanent_address ?? 'N/A' }}</span></div>
+                            <div class="info-item">
+                                <label>City & Postcode</label>
+                                <span>
+                                    @php
+                                        $currCityZip = trim(($student->current_city ?? $student->permanent_city ?? '').' '.($student->current_postcode ?? $student->permanent_postcode ?? ''));
+                                    @endphp
+                                    {{ $currCityZip !== '' ? $currCityZip : 'N/A' }}
+                                </span>
+                            </div>
+                            <div class="info-item"><label>Country</label><span>{{ $student->current_country ?? $student->permanent_country ?? 'N/A' }}</span></div>
                         </div>
                     </div>
                 </div>
@@ -202,16 +261,16 @@
                 <div class="info-section-title"><i class="fas fa-passport"></i> Passport & Travel History</div>
                 <div class="info-grid mb-4">
                     <div class="info-item"><label>Name in Passport</label><span>{{ $student->name_in_passport ?? 'N/A' }}</span></div>
-                    <div class="info-item"><label>Passport Number</label><span>{{ $student->passport_number ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Passport Number</label><span>{{ $assessment->passport_number ?? $student->passport_number ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Issue Date</label><span>{{ $student->passport_issue_date ? $student->passport_issue_date->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Expiry Date</label><span>{{ $student->passport_expiry_date ? $student->passport_expiry_date->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Issue Location</label><span>{{ $student->passport_issue_location ?? 'N/A' }}</span></div>
                 </div>
                 
                 @php
-                    $travelHistory = $student->travel_history ?? $assessment->travel_history ?? [];
-                    $immigrationHistory = $student->immigration_history ?? $assessment->immigration_history ?? [];
-                    $visaRefusals = $student->visa_refusals ?? $assessment->visa_refusals ?? [];
+                    $travelHistory = $assessment->travel_history ?? $student->travel_history ?? [];
+                    $immigrationHistory = $assessment->immigration_history ?? $student->immigration_history ?? [];
+                    $visaRefusals = $assessment->visa_refusals ?? $student->visa_refusals ?? [];
                     $takenTbTest = $student->taken_tb_test ?? 'N/A';
                 @endphp
                 <h6 class="text-muted text-uppercase mb-3 mt-4" style="font-size: 0.8rem;">Travel & Immigration History</h6>
@@ -224,16 +283,25 @@
                                 {{ strtoupper($travelHistory['has_history'] ?? 'No') }}
                             </span>
                             @if(($travelHistory['has_history'] ?? '') === 'yes')
-                                <div class="mt-2 ps-3 border-start border-3 border-primary">
-                                    <div class="row g-2">
-                                        <div class="col-md-6"><strong>Country:</strong> {{ $travelHistory['country'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $travelHistory['visa_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Purpose:</strong> {{ $travelHistory['purpose_of_visit'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Arrival Date:</strong> {{ $travelHistory['arrival_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Departure Date:</strong> {{ $travelHistory['departure_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Validity:</strong> {{ $travelHistory['visa_start_date'] ?? 'N/A' }} to {{ $travelHistory['visa_expiry_date'] ?? 'N/A' }}</div>
+                                @php
+                                    $tEntries = $travelHistory['entries'] ?? [];
+                                    if (empty($tEntries) && (!empty($travelHistory['country']) || !empty($travelHistory['arrival_date']))) {
+                                        $tEntries = [$travelHistory];
+                                    }
+                                @endphp
+                                @foreach($tEntries as $idx => $tEntry)
+                                    <div class="mt-2 ps-3 border-start border-3 border-primary mb-2">
+                                        @if(count($tEntries) > 1)<div class="fw-bold text-primary mb-1 font-12">Travel Entry #{{ $idx + 1 }}</div>@endif
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><strong>Country:</strong> {{ $tEntry['country'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Type:</strong> {{ $tEntry['visa_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Purpose:</strong> {{ $tEntry['purpose_of_visit'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Arrival Date:</strong> {{ $tEntry['arrival_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Departure Date:</strong> {{ $tEntry['departure_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Validity:</strong> {{ $tEntry['visa_start_date'] ?? 'N/A' }} to {{ $tEntry['visa_expiry_date'] ?? 'N/A' }}</div>
+                                        </div>
                                     </div>
-                                </div>
+                                @endforeach
                             @endif
                         </div>
                     </div>
@@ -263,15 +331,24 @@
                                 {{ strtoupper($visaRefusals['has_refusal'] ?? 'No') }}
                             </span>
                             @if(($visaRefusals['has_refusal'] ?? '') === 'yes')
-                                <div class="mt-2 ps-3 border-start border-3 border-danger">
-                                    <div class="row g-2">
-                                        <div class="col-md-6"><strong>Country:</strong> {{ $visaRefusals['country'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Visa Type:</strong> {{ $visaRefusals['visa_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Refusal Type:</strong> {{ $visaRefusals['refusal_type'] ?? 'N/A' }}</div>
-                                        <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $visaRefusals['refusal_date'] ?? 'N/A' }}</div>
-                                        <div class="col-md-12"><strong>Details/Reason:</strong> {{ $visaRefusals['details'] ?? 'N/A' }}</div>
+                                @php
+                                    $rEntries = $visaRefusals['entries'] ?? [];
+                                    if (empty($rEntries) && (!empty($visaRefusals['country']) || !empty($visaRefusals['refusal_type']))) {
+                                        $rEntries = [$visaRefusals];
+                                    }
+                                @endphp
+                                @foreach($rEntries as $idx => $rEntry)
+                                    <div class="mt-2 ps-3 border-start border-3 border-danger mb-2">
+                                        @if(count($rEntries) > 1)<div class="fw-bold text-danger mb-1 font-12">Refusal Entry #{{ $idx + 1 }}</div>@endif
+                                        <div class="row g-2">
+                                            <div class="col-md-6"><strong>Country:</strong> {{ $rEntry['country'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Visa Type:</strong> {{ $rEntry['visa_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Refusal Type:</strong> {{ $rEntry['refusal_type'] ?? 'N/A' }}</div>
+                                            <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $rEntry['refusal_date'] ?? 'N/A' }}</div>
+                                            <div class="col-md-12"><strong>Details/Reason:</strong> {{ $rEntry['details'] ?? 'N/A' }}</div>
+                                        </div>
                                     </div>
-                                </div>
+                                @endforeach
                             @endif
                         </div>
                     </div>
