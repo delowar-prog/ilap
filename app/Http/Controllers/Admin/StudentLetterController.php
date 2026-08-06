@@ -226,7 +226,7 @@ class StudentLetterController extends Controller
 
             if ($action === 'send') {
                 // Send only — do not download, just redirect back with success message
-                return redirect()->route('admin.students.show', $student->id)
+                return redirect()->route('admin.students.show', ['student' => $student->id, 'tab' => 'letters'])
                     ->with('success', 'Letter "' . $template->title . '" has been sent to student\'s profile successfully!');
             }
 

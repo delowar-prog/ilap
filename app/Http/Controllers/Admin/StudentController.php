@@ -414,15 +414,43 @@ class StudentController extends Controller
         $installment = \App\Models\StudentApplicationInstallment::findOrFail($installmentId);
         $application = $installment->application;
         
-        $maxAllowed = $installment->amount - $installment->paid_amount;
+        $maxAllowed = number_format($installment->amount - $installment->paid_amount, 2, '.', '');
 
         $request->validate([
             'amount_paid' => 'required|numeric|min:0.01|max:' . $maxAllowed,
+            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
         ]);
 
-        \DB::transaction(function() use ($request, $installment, $application) {
-            $installment->paid_amount += $request->amount_paid;
-            
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('payment_attachments', 'public');
+        }
+
+        $installment->pending_paid_amount = $request->amount_paid;
+        $installment->payment_method = $request->payment_method ?? 'Cash';
+        $installment->transaction_id = $request->transaction_id ?? null;
+        if ($attachmentPath) {
+            $installment->attachment = $attachmentPath;
+        }
+        $installment->approval_status = 'pending_approval';
+        $installment->status = 'pending_approval';
+        $installment->save();
+
+        return back()->with('success', 'Payment request of ' . number_format($request->amount_paid, 2) . ' ' . ($application->course->currency ?? 'GBP') . ' submitted and is pending admin approval.');
+    }
+
+    public function approveInstallmentPayment($installmentId)
+    {
+        $installment = \App\Models\StudentApplicationInstallment::findOrFail($installmentId);
+        $application = $installment->application;
+
+        \DB::transaction(function() use ($installment, $application) {
+            $amountToAdd = $installment->pending_paid_amount ?? ($installment->amount - $installment->paid_amount);
+            $installment->paid_amount += $amountToAdd;
+            $installment->pending_paid_amount = 0;
+            $installment->paid_at = now();
+            $installment->approval_status = 'approved';
+
             if ($installment->paid_amount >= $installment->amount) {
                 $installment->status = 'paid';
             } else {
@@ -430,17 +458,32 @@ class StudentController extends Controller
             }
             $installment->save();
 
-            $totalPaidInstallments = $application->installments()->sum('paid_amount');
+            $totalPaidInstallments = $application->installments()->whereIn('status', ['paid', 'partially_paid'])->sum('paid_amount');
             $totalPaidCosts = $application->additionalCosts()->where('status', 'paid')->sum('paid_amount');
             $application->paid_amount = $totalPaidInstallments + $totalPaidCosts;
-            
+
             if ($application->paid_amount >= $application->total_fee) {
                 $application->stage = 'payment_made';
             }
             $application->save();
         });
 
-        return back()->with('success', 'Payment of ' . number_format($request->amount_paid, 2) . ' ' . ($application->course->currency ?? 'GBP') . ' recorded successfully.');
+        return back()->with('success', 'Installment payment approved successfully.');
+    }
+
+    public function rejectInstallmentPayment($installmentId)
+    {
+        $installment = \App\Models\StudentApplicationInstallment::findOrFail($installmentId);
+        $installment->pending_paid_amount = 0;
+        $installment->approval_status = 'rejected';
+        if ($installment->paid_amount > 0) {
+            $installment->status = 'partially_paid';
+        } else {
+            $installment->status = 'pending';
+        }
+        $installment->save();
+
+        return back()->with('info', 'Installment payment request rejected.');
     }
 
     public function recordAdditionalCostPayment(Request $request, $costId)
@@ -448,15 +491,40 @@ class StudentController extends Controller
         $cost = \App\Models\StudentApplicationAdditionalCost::findOrFail($costId);
         $application = $cost->application;
 
-        \DB::transaction(function() use ($request, $cost, $application) {
+        $request->validate([
+            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
+        ]);
+
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            $attachmentPath = $request->file('attachment')->store('payment_attachments', 'public');
+        }
+
+        $cost->payment_method = $request->payment_method ?? 'Cash/Direct';
+        $cost->transaction_id = $request->transaction_id ?? null;
+        if ($attachmentPath) {
+            $cost->attachment = $attachmentPath;
+        }
+        $cost->approval_status = 'pending_approval';
+        $cost->status = 'pending_approval';
+        $cost->save();
+
+        return back()->with('success', 'Payment submission for "' . $cost->cost_name . '" received and is pending admin approval.');
+    }
+
+    public function approveAdditionalCostPayment($costId)
+    {
+        $cost = \App\Models\StudentApplicationAdditionalCost::findOrFail($costId);
+        $application = $cost->application;
+
+        \DB::transaction(function() use ($cost, $application) {
             $cost->status = 'paid';
             $cost->paid_amount = $cost->amount;
             $cost->paid_at = now();
-            $cost->payment_method = $request->payment_method ?? 'Cash/Direct';
-            $cost->transaction_id = $request->transaction_id ?? null;
+            $cost->approval_status = 'approved';
             $cost->save();
 
-            $totalPaidInstallments = $application->installments()->sum('paid_amount');
+            $totalPaidInstallments = $application->installments()->whereIn('status', ['paid', 'partially_paid'])->sum('paid_amount');
             $totalPaidCosts = $application->additionalCosts()->where('status', 'paid')->sum('paid_amount');
             $application->paid_amount = $totalPaidInstallments + $totalPaidCosts;
 
@@ -466,6 +534,16 @@ class StudentController extends Controller
             $application->save();
         });
 
-        return back()->with('success', 'Full payment of ' . number_format($cost->amount, 2) . ' ' . ($application->course->currency ?? 'GBP') . ' for "' . $cost->cost_name . '" recorded successfully.');
+        return back()->with('success', 'Additional cost payment approved successfully.');
+    }
+
+    public function rejectAdditionalCostPayment($costId)
+    {
+        $cost = \App\Models\StudentApplicationAdditionalCost::findOrFail($costId);
+        $cost->approval_status = 'rejected';
+        $cost->status = 'pending';
+        $cost->save();
+
+        return back()->with('info', 'Additional cost payment request rejected.');
     }
 }

@@ -617,7 +617,7 @@ class StudentInvoiceController extends Controller
             }
 
             if ($action === 'send') {
-                return redirect()->route('admin.students.show', $student->id)
+                return redirect()->route('admin.students.show', ['student' => $student->id, 'tab' => 'invoices'])
                     ->with('success', 'Invoice "' . $template->title . '" has been sent to student\'s profile successfully!');
             }
 
@@ -676,7 +676,7 @@ class StudentInvoiceController extends Controller
                 ]);
 
                 if ($action === 'send') {
-                    return redirect()->route('admin.students.show', $student->id)
+                    return redirect()->route('admin.students.show', ['student' => $student->id, 'tab' => 'invoices'])
                         ->with('success', 'Uploaded invoice has been sent to student\'s profile successfully!');
                 }
 

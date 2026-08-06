@@ -20,12 +20,19 @@ class StudentApplicationInstallment extends Model
         'paid_amount',
         'is_invoiced',
         'invoiced_at',
+        'paid_at',
+        'payment_method',
+        'transaction_id',
+        'attachment',
+        'pending_paid_amount',
+        'approval_status',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'due_date' => 'date',
+        'paid_at' => 'datetime',
         'is_invoiced' => 'boolean',
         'invoiced_at' => 'datetime',
     ];
