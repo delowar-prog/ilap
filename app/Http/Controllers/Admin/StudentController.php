@@ -59,6 +59,7 @@ class StudentController extends Controller
             'approved' => Student::where('enrolment_status', 'approved')->whereDoesntHave('applications')->count(),
             'assigned' => Student::where('enrolment_status', 'approved')->whereHas('applications')->count(),
             'rejected' => Student::where('enrolment_status', 'rejected')->count(),
+            'terminated' => Student::where('enrolment_status', 'terminated')->count(),
         ];
 
         return view('backend.admin.students.index', compact('students', 'status', 'counts', 'search', 'sortBy', 'sortDir', 'perPage'));
@@ -243,6 +244,72 @@ class StudentController extends Controller
                 'success' => true,
                 'message' => $msg,
             ]);
+        }
+
+        return back()->with('success', $msg);
+    }
+
+    public function terminateStudent(Request $request, $id)
+    {
+        $student = Student::findOrFail($id);
+        
+        \DB::transaction(function() use ($request, $student) {
+            $student->enrolment_status = 'terminated';
+            $student->terminated_at = now();
+            $student->termination_reason = $request->termination_reason ?? 'Student discontinued course after enrolment.';
+            $student->save();
+
+            // Waive all unpaid installments for this student's applications
+            foreach ($student->applications as $application) {
+                $application->installments()->where('status', '!=', 'paid')->update([
+                    'status' => 'waived',
+                    'approval_status' => 'none',
+                ]);
+                $application->additionalCosts()->where('status', '!=', 'paid')->update([
+                    'status' => 'waived',
+                    'approval_status' => 'none',
+                ]);
+
+                // Recalculate paid_amount
+                $totalPaidInstallments = $application->installments()->where('status', 'paid')->sum('paid_amount');
+                $totalPaidCosts = $application->additionalCosts()->where('status', 'paid')->sum('paid_amount');
+                $application->paid_amount = $totalPaidInstallments + $totalPaidCosts;
+                $application->save();
+            }
+        });
+
+        $msg = 'Student status marked as Terminated. Remaining unpaid balance has been waived/adjusted.';
+        if (request()->ajax()) {
+            return response()->json(['success' => true, 'message' => $msg]);
+        }
+
+        return back()->with('success', $msg);
+    }
+
+    public function reinstallStudent(Request $request, $id)
+    {
+        $student = Student::findOrFail($id);
+
+        \DB::transaction(function() use ($student) {
+            $student->enrolment_status = 'enrolled';
+            $student->terminated_at = null;
+            $student->termination_reason = null;
+            $student->save();
+
+            // Revert waived installments back to pending
+            foreach ($student->applications as $application) {
+                $application->installments()->where('status', 'waived')->update([
+                    'status' => 'pending',
+                ]);
+                $application->additionalCosts()->where('status', 'waived')->update([
+                    'status' => 'pending',
+                ]);
+            }
+        });
+
+        $msg = 'Student re-enrolled successfully. Waived installments have been restored.';
+        if (request()->ajax()) {
+            return response()->json(['success' => true, 'message' => $msg]);
         }
 
         return back()->with('success', $msg);

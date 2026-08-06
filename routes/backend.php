@@ -90,6 +90,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/students/{id}/reject', [StudentController::class, 'reject'])->name('students.reject');
     Route::post('/students/{id}/revert-to-pending', [StudentController::class, 'revertToPending'])->name('students.revert_to_pending');
     Route::post('/students/{id}/send-to-student', [StudentController::class, 'sendToStudent'])->name('students.send_to_student');
+    Route::post('/students/{id}/terminate', [StudentController::class, 'terminateStudent'])->name('students.terminate');
+    Route::post('/students/{id}/reinstall', [StudentController::class, 'reinstallStudent'])->name('students.reinstall');
     Route::get('/enrolled-students', [StudentController::class, 'enrolledStudents'])->name('students.enrolled');
     Route::delete('/students/{id}', [StudentController::class, 'destroy'])->name('students.destroy');
     Route::get('/students/{id}/profile-pdf', [StudentController::class, 'downloadProfilePdf'])->name('students.profile.pdf');

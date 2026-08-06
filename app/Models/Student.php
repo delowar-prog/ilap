@@ -20,7 +20,7 @@ class Student extends Model
         'current_address', 'current_city', 'current_state', 'current_postcode', 'current_country',
         'emergency_contact_name', 'emergency_contact_mobile', 'emergency_contact_email', 'emergency_contact_relationship',
         'applied_leave_to_remain_uk', 'need_visa_for_uk', 'refused_visa_or_deported',
-        'taken_tb_test', 'bank_balance_info', 'enrolment_status',
+        'taken_tb_test', 'bank_balance_info', 'enrolment_status', 'terminated_at', 'termination_reason',
         // Travel & Immigration
         'travel_history', 'immigration_history', 'visa_refusals',
     ];
@@ -31,6 +31,7 @@ class Student extends Model
 
     protected $casts = [
         'dob' => 'date',
+        'terminated_at' => 'datetime',
         'has_whatsapp' => 'boolean',
         'passport_issue_date' => 'date',
         'passport_expiry_date' => 'date',

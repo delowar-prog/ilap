@@ -39,6 +39,13 @@
                             <span class="badge bg-warning rounded-pill ms-1">{{ $counts['rejected'] }}</span>
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.students.index', ['status' => 'terminated']) }}" 
+                           class="nav-link rounded-0 {{ $status == 'terminated' ? 'active' : '' }}">
+                            <i class="mdi mdi-account-off-outline me-1"></i> Terminated
+                            <span class="badge bg-dark rounded-pill ms-1">{{ $counts['terminated'] ?? 0 }}</span>
+                        </a>
+                    </li>
                 </ul>
 
                 {{-- Filter Toolbar --}}

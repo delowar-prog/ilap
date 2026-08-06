@@ -160,6 +160,17 @@
                                 <span class="badge bg-success">Approved</span>
                             <?php elseif($student->enrolment_status === 'enrolled'): ?>
                                 <span class="badge bg-primary">Enrolled</span>
+                                <button type="button" class="btn btn-xs btn-outline-light ms-2 text-white border-white-50" data-bs-toggle="modal" data-bs-target="#terminateStudentModal" title="Terminate / Discontinue Student">
+                                    <i class="fas fa-user-slash me-1"></i> Terminate Student
+                                </button>
+                            <?php elseif($student->enrolment_status === 'terminated'): ?>
+                                <span class="badge bg-dark px-2 py-1"><i class="fas fa-user-slash me-1"></i> Terminated</span>
+                                <form action="<?php echo e(route('admin.students.reinstall', $student->id)); ?>" method="POST" class="d-inline ms-2">
+                                    <?php echo csrf_field(); ?>
+                                    <button type="submit" class="btn btn-xs btn-outline-success text-white border-success-subtle" title="Re-enroll Student">
+                                        <i class="fas fa-undo me-1"></i> Re-enroll Student
+                                    </button>
+                                </form>
                             <?php elseif($student->enrolment_status === 'rejected'): ?>
                                 <span class="badge bg-danger">Rejected</span>
                             <?php else: ?>
@@ -766,6 +777,8 @@
                                                                     <span class="badge bg-info text-dark">Partially Paid</span>
                                                                 <?php elseif($inst->status === 'pending_approval'): ?>
                                                                     <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pending Approval</span>
+                                                                <?php elseif($inst->status === 'waived'): ?>
+                                                                    <span class="badge bg-secondary"><i class="fas fa-slash me-1"></i> Waived / Adjusted</span>
                                                                 <?php else: ?>
                                                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($inst->due_date && $inst->due_date->isPast()): ?>
                                                                         <span class="badge bg-danger">Overdue</span>
@@ -789,7 +802,7 @@
                                                                                 <i class="fas fa-times"></i>
                                                                             </button>
                                                                         </form>
-                                                                    <?php elseif($inst->status !== 'paid'): ?>
+                                                                    <?php elseif(!in_array($inst->status, ['paid', 'waived'])): ?>
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-success record-payment-btn" 
                                                                                 data-id="<?php echo e($inst->id); ?>" 
@@ -866,14 +879,28 @@
                                                 <span class="text-muted">Additional Costs Total</span>
                                                 <span class="fw-semibold text-dark"><?php echo e(number_format($application->additionalCosts->sum('amount'), 2)); ?> <?php echo e($application->course->currency ?? 'GBP'); ?></span>
                                             </div>
+                                            <?php
+                                                $totalWaivedInstallments = $application->installments->where('status', 'waived')->sum(function($inst) {
+                                                    return max(0, $inst->amount - $inst->paid_amount);
+                                                });
+                                                $totalWaivedCosts = $application->additionalCosts->where('status', 'waived')->sum('amount');
+                                                $totalWaived = $totalWaivedInstallments + $totalWaivedCosts;
+                                                $balanceDue = max(0, $application->total_fee - $application->paid_amount - $totalWaived);
+                                            ?>
                                             <hr class="my-2">
                                             <div class="d-flex justify-content-between mb-1 font-13">
                                                 <span class="text-muted">Total Paid</span>
                                                 <span class="fw-semibold text-success"><?php echo e(number_format($application->paid_amount, 2)); ?> <?php echo e($application->course->currency ?? 'GBP'); ?></span>
                                             </div>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($totalWaived > 0 || $student->enrolment_status === 'terminated'): ?>
+                                                <div class="d-flex justify-content-between mb-1 font-13">
+                                                    <span class="text-muted"><i class="fas fa-slash text-secondary me-1"></i> Waived / Adjusted</span>
+                                                    <span class="fw-semibold text-secondary"><?php echo e(number_format($totalWaived, 2)); ?> <?php echo e($application->course->currency ?? 'GBP'); ?></span>
+                                                </div>
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                             <div class="d-flex justify-content-between font-13">
                                                 <span class="text-muted">Balance Due</span>
-                                                <span class="fw-semibold text-danger"><?php echo e(number_format(max(0, $application->total_fee - $application->paid_amount), 2)); ?> <?php echo e($application->course->currency ?? 'GBP'); ?></span>
+                                                <span class="fw-semibold <?php echo e($balanceDue > 0 ? 'text-danger' : 'text-muted'); ?>"><?php echo e(number_format($balanceDue, 2)); ?> <?php echo e($application->course->currency ?? 'GBP'); ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -933,6 +960,8 @@
                                                                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                     <?php elseif($cost->status === 'pending_approval'): ?>
                                                                         <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pending Approval</span>
+                                                                    <?php elseif($cost->status === 'waived'): ?>
+                                                                        <span class="badge bg-secondary"><i class="fas fa-slash me-1"></i> Waived / Adjusted</span>
                                                                     <?php else: ?>
                                                                         <span class="badge bg-secondary">Pending</span>
                                                                     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
@@ -952,7 +981,7 @@
                                                                                     <i class="fas fa-times"></i>
                                                                                 </button>
                                                                             </form>
-                                                                        <?php elseif($cost->status !== 'paid'): ?>
+                                                                        <?php elseif(!in_array($cost->status, ['paid', 'waived'])): ?>
                                                                             <button type="button" 
                                                                                     class="btn btn-xs btn-outline-success record-cost-payment-btn" 
                                                                                     data-id="<?php echo e($cost->id); ?>" 
@@ -1589,6 +1618,39 @@
             <div class="modal-footer bg-light py-2">
                 <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Close</button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terminate Student Modal -->
+<div class="modal fade" id="terminateStudentModal" tabindex="-1" aria-labelledby="terminateStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold text-white mb-0" id="terminateStudentModalLabel">
+                    <i class="fas fa-user-slash me-2"></i> Terminate / Discontinue Student
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="<?php echo e(route('admin.students.terminate', $student->id)); ?>" method="POST">
+                <?php echo csrf_field(); ?>
+                <div class="modal-body p-4">
+                    <div class="alert alert-warning border-0 d-flex align-items-center gap-2 font-13 mb-3">
+                        <i class="fas fa-exclamation-triangle fa-lg text-warning flex-shrink-0"></i>
+                        <div>
+                            <strong>Warning:</strong> Mark this student as discontinued/terminated. All remaining unpaid course installments and costs will be <strong>Waived / Adjusted</strong> and the Balance Due will become zero.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Termination / Discontinuation Reason <span class="text-danger">*</span></label>
+                        <textarea name="termination_reason" class="form-control" rows="3" placeholder="Enter reason (e.g. Discontinued studies, Returned home, Visa cancelled...)" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm fw-bold"><i class="fas fa-user-slash me-1"></i> Confirm Termination</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
