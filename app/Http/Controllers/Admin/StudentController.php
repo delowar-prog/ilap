@@ -396,10 +396,12 @@ class StudentController extends Controller
             'additional_costs' => 'nullable|array',
             'additional_costs.*.cost_name' => 'required|string',
             'additional_costs.*.amount' => 'required|numeric|min:0',
+            'additional_costs.*.note' => 'nullable|string|max:500',
             'installments' => 'required|array|min:1',
             'installments.*.amount' => 'required|numeric|min:0.01',
             'installments.*.due_date' => 'required|date',
-            'installments.*.status' => 'required|in:pending,paid,partially_paid',
+            'installments.*.note' => 'nullable|string|max:500',
+            'installments.*.status' => 'nullable|string',
             'installments.*.paid_amount' => 'nullable|numeric|min:0',
         ]);
 
@@ -429,6 +431,7 @@ class StudentController extends Controller
                     $application->additionalCosts()->create([
                         'cost_name' => $costData['cost_name'],
                         'amount' => $costData['amount'],
+                        'note' => $costData['note'] ?? null,
                     ]);
                     $additionalCostsTotal += $costData['amount'];
                 }
@@ -451,6 +454,7 @@ class StudentController extends Controller
                     'installment_number' => $index + 1,
                     'amount' => $instData['amount'],
                     'due_date' => $instData['due_date'],
+                    'note' => $instData['note'] ?? null,
                     'status' => $status,
                     'paid_amount' => $paid,
                 ]);
@@ -612,5 +616,133 @@ class StudentController extends Controller
         $cost->save();
 
         return back()->with('info', 'Additional cost payment request rejected.');
+    }
+
+    public function refundInstallment(Request $request, $installmentId)
+    {
+        $installment = \App\Models\StudentApplicationInstallment::findOrFail($installmentId);
+        $application = $installment->application;
+
+        $maxRefundable = floatval($installment->paid_amount);
+        if ($maxRefundable <= 0) {
+            return back()->with('error', 'This installment does not have any paid amount eligible for refund.');
+        }
+
+        $request->validate([
+            'refund_amount' => 'required|numeric|min:0.00|max:' . $maxRefundable,
+            'deduction_percentage' => 'nullable|numeric|min:0|max:100',
+            'deduction_amount' => 'nullable|numeric|min:0|max:' . $maxRefundable,
+            'reason_note' => 'required|string|max:1000',
+        ]);
+
+        $refundAmount = floatval($request->refund_amount);
+        $deductionAmount = floatval($request->deduction_amount ?? 0);
+        $deductionPct = $request->has('deduction_percentage') && $request->deduction_percentage !== null ? floatval($request->deduction_percentage) : null;
+
+        if (($refundAmount + $deductionAmount) > ($maxRefundable + 0.01)) {
+            return back()->with('error', 'Refund amount plus deduction cannot exceed total paid amount of ' . format_currency($maxRefundable, $application->course->currency ?? 'GBP') . '.');
+        }
+
+        \DB::transaction(function() use ($request, $installment, $application, $maxRefundable, $refundAmount, $deductionAmount, $deductionPct) {
+            \App\Models\StudentApplicationRefund::create([
+                'application_id' => $application->id,
+                'refund_type' => 'installment',
+                'item_id' => $installment->id,
+                'original_paid_amount' => $maxRefundable,
+                'deduction_percentage' => $deductionPct,
+                'deduction_amount' => $deductionAmount,
+                'refund_amount' => $refundAmount,
+                'reason_note' => $request->reason_note,
+                'processed_by' => auth()->id(),
+                'refunded_at' => now(),
+            ]);
+
+            $newPaidAmount = max(0, $installment->paid_amount - $refundAmount - $deductionAmount);
+            $installment->paid_amount = $newPaidAmount;
+            $installment->refunded_amount = ($installment->refunded_amount ?? 0) + $refundAmount;
+            $installment->deducted_amount = ($installment->deducted_amount ?? 0) + $deductionAmount;
+
+            if ($newPaidAmount == 0) {
+                $installment->status = 'refunded';
+            } else {
+                $installment->status = 'partially_refunded';
+            }
+            $installment->save();
+
+            $totalPaidInstallments = $application->installments()->sum('paid_amount');
+            $totalPaidCosts = $application->additionalCosts()->sum('paid_amount');
+            $application->paid_amount = $totalPaidInstallments + $totalPaidCosts;
+
+            if ($application->paid_amount < $application->total_fee) {
+                $application->stage = 'accepted';
+            }
+            $application->save();
+        });
+
+        return back()->with('success', 'Refund of ' . format_currency($refundAmount, $application->course->currency ?? 'GBP') . ' processed successfully.');
+    }
+
+    public function refundAdditionalCost(Request $request, $costId)
+    {
+        $cost = \App\Models\StudentApplicationAdditionalCost::findOrFail($costId);
+        $application = $cost->application;
+
+        $maxRefundable = floatval($cost->paid_amount > 0 ? $cost->paid_amount : ($cost->status === 'paid' ? $cost->amount : 0));
+        if ($maxRefundable <= 0) {
+            return back()->with('error', 'This item does not have any paid amount eligible for refund.');
+        }
+
+        $request->validate([
+            'refund_amount' => 'required|numeric|min:0.00|max:' . $maxRefundable,
+            'deduction_percentage' => 'nullable|numeric|min:0|max:100',
+            'deduction_amount' => 'nullable|numeric|min:0|max:' . $maxRefundable,
+            'reason_note' => 'required|string|max:1000',
+        ]);
+
+        $refundAmount = floatval($request->refund_amount);
+        $deductionAmount = floatval($request->deduction_amount ?? 0);
+        $deductionPct = $request->has('deduction_percentage') && $request->deduction_percentage !== null ? floatval($request->deduction_percentage) : null;
+
+        if (($refundAmount + $deductionAmount) > ($maxRefundable + 0.01)) {
+            return back()->with('error', 'Refund amount plus deduction cannot exceed total paid amount of ' . format_currency($maxRefundable, $application->course->currency ?? 'GBP') . '.');
+        }
+
+        \DB::transaction(function() use ($request, $cost, $application, $maxRefundable, $refundAmount, $deductionAmount, $deductionPct) {
+            \App\Models\StudentApplicationRefund::create([
+                'application_id' => $application->id,
+                'refund_type' => 'additional_cost',
+                'item_id' => $cost->id,
+                'original_paid_amount' => $maxRefundable,
+                'deduction_percentage' => $deductionPct,
+                'deduction_amount' => $deductionAmount,
+                'refund_amount' => $refundAmount,
+                'reason_note' => $request->reason_note,
+                'processed_by' => auth()->id(),
+                'refunded_at' => now(),
+            ]);
+
+            $newPaidAmount = max(0, $maxRefundable - $refundAmount - $deductionAmount);
+            $cost->paid_amount = $newPaidAmount;
+            $cost->refunded_amount = ($cost->refunded_amount ?? 0) + $refundAmount;
+            $cost->deducted_amount = ($cost->deducted_amount ?? 0) + $deductionAmount;
+
+            if ($newPaidAmount == 0) {
+                $cost->status = 'refunded';
+            } else {
+                $cost->status = 'partially_refunded';
+            }
+            $cost->save();
+
+            $totalPaidInstallments = $application->installments()->sum('paid_amount');
+            $totalPaidCosts = $application->additionalCosts()->sum('paid_amount');
+            $application->paid_amount = $totalPaidInstallments + $totalPaidCosts;
+
+            if ($application->paid_amount < $application->total_fee) {
+                $application->stage = 'accepted';
+            }
+            $application->save();
+        });
+
+        return back()->with('success', 'Refund of ' . format_currency($refundAmount, $application->course->currency ?? 'GBP') . ' for cost "' . $cost->cost_name . '" processed successfully.');
     }
 }

@@ -130,8 +130,7 @@
                                         <th style="width: 15%;">Installment No.</th>
                                         <th style="width: 25%;">Amount</th>
                                         <th style="width: 20%;">Due Date</th>
-                                        <th style="width: 15%;">Status</th>
-                                        <th style="width: 20%;">Paid Amount</th>
+                                        <th style="width: 35%;">Note / Remarks</th>
                                         <th style="width: 5%;" class="text-center">Action</th>
                                     </tr>
                                 </thead>
@@ -162,9 +161,10 @@
                             <table class="table table-bordered table-sm align-middle" id="additional_costs_table">
                                 <thead class="table-light">
                                     <tr>
-                                        <th style="width: 50%;">Cost Item / Description</th>
-                                        <th style="width: 40%;">Amount</th>
-                                        <th style="width: 10%;" class="text-center">Action</th>
+                                        <th style="width: 40%;">Cost Item / Description</th>
+                                        <th style="width: 25%;">Amount</th>
+                                        <th style="width: 30%;">Note / Remarks</th>
+                                        <th style="width: 5%;" class="text-center">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="additional_costs_tbody">
@@ -173,6 +173,7 @@
                                             @php
                                                 $costName = is_array($cost) ? ($cost['cost_name'] ?? '') : $cost->cost_name;
                                                 $amount = is_array($cost) ? ($cost['amount'] ?? 0) : $cost->amount;
+                                                $costNote = is_array($cost) ? ($cost['note'] ?? '') : ($cost->note ?? '');
                                             @endphp
                                             <tr>
                                                 <td>
@@ -185,6 +186,9 @@
                                                 </td>
                                                 <td>
                                                     <input type="number" name="additional_costs[{{ $index }}][amount]" class="form-control form-control-sm cost-amount" step="0.01" min="0" required value="{{ number_format($amount, 2, '.', '') }}">
+                                                </td>
+                                                <td>
+                                                    <input type="text" name="additional_costs[{{ $index }}][note]" class="form-control form-control-sm" placeholder="Optional note / remarks..." value="{{ $costNote }}">
                                                 </td>
                                                 <td class="text-center">
                                                     <button type="button" class="btn btn-xs btn-danger remove-row-btn">
@@ -280,6 +284,7 @@
             'due_date' => $inst->due_date ? $inst->due_date->format('Y-m-d') : '',
             'status' => $inst->status,
             'paid_amount' => (float)$inst->paid_amount,
+            'note' => $inst->note ?? '',
         ];
     })->toJson() : '[]' !!};
 
@@ -336,6 +341,9 @@
                     <td>
                         <input type="number" name="additional_costs[${costCount}][amount]" class="form-control form-control-sm cost-amount" step="0.01" min="0" required value="0.00">
                     </td>
+                    <td>
+                        <input type="text" name="additional_costs[${costCount}][note]" class="form-control form-control-sm" placeholder="Optional note / remarks..." value="">
+                    </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-xs btn-danger remove-row-btn">
                             <i class="fas fa-trash-alt"></i>
@@ -348,9 +356,21 @@
             calculateTotals();
         });
 
-        // Dynamic rows generation for Installments
+        // Dynamic rows generation for Installments (Auto-calculates remaining unallocated balance)
         $('#add_installment_btn').on('click', function() {
-            $('#installments_tbody').append(createInstallmentRowHtml(instCount, '', '', 'pending', 0.00));
+            const baseFee = parseFloat($('#course_fee_display').val()) || 0;
+            const scholarship = parseFloat($('#scholarship_amount').val()) || 0;
+            const netCourseFee = Math.max(0, baseFee - scholarship);
+
+            let allocatedTotal = 0;
+            $('.installment-amount').each(function() {
+                allocatedTotal += parseFloat($(this).val()) || 0;
+            });
+
+            const remaining = Math.max(0, netCourseFee - allocatedTotal);
+            const autoAmount = remaining > 0 ? remaining.toFixed(2) : '';
+
+            $('#installments_tbody').append(createInstallmentRowHtml(instCount, autoAmount, '', 'pending', 0.00, ''));
             instCount++;
             updateInstallmentLabels();
             calculateTotals();
@@ -401,11 +421,9 @@
                             <input type="date" name="installments[0][due_date]" class="form-control form-control-sm" value="${today}">
                         </td>
                         <td>
+                            <input type="text" name="installments[0][note]" class="form-control form-control-sm" placeholder="Optional note / remarks..." value="Full upfront course fee payment">
                             <input type="hidden" name="installments[0][status]" value="paid">
-                            <span class="badge bg-success">Fully Paid</span>
-                        </td>
-                        <td>
-                            <input type="number" name="installments[0][paid_amount]" class="form-control form-control-sm installment-paid" value="${netCourseFee.toFixed(2)}" readonly>
+                            <input type="hidden" name="installments[0][paid_amount]" class="installment-paid" value="${netCourseFee.toFixed(2)}">
                         </td>
                         <td class="text-center text-muted">-</td>
                     </tr>
@@ -432,11 +450,9 @@
                             <input type="date" name="installments[0][due_date]" class="form-control form-control-sm" value="${today}">
                         </td>
                         <td>
+                            <input type="text" name="installments[0][note]" class="form-control form-control-sm" placeholder="Optional note / remarks..." value="Partial upfront payment">
                             <input type="hidden" name="installments[0][status]" value="paid">
-                            <span class="badge bg-success">Fully Paid</span>
-                        </td>
-                        <td>
-                            <input type="number" name="installments[0][paid_amount]" class="form-control form-control-sm installment-paid" value="${upfrontAmount.toFixed(2)}" readonly>
+                            <input type="hidden" name="installments[0][paid_amount]" class="installment-paid" value="${upfrontAmount.toFixed(2)}">
                         </td>
                         <td class="text-center text-muted">-</td>
                     </tr>
@@ -446,11 +462,13 @@
 
                 if (existingInstallments.length > 1 && setupType === initialSetupType) {
                     existingInstallments.slice(1).forEach((inst) => {
-                        tbody.append(createInstallmentRowHtml(instCount, inst.amount, inst.due_date, inst.status, inst.paid_amount));
+                        tbody.append(createInstallmentRowHtml(instCount, inst.amount, inst.due_date, inst.status, inst.paid_amount, inst.note));
                         instCount++;
                     });
                 } else {
-                    tbody.append(createInstallmentRowHtml(instCount, '', '', 'pending', 0.00));
+                    const remainingForUpfront = Math.max(0, netCourseFee - upfrontAmount);
+                    const initUpfrontAmt = remainingForUpfront > 0 ? remainingForUpfront.toFixed(2) : '';
+                    tbody.append(createInstallmentRowHtml(instCount, initUpfrontAmt, '', 'pending', 0.00, ''));
                     instCount++;
                 }
             } 
@@ -460,11 +478,12 @@
 
                 if (existingInstallments.length > 0 && setupType === initialSetupType) {
                     existingInstallments.forEach((inst) => {
-                        tbody.append(createInstallmentRowHtml(instCount, inst.amount, inst.due_date, inst.status, inst.paid_amount));
+                        tbody.append(createInstallmentRowHtml(instCount, inst.amount, inst.due_date, inst.status, inst.paid_amount, inst.note));
                         instCount++;
                     });
                 } else {
-                    tbody.append(createInstallmentRowHtml(instCount, '', '', 'pending', 0.00));
+                    const initAmt = netCourseFee > 0 ? netCourseFee.toFixed(2) : '';
+                    tbody.append(createInstallmentRowHtml(instCount, initAmt, '', 'pending', 0.00, ''));
                     instCount++;
                 }
             }
@@ -473,8 +492,9 @@
             calculateTotals();
         }
 
-        function createInstallmentRowHtml(index, amount, dueDate, status, paidAmount) {
+        function createInstallmentRowHtml(index, amount, dueDate, status, paidAmount, note) {
             const amountVal = (amount !== undefined && amount !== null && amount !== '') ? parseFloat(amount).toFixed(2) : '';
+            const noteVal = note || '';
             return `
                 <tr>
                     <td class="fw-semibold ps-3 py-2 text-muted inst-label">
@@ -487,14 +507,9 @@
                         <input type="date" name="installments[${index}][due_date]" class="form-control form-control-sm" value="${dueDate || ''}">
                     </td>
                     <td>
-                        <select name="installments[${index}][status]" class="form-select form-select-sm installment-status">
-                            <option value="pending" ${status === 'pending' ? 'selected' : ''}>Due (Pending)</option>
-                            <option value="partially_paid" ${status === 'partially_paid' ? 'selected' : ''}>Partially Paid</option>
-                            <option value="paid" ${status === 'paid' ? 'selected' : ''}>Fully Paid</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input type="number" name="installments[${index}][paid_amount]" class="form-control form-control-sm installment-paid" step="0.01" min="0" value="${parseFloat(paidAmount || 0).toFixed(2)}" ${status !== 'partially_paid' ? 'readonly' : ''}>
+                        <input type="text" name="installments[${index}][note]" class="form-control form-control-sm" placeholder="Optional note / remarks..." value="${noteVal}">
+                        <input type="hidden" name="installments[${index}][status]" value="${status || 'pending'}">
+                        <input type="hidden" name="installments[${index}][paid_amount]" class="installment-paid" value="${parseFloat(paidAmount || 0).toFixed(2)}">
                     </td>
                     <td class="text-center">
                         <button type="button" class="btn btn-xs btn-danger remove-row-btn">
@@ -645,6 +660,33 @@
             return true;
         });
 
+        function getCurrencySymbolJS(code) {
+            code = (code || 'GBP').toUpperCase().trim();
+            const symbols = {
+                'USD': '$',
+                'GBP': '£',
+                'EUR': '€',
+                'BDT': '৳',
+                'INR': '₹',
+                'CAD': 'CA$',
+                'AUD': 'A$',
+                'MYR': 'RM',
+                'SGD': 'S$',
+                'AED': 'AED',
+                'SAR': 'SAR'
+            };
+            return symbols[code] || '$';
+        }
+
+        function formatCurrencyJS(amount, code) {
+            code = (code || 'GBP').toUpperCase().trim();
+            const symbol = getCurrencySymbolJS(code);
+            const num = parseFloat(amount) || 0;
+            const formatted = Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const prefix = num < 0 ? '-' : '';
+            return `${prefix}${code} ${symbol} ${formatted}`;
+        }
+
         // Perform calculation updates and grand validation in real-time
         function calculateTotals() {
             // Calculate base fee & scholarship
@@ -683,13 +725,22 @@
             });
             $('#installments_total_display').text(installmentsTotal.toFixed(2));
 
-            // Informational check against netCourseFee (does not block form submission)
+            // Informational check against netCourseFee & Remaining Unallocated Due Banner
             const errorWarning = $('#installment_validation_warning');
-            if (Math.abs(installmentsTotal - netCourseFee) > 0.01) {
-                errorWarning.removeClass('d-none').addClass('d-flex');
-                $('#installment_warning_text').html(`<strong>Note:</strong> Total payment installments amount (<strong>${installmentsTotal.toFixed(2)}</strong>) differs from Net Course Fee (<strong>${netCourseFee.toFixed(2)}</strong>).`);
+            const diff = netCourseFee - installmentsTotal;
+            const currency = $('#currency_symbol').text() || 'GBP';
+
+            if (Math.abs(diff) <= 0.01) {
+                errorWarning.removeClass('d-none alert-info alert-warning alert-danger').addClass('d-flex alert-success');
+                $('#installment_warning_text').html(`<i class="fas fa-check-circle me-1"></i> <strong>Full Fee Allocated:</strong> Total scheduled installments (<strong>${formatCurrencyJS(installmentsTotal, currency)}</strong>) matches Net Course Fee.`);
+            } else if (diff > 0.01) {
+                const remaining = diff;
+                errorWarning.removeClass('d-none alert-success alert-danger alert-warning').addClass('d-flex alert-info');
+                $('#installment_warning_text').html(`<i class="fas fa-info-circle me-1"></i> <strong>Remaining Unallocated Balance: ${formatCurrencyJS(remaining, currency)}</strong> (Net Fee: ${formatCurrencyJS(netCourseFee, currency)} | Allocated: ${formatCurrencyJS(installmentsTotal, currency)}). Click <strong>'Add Installment'</strong> to auto-fill the remaining <strong>${formatCurrencyJS(remaining, currency)}</strong>.`);
             } else {
-                errorWarning.removeClass('d-flex').addClass('d-none');
+                const excess = Math.abs(diff);
+                errorWarning.removeClass('d-none alert-success alert-info alert-danger').addClass('d-flex alert-warning');
+                $('#installment_warning_text').html(`<i class="fas fa-exclamation-triangle me-1"></i> <strong>Over-Allocated:</strong> Total scheduled installments (<strong>${formatCurrencyJS(installmentsTotal, currency)}</strong>) exceeds Net Course Fee by <strong>${formatCurrencyJS(excess, currency)}</strong>.`);
             }
         }
 

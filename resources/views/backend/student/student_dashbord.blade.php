@@ -151,7 +151,7 @@
                 </div>
 
                 <!-- Course Attributes Grid -->
-                <div class="row g-4">
+                <div class="row g-4 mb-4">
                     <!-- Partner Institute -->
                     <div class="col-md-6 col-lg-3">
                         <div class="d-flex align-items-center">
@@ -199,7 +199,91 @@
                             </div>
                             <div>
                                 <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Tuition Fee</small>
-                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ number_format($application->total_fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ format_currency($application->total_fee, $application->course->currency ?? 'GBP') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fees Summary Line (Row 2 - Single Horizontal Line) -->
+                <div class="pt-3 border-top">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <!-- Grand Total Fee -->
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-primary me-2" style="width: 36px; height: 36px; background-color: rgba(44, 62, 122, 0.1);">
+                                <i class="fas fa-calculator"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Grand Total Fee</small>
+                                <span class="fw-bold text-primary" style="font-size: 0.9rem;">{{ format_currency($application->total_fee, $application->course->currency ?? 'GBP') }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Base Course Fee -->
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary me-2" style="width: 36px; height: 36px; background-color: rgba(108, 117, 125, 0.1);">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Base Fee</small>
+                                <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ format_currency($application->course->fee, $application->course->currency ?? 'GBP') }}</span>
+                            </div>
+                        </div>
+
+                        @if(($application->scholarship_amount ?? 0) > 0)
+                        <!-- Scholarship -->
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-success me-2" style="width: 36px; height: 36px; background-color: rgba(40, 167, 69, 0.1);">
+                                <i class="fas fa-gift"></i>
+                            </div>
+                            <div>
+                                <small class="text-success d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Scholarship</small>
+                                <span class="fw-bold text-success" style="font-size: 0.9rem;">{{ format_currency(-$application->scholarship_amount, $application->course->currency ?? 'GBP') }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Net Course Fee -->
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-primary me-2" style="width: 36px; height: 36px; background-color: rgba(13, 110, 253, 0.1);">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Course Fee</small>
+                                <span class="fw-bold text-primary" style="font-size: 0.9rem;">{{ format_currency($application->net_course_fee ?? ($application->course->fee - $application->scholarship_amount), $application->course->currency ?? 'GBP') }}</span>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Additional Costs Total -->
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-info me-2" style="width: 36px; height: 36px; background-color: rgba(23, 162, 184, 0.1);">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Add. Costs</small>
+                                <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ format_currency($application->additionalCosts->sum('amount'), $application->course->currency ?? 'GBP') }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Total Paid -->
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-success me-2" style="width: 36px; height: 36px; background-color: rgba(40, 167, 69, 0.15);">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Paid</small>
+                                <span class="fw-bold text-success" style="font-size: 0.9rem;">{{ format_currency($application->paid_amount, $application->course->currency ?? 'GBP') }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Balance Due -->
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-3 d-flex align-items-center justify-content-center text-danger me-2" style="width: 36px; height: 36px; background-color: rgba(220, 53, 69, 0.1);">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Balance Due</small>
+                                <span class="fw-bold text-danger" style="font-size: 0.9rem;">{{ format_currency(max(0, $application->total_fee - $application->paid_amount), $application->course->currency ?? 'GBP') }}</span>
                             </div>
                         </div>
                     </div>
@@ -210,10 +294,10 @@
     </div>
 </div>
 
-<div class="row g-4 mb-4">
+<div class="row mb-4">
     <!-- Payment Installments -->
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-3">
             <div class="card-header bg-white border-bottom py-3">
                 <h5 class="mb-0 fw-bold text-primary"><i class="fas fa-calendar-alt text-primary me-2"></i> Payment Installments Schedule</h5>
             </div>
@@ -232,15 +316,27 @@
                         <tbody>
                             @foreach($application->installments as $inst)
                                 <tr>
-                                    <td class="ps-4 fw-semibold text-muted">Installment {{ $inst->installment_number }}</td>
+                                    <td class="ps-4 fw-semibold text-muted">
+                                        Installment {{ $inst->installment_number }}
+                                        @if($inst->is_invoiced)
+                                            <span class="badge bg-info ms-1" title="Invoiced on {{ $inst->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-check"></i></span>
+                                        @endif
+                                        @if($inst->note)
+                                            <div class="small text-secondary fw-normal mt-1"><i class="fas fa-info-circle me-1 text-muted"></i>{{ $inst->note }}</div>
+                                        @endif
+                                    </td>
                                     <td>{{ $inst->due_date ? $inst->due_date->format('d M, Y') : '-' }}</td>
-                                    <td class="fw-bold">{{ number_format($inst->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
-                                    <td>{{ number_format($inst->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
+                                    <td class="fw-bold">{{ format_currency($inst->amount, $application->course->currency ?? 'GBP') }}</td>
+                                    <td>{{ format_currency($inst->paid_amount, $application->course->currency ?? 'GBP') }}</td>
                                     <td class="text-center">
                                         @if($inst->status === 'paid')
                                             <span class="badge bg-success">Paid</span>
                                         @elseif($inst->status === 'partially_paid')
                                             <span class="badge bg-info text-dark">Partially Paid</span>
+                                        @elseif($inst->status === 'refunded')
+                                            <span class="badge bg-danger"><i class="fas fa-undo me-1"></i> Refunded</span>
+                                        @elseif($inst->status === 'partially_refunded')
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-undo me-1"></i> Partially Refunded</span>
                                         @else
                                             @if($inst->due_date && $inst->due_date->isPast())
                                                 <span class="badge bg-danger">Overdue</span>
@@ -253,48 +349,6 @@
                             @endforeach
                         </tbody>
                     </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Fee Summary & Additional Costs -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm rounded-3 h-100">
-            <div class="card-header bg-white border-bottom py-3">
-                <h5 class="mb-0 fw-bold text-primary"><i class="fas fa-receipt text-primary me-2"></i> Fees Summary</h5>
-            </div>
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                    <span class="text-dark fw-bold">Grand Total Fee</span>
-                    <span class="text-primary fw-bold fs-4">{{ number_format($application->total_fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Base Course Fee</span>
-                    <span class="fw-semibold text-dark">{{ number_format($application->course->fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                </div>
-                @if(($application->scholarship_amount ?? 0) > 0)
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-success"><i class="fas fa-gift me-1"></i> Scholarship</span>
-                    <span class="fw-bold text-success">-{{ number_format($application->scholarship_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                </div>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Course Fee</span>
-                    <span class="fw-semibold text-primary">{{ number_format($application->net_course_fee ?? ($application->course->fee - $application->scholarship_amount), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                </div>
-                @endif
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Additional Costs Total</span>
-                    <span class="fw-semibold text-dark">{{ number_format($application->additionalCosts->sum('amount'), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                </div>
-                <hr>
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted">Total Paid</span>
-                    <span class="fw-semibold text-success">{{ number_format($application->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span class="text-muted">Balance Due</span>
-                    <span class="fw-semibold text-danger">{{ number_format(max(0, $application->total_fee - $application->paid_amount), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
                 </div>
             </div>
         </div>
@@ -322,17 +376,29 @@
                         <tbody>
                             @foreach($application->additionalCosts as $cost)
                                 <tr>
-                                    <td class="ps-4 fw-semibold text-dark">{{ $cost->cost_name }}</td>
-                                    <td class="fw-bold text-primary">{{ number_format($cost->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
+                                    <td class="ps-4 fw-semibold text-dark">
+                                        {{ $cost->cost_name }}
+                                        @if($cost->is_invoiced)
+                                            <span class="badge bg-info ms-1" title="Invoiced on {{ $cost->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-check"></i></span>
+                                        @endif
+                                        @if($cost->note)
+                                            <div class="small text-secondary fw-normal mt-1"><i class="fas fa-info-circle me-1 text-muted"></i>{{ $cost->note }}</div>
+                                        @endif
+                                    </td>
+                                    <td class="fw-bold text-primary">{{ format_currency($cost->amount, $application->course->currency ?? 'GBP') }}</td>
                                     <td class="text-center">
                                         @if($cost->status === 'paid')
                                             <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> Paid</span>
+                                        @elseif($cost->status === 'refunded')
+                                            <span class="badge bg-danger"><i class="fas fa-undo me-1"></i> Refunded</span>
+                                        @elseif($cost->status === 'partially_refunded')
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-undo me-1"></i> Partially Refunded</span>
                                         @else
                                             <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pending</span>
                                         @endif
                                     </td>
                                     <td class="text-end pe-4">
-                                        @if($cost->status !== 'paid')
+                                        @if($cost->status !== 'paid' && $cost->status !== 'refunded')
                                             <button type="button" class="btn btn-sm btn-success st-pay-cost-btn"
                                                     data-id="{{ $cost->id }}"
                                                     data-name="{{ $cost->cost_name }}"
@@ -350,7 +416,7 @@
                         <tfoot class="table-light">
                             <tr>
                                 <th class="ps-4 text-end">Total Additional Costs:</th>
-                                <th class="fw-bold text-primary">{{ number_format($application->additionalCosts->sum('amount'), 2) }} {{ $application->course->currency ?? 'GBP' }}</th>
+                                <th class="fw-bold text-primary">{{ format_currency($application->additionalCosts->sum('amount'), $application->course->currency ?? 'GBP') }}</th>
                                 <th colspan="2"></th>
                             </tr>
                         </tfoot>

@@ -36,4 +36,9 @@ class StudentApplication extends Model
     {
         return $this->hasMany(StudentApplicationInstallment::class, 'student_application_id');
     }
+
+    public function refunds()
+    {
+        return $this->hasMany(StudentApplicationRefund::class, 'application_id');
+    }
 }

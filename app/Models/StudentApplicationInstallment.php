@@ -16,6 +16,7 @@ class StudentApplicationInstallment extends Model
         'installment_number',
         'amount',
         'due_date',
+        'note',
         'status',
         'paid_amount',
         'is_invoiced',
@@ -26,11 +27,15 @@ class StudentApplicationInstallment extends Model
         'attachment',
         'pending_paid_amount',
         'approval_status',
+        'refunded_amount',
+        'deducted_amount',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'refunded_amount' => 'decimal:2',
+        'deducted_amount' => 'decimal:2',
         'due_date' => 'date',
         'paid_at' => 'datetime',
         'is_invoiced' => 'boolean',

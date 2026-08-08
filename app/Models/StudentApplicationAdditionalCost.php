@@ -15,6 +15,7 @@ class StudentApplicationAdditionalCost extends Model
         'student_application_id',
         'cost_name',
         'amount',
+        'note',
         'status',
         'paid_amount',
         'paid_at',
@@ -22,11 +23,15 @@ class StudentApplicationAdditionalCost extends Model
         'transaction_id',
         'is_invoiced',
         'invoiced_at',
+        'refunded_amount',
+        'deducted_amount',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'paid_amount' => 'decimal:2',
+        'refunded_amount' => 'decimal:2',
+        'deducted_amount' => 'decimal:2',
         'paid_at' => 'datetime',
         'is_invoiced' => 'boolean',
         'invoiced_at' => 'datetime',

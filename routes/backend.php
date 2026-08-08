@@ -100,9 +100,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/installments/{installment}/record-payment', [StudentController::class, 'recordInstallmentPayment'])->name('installments.record_payment');
     Route::post('/installments/{installment}/approve-payment', [StudentController::class, 'approveInstallmentPayment'])->name('installments.approve_payment');
     Route::post('/installments/{installment}/reject-payment', [StudentController::class, 'rejectInstallmentPayment'])->name('installments.reject_payment');
+    Route::post('/installments/{installment}/refund', [StudentController::class, 'refundInstallment'])->name('installments.refund');
     Route::post('/additional-costs/{cost}/record-payment', [StudentController::class, 'recordAdditionalCostPayment'])->name('additional_costs.record_payment');
     Route::post('/additional-costs/{cost}/approve-payment', [StudentController::class, 'approveAdditionalCostPayment'])->name('additional_costs.approve_payment');
     Route::post('/additional-costs/{cost}/reject-payment', [StudentController::class, 'rejectAdditionalCostPayment'])->name('additional_costs.reject_payment');
+    Route::post('/additional-costs/{cost}/refund', [StudentController::class, 'refundAdditionalCost'])->name('additional_costs.refund');
     Route::resource('students', StudentController::class)->only(['index', 'show']);
 
     // ── Official Signatures & Seals CRUD ──────────────────────────────

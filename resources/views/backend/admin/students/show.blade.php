@@ -706,15 +706,162 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Tuition Fee</small>
-                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ number_format($application->total_fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
+                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ format_currency($application->total_fee, $application->course->currency ?? 'GBP') }}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- Payment Schedule & Summary Row -->
-                                <div class="row g-4 pt-3 border-top">
-                                    <div class="col-lg-8">
+                                <!-- Fees Summary Line (Row 2 - Single Horizontal Line) -->
+                                @php
+                                    $totalWaivedInstallments = $application->installments->where('status', 'waived')->sum(function($inst) {
+                                        return max(0, $inst->amount - $inst->paid_amount);
+                                    });
+                                    $totalWaivedCosts = $application->additionalCosts->where('status', 'waived')->sum('amount');
+                                    $totalWaived = $totalWaivedInstallments + $totalWaivedCosts;
+                                    $balanceDue = max(0, $application->total_fee - $application->paid_amount - $totalWaived);
+                                @endphp
+
+                                <div class="pt-3 border-top">
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                                        <!-- Grand Total Fee -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-primary me-2" style="width: 36px; height: 36px; background-color: rgba(44, 62, 122, 0.1);">
+                                                <i class="fas fa-calculator"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Grand Total</small>
+                                                <span class="fw-bold text-primary" style="font-size: 0.9rem;">{{ format_currency($application->total_fee, $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Base Course Fee -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary me-2" style="width: 36px; height: 36px; background-color: rgba(108, 117, 125, 0.1);">
+                                                <i class="fas fa-book"></i>
+                                            </div>
+                                            <div>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <input type="checkbox" class="form-check-input fee-summary-checkbox" value="base_fee" onchange="updateSelectedCount()" title="Include Base Course Fee in invoice">
+                                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Base Fee</small>
+                                                </div>
+                                                <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ format_currency($application->course->fee, $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+
+                                        @if(($application->scholarship_amount ?? 0) > 0)
+                                        <!-- Scholarship -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-success me-2" style="width: 36px; height: 36px; background-color: rgba(40, 167, 69, 0.1);">
+                                                <i class="fas fa-gift"></i>
+                                            </div>
+                                            <div>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <input type="checkbox" class="form-check-input fee-summary-checkbox" value="scholarship" onchange="updateSelectedCount()" title="Include Scholarship in invoice">
+                                                    <small class="text-success text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Scholarship</small>
+                                                </div>
+                                                <span class="fw-bold text-success" style="font-size: 0.9rem;">{{ format_currency(-$application->scholarship_amount, $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Net Course Fee -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-primary me-2" style="width: 36px; height: 36px; background-color: rgba(13, 110, 253, 0.1);">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </div>
+                                            <div>
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <input type="checkbox" class="form-check-input fee-summary-checkbox" value="net_course_fee" onchange="updateSelectedCount()" title="Include Net Course Fee in invoice">
+                                                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Course Fee</small>
+                                                </div>
+                                                <span class="fw-bold text-primary" style="font-size: 0.9rem;">{{ format_currency($application->net_course_fee ?? ($application->course->fee - $application->scholarship_amount), $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        <!-- Additional Costs Total -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-info me-2" style="width: 36px; height: 36px; background-color: rgba(23, 162, 184, 0.1);">
+                                                <i class="fas fa-tags"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Add. Costs</small>
+                                                <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ format_currency($application->additionalCosts->sum('amount'), $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Total Paid -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-success me-2" style="width: 36px; height: 36px; background-color: rgba(40, 167, 69, 0.15);">
+                                                <i class="fas fa-check-circle"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Paid</small>
+                                                <span class="fw-bold text-success" style="font-size: 0.9rem;">{{ format_currency($application->paid_amount, $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+
+                                        @php
+                                            $totalRefundedAmt = $application->refunds->sum('refund_amount');
+                                            $totalDeductedAmt = $application->refunds->sum('deduction_amount');
+                                        @endphp
+                                        @if($totalRefundedAmt > 0)
+                                        <!-- Total Refunded -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-warning me-2" style="width: 36px; height: 36px; background-color: rgba(255, 193, 7, 0.15);">
+                                                <i class="fas fa-undo"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Refunded</small>
+                                                <span class="fw-bold text-warning" style="font-size: 0.9rem;">{{ format_currency($totalRefundedAmt, $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        @if($totalDeductedAmt > 0)
+                                        <!-- Total Fee Cut Retained -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-danger me-2" style="width: 36px; height: 36px; background-color: rgba(220, 53, 69, 0.15);">
+                                                <i class="fas fa-cut"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Fee Cut</small>
+                                                <span class="fw-bold text-danger" style="font-size: 0.9rem;">{{ format_currency($totalDeductedAmt, $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        @if($totalWaived > 0 || $student->enrolment_status === 'terminated')
+                                        <!-- Waived / Adjusted -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary me-2" style="width: 36px; height: 36px; background-color: rgba(108, 117, 125, 0.15);">
+                                                <i class="fas fa-slash"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Waived</small>
+                                                <span class="fw-bold text-secondary" style="font-size: 0.9rem;">{{ format_currency($totalWaived, $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        <!-- Balance Due -->
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center {{ $balanceDue > 0 ? 'text-danger' : 'text-success' }} me-2" style="width: 36px; height: 36px; background-color: {{ $balanceDue > 0 ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)' }};">
+                                                <i class="fas fa-exclamation-circle"></i>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Balance Due</small>
+                                                <span class="fw-bold {{ $balanceDue > 0 ? 'text-danger' : 'text-success' }}" style="font-size: 0.9rem;">{{ format_currency($balanceDue, $application->course->currency ?? 'GBP') }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                                <!-- Payment Schedule Row -->
+                                <div class="row g-4 mb-4">
+                                    <div class="col-12">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <h6 class="text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 0.5px;"><i class="fas fa-calendar-alt text-primary me-2"></i> Payment Installments Schedule</h6>
                                             <button type="button" id="generateInvoiceSelectedBtn" class="btn btn-sm btn-outline-success rounded-pill px-3 d-none" data-bs-toggle="modal" data-bs-target="#generateInvoiceModal" onclick="prepareInvoiceModal()">
@@ -742,7 +889,10 @@
                                                             <td class="fw-semibold text-muted">
                                                                 Installment {{ $inst->installment_number }}
                                                                 @if($inst->is_invoiced)
-                                                                    <span class="badge bg-info ms-1" title="Invoiced on {{ $inst->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-file-invoice me-1"></i>Invoiced</span>
+                                                                    <span class="badge bg-info ms-1" title="Invoiced on {{ $inst->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-check"></i></span>
+                                                                @endif
+                                                                @if($inst->note)
+                                                                    <div class="small text-secondary fw-normal mt-1"><i class="fas fa-info-circle me-1 text-muted"></i>{{ $inst->note }}</div>
                                                                 @endif
                                                             </td>
                                                             <td>{{ $inst->due_date ? $inst->due_date->format('d M, Y') : '-' }}</td>
@@ -753,13 +903,17 @@
                                                                     <span class="text-muted">-</span>
                                                                 @endif
                                                             </td>
-                                                            <td class="text-end fw-bold">{{ number_format($inst->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
-                                                            <td class="text-end text-success">{{ number_format($inst->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
+                                                            <td class="text-end fw-bold">{{ format_currency($inst->amount, $application->course->currency ?? 'GBP') }}</td>
+                                                            <td class="text-end text-success">{{ format_currency($inst->paid_amount, $application->course->currency ?? 'GBP') }}</td>
                                                             <td class="text-center">
                                                                 @if($inst->status === 'paid')
                                                                     <span class="badge bg-success">Paid</span>
                                                                 @elseif($inst->status === 'partially_paid')
                                                                     <span class="badge bg-info text-dark">Partially Paid</span>
+                                                                @elseif($inst->status === 'refunded')
+                                                                    <span class="badge bg-danger"><i class="fas fa-undo me-1"></i> Refunded</span>
+                                                                @elseif($inst->status === 'partially_refunded')
+                                                                    <span class="badge bg-warning text-dark"><i class="fas fa-undo me-1"></i> Partially Refunded</span>
                                                                 @elseif($inst->status === 'pending_approval')
                                                                     <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pending Approval</span>
                                                                 @elseif($inst->status === 'waived')
@@ -787,7 +941,7 @@
                                                                                 <i class="fas fa-times"></i>
                                                                             </button>
                                                                         </form>
-                                                                    @elseif(!in_array($inst->status, ['paid', 'waived']))
+                                                                    @elseif(!in_array($inst->status, ['paid', 'waived', 'refunded']))
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-success record-payment-btn" 
                                                                                 data-id="{{ $inst->id }}" 
@@ -808,8 +962,8 @@
                                                                             data-payer-name="{{ trim($student->first_name . ' ' . $student->surname) }}"
                                                                             data-payer-id="{{ $student->student_id }}"
                                                                             data-receiver-name="{{ auth()->user()->name ?? 'System Admin' }}"
-                                                                            data-amount="{{ number_format($inst->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}"
-                                                                            data-paid="{{ number_format($inst->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}"
+                                                                            data-amount="{{ format_currency($inst->amount, $application->course->currency ?? 'GBP') }}"
+                                                                            data-paid="{{ format_currency($inst->paid_amount, $application->course->currency ?? 'GBP') }}"
                                                                             data-due-date="{{ $inst->due_date ? $inst->due_date->format('d M, Y') : 'N/A' }}"
                                                                             data-paid-date="{{ $inst->paid_at ? $inst->paid_at->format('d M, Y h:i A') : 'N/A' }}"
                                                                             data-payment-method="{{ $inst->payment_method ?? 'N/A' }}"
@@ -820,73 +974,36 @@
                                                                             title="View Payment Details">
                                                                         <i class="fas fa-info-circle"></i>
                                                                     </button>
+                                                                    @php
+                                                                        $instPaidVal = floatval($inst->paid_amount ?? 0);
+                                                                    @endphp
+                                                                    @if($instPaidVal > 0)
+                                                                        <button type="button" 
+                                                                                class="btn btn-xs btn-outline-warning process-refund-btn" 
+                                                                                data-type="installment"
+                                                                                data-id="{{ $inst->id }}" 
+                                                                                data-title="Installment {{ $inst->installment_number }}" 
+                                                                                data-paid="{{ $instPaidVal }}" 
+                                                                                data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                data-bs-toggle="tooltip" 
+                                                                                title="Process Refund">
+                                                                            <i class="fas fa-undo"></i>
+                                                                        </button>
+                                                                    @else
+                                                                        <button type="button" 
+                                                                                class="btn btn-xs btn-outline-secondary" 
+                                                                                disabled 
+                                                                                data-bs-toggle="tooltip" 
+                                                                                title="No paid amount to refund">
+                                                                            <i class="fas fa-undo"></i>
+                                                                        </button>
+                                                                    @endif
                                                                 </div>
                                                             </td>
                                                         </tr>
                                                     @endforeach
                                                 </tbody>
                                             </table>
-                                        </div>
-                                    </div>
-
-                                    <!-- Fees Summary -->
-                                    <div class="col-lg-4">
-                                        <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.5px;"><i class="fas fa-receipt text-primary me-2"></i> Fees Summary</h6>
-                                        <div class="p-3 border rounded bg-light">
-                                            <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
-                                                <span class="text-dark fw-bold">Grand Total Fee</span>
-                                                <span class="text-primary fw-bold fs-5">{{ number_format($application->total_fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mb-1 font-13">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <input type="checkbox" class="form-check-input fee-summary-checkbox" value="base_fee" onchange="updateSelectedCount()" title="Include Base Course Fee in invoice">
-                                                    <span class="text-muted">Base Course Fee</span>
-                                                </div>
-                                                <span class="fw-semibold text-dark">{{ number_format($application->course->fee, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                                            </div>
-                                            @if(($application->scholarship_amount ?? 0) > 0)
-                                            <div class="d-flex justify-content-between align-items-center mb-1 font-13">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <input type="checkbox" class="form-check-input fee-summary-checkbox" value="scholarship" onchange="updateSelectedCount()" title="Include Scholarship in invoice">
-                                                    <span class="text-success"><i class="fas fa-gift me-1"></i> Scholarship</span>
-                                                </div>
-                                                <span class="fw-bold text-success">-{{ number_format($application->scholarship_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mb-1 font-13">
-                                                <div class="d-flex align-items-center gap-2">
-                                                    <input type="checkbox" class="form-check-input fee-summary-checkbox" value="net_course_fee" onchange="updateSelectedCount()" title="Include Net Course Fee in invoice">
-                                                    <span class="text-muted">Course Fee</span>
-                                                </div>
-                                                <span class="fw-semibold text-primary">{{ number_format($application->net_course_fee ?? ($application->course->fee - $application->scholarship_amount), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                                            </div>
-                                            @endif
-                                            <div class="d-flex justify-content-between mb-2 font-13">
-                                                <span class="text-muted">Additional Costs Total</span>
-                                                <span class="fw-semibold text-dark">{{ number_format($application->additionalCosts->sum('amount'), 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                                            </div>
-                                            @php
-                                                $totalWaivedInstallments = $application->installments->where('status', 'waived')->sum(function($inst) {
-                                                    return max(0, $inst->amount - $inst->paid_amount);
-                                                });
-                                                $totalWaivedCosts = $application->additionalCosts->where('status', 'waived')->sum('amount');
-                                                $totalWaived = $totalWaivedInstallments + $totalWaivedCosts;
-                                                $balanceDue = max(0, $application->total_fee - $application->paid_amount - $totalWaived);
-                                            @endphp
-                                            <hr class="my-2">
-                                            <div class="d-flex justify-content-between mb-1 font-13">
-                                                <span class="text-muted">Total Paid</span>
-                                                <span class="fw-semibold text-success">{{ number_format($application->paid_amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                                            </div>
-                                            @if($totalWaived > 0 || $student->enrolment_status === 'terminated')
-                                                <div class="d-flex justify-content-between mb-1 font-13">
-                                                    <span class="text-muted"><i class="fas fa-slash text-secondary me-1"></i> Waived / Adjusted</span>
-                                                    <span class="fw-semibold text-secondary">{{ number_format($totalWaived, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                                                </div>
-                                            @endif
-                                            <div class="d-flex justify-content-between font-13">
-                                                <span class="text-muted">Balance Due</span>
-                                                <span class="fw-semibold {{ $balanceDue > 0 ? 'text-danger' : 'text-muted' }}">{{ number_format($balanceDue, 2) }} {{ $application->course->currency ?? 'GBP' }}</span>
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -925,7 +1042,10 @@
                                                                 <td class="fw-semibold text-dark">
                                                                     <i class="fas fa-tag text-secondary me-2"></i> {{ $cost->cost_name }}
                                                                     @if($cost->is_invoiced)
-                                                                        <span class="badge bg-info ms-1" title="Invoiced on {{ $cost->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-file-invoice me-1"></i>Invoiced</span>
+                                                                        <span class="badge bg-info ms-1" title="Invoiced on {{ $cost->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-check"></i></span>
+                                                                    @endif
+                                                                    @if($cost->note)
+                                                                        <div class="small text-secondary fw-normal ms-4 mt-1"><i class="fas fa-info-circle me-1 text-muted"></i>{{ $cost->note }}</div>
                                                                     @endif
                                                                 </td>
                                                                 <td>
@@ -935,7 +1055,7 @@
                                                                         <span class="text-muted">-</span>
                                                                     @endif
                                                                 </td>
-                                                                <td class="text-end fw-bold text-primary">{{ number_format($cost->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}</td>
+                                                                <td class="text-end fw-bold text-primary">{{ format_currency($cost->amount, $application->course->currency ?? 'GBP') }}</td>
                                                                 <td class="text-center">
                                                                     @if($cost->status === 'paid')
                                                                         <span class="badge bg-success">Paid</span>
@@ -946,6 +1066,10 @@
                                                                         <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pending Approval</span>
                                                                     @elseif($cost->status === 'waived')
                                                                         <span class="badge bg-secondary"><i class="fas fa-slash me-1"></i> Waived / Adjusted</span>
+                                                                    @elseif($cost->status === 'refunded')
+                                                                        <span class="badge bg-danger"><i class="fas fa-undo me-1"></i> Refunded</span>
+                                                                    @elseif($cost->status === 'partially_refunded')
+                                                                        <span class="badge bg-warning text-dark"><i class="fas fa-undo me-1"></i> Partially Refunded</span>
                                                                     @else
                                                                         <span class="badge bg-secondary">Pending</span>
                                                                     @endif
@@ -965,7 +1089,7 @@
                                                                                     <i class="fas fa-times"></i>
                                                                                 </button>
                                                                             </form>
-                                                                        @elseif(!in_array($cost->status, ['paid', 'waived']))
+                                                                        @elseif(!in_array($cost->status, ['paid', 'waived', 'refunded']))
                                                                             <button type="button" 
                                                                                     class="btn btn-xs btn-outline-success record-cost-payment-btn" 
                                                                                     data-id="{{ $cost->id }}" 
@@ -984,8 +1108,8 @@
                                                                                 data-payer-name="{{ trim($student->first_name . ' ' . $student->surname) }}"
                                                                                 data-payer-id="{{ $student->student_id }}"
                                                                                 data-receiver-name="{{ auth()->user()->name ?? 'System Admin' }}"
-                                                                                data-amount="{{ number_format($cost->amount, 2) }} {{ $application->course->currency ?? 'GBP' }}"
-                                                                                data-paid="{{ number_format($cost->status === 'paid' ? $cost->amount : 0, 2) }} {{ $application->course->currency ?? 'GBP' }}"
+                                                                                data-amount="{{ format_currency($cost->amount, $application->course->currency ?? 'GBP') }}"
+                                                                                data-paid="{{ format_currency($cost->status === 'paid' ? $cost->amount : 0, $application->course->currency ?? 'GBP') }}"
                                                                                 data-due-date="{{ $cost->paid_at ? $cost->paid_at->format('d M, Y') : 'N/A' }}"
                                                                                 data-paid-date="{{ $cost->paid_at ? $cost->paid_at->format('d M, Y h:i A') : 'N/A' }}"
                                                                                 data-payment-method="{{ $cost->payment_method ?? 'N/A' }}"
@@ -996,6 +1120,30 @@
                                                                                 title="View Payment Details">
                                                                             <i class="fas fa-info-circle"></i>
                                                                         </button>
+                                                                        @php
+                                                                            $costPaidVal = floatval($cost->paid_amount > 0 ? $cost->paid_amount : ($cost->status === 'paid' ? $cost->amount : 0));
+                                                                        @endphp
+                                                                        @if($costPaidVal > 0)
+                                                                            <button type="button" 
+                                                                                    class="btn btn-xs btn-outline-warning process-refund-btn" 
+                                                                                    data-type="additional_cost"
+                                                                                    data-id="{{ $cost->id }}" 
+                                                                                    data-title="{{ $cost->cost_name }}" 
+                                                                                    data-paid="{{ $costPaidVal }}" 
+                                                                                    data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                    data-bs-toggle="tooltip" 
+                                                                                    title="Process Refund">
+                                                                                <i class="fas fa-undo"></i>
+                                                                            </button>
+                                                                        @else
+                                                                            <button type="button" 
+                                                                                    class="btn btn-xs btn-outline-secondary" 
+                                                                                    disabled 
+                                                                                    data-bs-toggle="tooltip" 
+                                                                                    title="No paid amount to refund">
+                                                                                <i class="fas fa-undo"></i>
+                                                                            </button>
+                                                                        @endif
                                                                     </div>
                                                                 </td>
                                                             </tr>
@@ -1004,7 +1152,7 @@
                                                     <tfoot class="table-light">
                                                         <tr>
                                                             <th class="text-end" colspan="2">Total Additional Costs:</th>
-                                                            <th class="text-end text-primary fw-bold">{{ number_format($application->additionalCosts->sum('amount'), 2) }} {{ $application->course->currency ?? 'GBP' }}</th>
+                                                            <th class="text-end text-primary fw-bold">{{ format_currency($application->additionalCosts->sum('amount'), $application->course->currency ?? 'GBP') }}</th>
                                                             <th colspan="2"></th>
                                                         </tr>
                                                     </tfoot>
@@ -1015,8 +1163,59 @@
                                                 <i class="fas fa-info-circle me-1"></i> No additional costs assigned for this enrolment. Click <strong><a href="{{ route('admin.students.enrolment', $student->id) }}">Manage Enrolment & Fees</a></strong> to add items.
                                             </div>
                                         @endif
+                                @if($application->refunds->count() > 0)
+                                <!-- Refund History Section -->
+                                <div class="row g-4 pt-3 border-top mt-3">
+                                    <div class="col-12">
+                                        <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem; letter-spacing: 0.5px;">
+                                            <i class="fas fa-history text-warning me-2"></i> Refund & Fee Deduction History Log
+                                        </h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-sm align-middle" style="font-size: 0.85rem;">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th>Date & Time</th>
+                                                        <th>Type / Item</th>
+                                                        <th>Original Paid</th>
+                                                        <th>Deduction Fee</th>
+                                                        <th>Net Refund Amount</th>
+                                                        <th>Reason / Note</th>
+                                                        <th>Processed By</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($application->refunds->sortByDesc('created_at') as $refund)
+                                                        <tr>
+                                                            <td><i class="fas fa-calendar-alt text-muted me-1"></i>{{ $refund->refunded_at?->format('d M, Y h:i A') ?? $refund->created_at->format('d M, Y h:i A') }}</td>
+                                                            <td class="fw-semibold">
+                                                                @if($refund->refund_type === 'installment')
+                                                                    <span class="badge bg-primary me-1">Installment</span>
+                                                                @else
+                                                                    <span class="badge bg-info text-dark me-1">Additional Cost</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>{{ format_currency($refund->original_paid_amount, $application->course->currency ?? 'GBP') }}</td>
+                                                            <td class="text-danger fw-semibold">
+                                                                {{ format_currency($refund->deduction_amount, $application->course->currency ?? 'GBP') }}
+                                                                @if($refund->deduction_percentage > 0)
+                                                                    <small class="text-muted">({{ $refund->deduction_percentage }}%)</small>
+                                                                @endif
+                                                            </td>
+                                                            <td class="text-success fw-bold">{{ format_currency($refund->refund_amount, $application->course->currency ?? 'GBP') }}</td>
+                                                            <td>
+                                                                <span class="text-dark" title="{{ $refund->reason_note }}"><i class="fas fa-info-circle me-1 text-secondary"></i>{{ Str::limit($refund->reason_note, 60) }}</span>
+                                                            </td>
+                                                            <td>
+                                                                <small class="text-muted"><i class="fas fa-user-shield me-1"></i>{{ $refund->processedBy->name ?? 'Admin' }}</small>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
+                                @endif
 
                             </div>
                         </div>
@@ -1983,6 +2182,130 @@ $(document).ready(function() {
         var modal = new bootstrap.Modal(document.getElementById('paymentDetailsModal'));
         modal.show();
     });
+    function getCurrencySymbolJS(code) {
+        code = (code || 'GBP').toUpperCase().trim();
+        const symbols = {
+            'USD': '$',
+            'GBP': '£',
+            'EUR': '€',
+            'BDT': '৳',
+            'INR': '₹',
+            'CAD': 'CA$',
+            'AUD': 'A$',
+            'MYR': 'RM',
+            'SGD': 'S$',
+            'AED': 'AED',
+            'SAR': 'SAR'
+        };
+        return symbols[code] || '$';
+    }
+
+    function formatCurrencyJS(amount, code) {
+        code = (code || 'GBP').toUpperCase().trim();
+        const symbol = getCurrencySymbolJS(code);
+        const num = parseFloat(amount) || 0;
+        const formatted = Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const prefix = num < 0 ? '-' : '';
+        return `${prefix}${code} ${symbol} ${formatted}`;
+    }
+
+    function calculateRefundModal() {
+        const maxPaid = parseFloat($('#processRefundForm').data('max-paid')) || 0;
+        const currency = $('#processRefundForm').data('currency') || 'GBP';
+        const isPartial = $('#refund_mode_partial').is(':checked');
+
+        let baseRefundable = maxPaid;
+        if (isPartial) {
+            let userPartial = parseFloat($('#refund_partial_amount_input').val());
+            if (isNaN(userPartial) || userPartial < 0) {
+                userPartial = 0;
+            }
+            if (userPartial > maxPaid) {
+                userPartial = maxPaid;
+                $('#refund_partial_amount_input').val(userPartial.toFixed(2));
+            }
+            baseRefundable = userPartial;
+
+            const remainingBalance = Math.max(0, maxPaid - baseRefundable);
+            $('#refund_remaining_balance_display').text(formatCurrencyJS(remainingBalance, currency));
+        } else {
+            $('#refund_remaining_balance_display').text(formatCurrencyJS(0, currency));
+        }
+
+        const deductionAmount = parseFloat($('#refund_deduction_amount').val()) || 0;
+        const netRefund = Math.max(0, baseRefundable - deductionAmount);
+        $('#refund_net_amount').val(netRefund.toFixed(2));
+    }
+
+    // Process Refund Button & Modal Handling
+    $(document).on('click', '.process-refund-btn', function() {
+        const type = $(this).data('type');
+        const id = $(this).data('id');
+        const title = $(this).data('title');
+        const paidAmount = parseFloat($(this).data('paid')) || 0;
+        const currency = $(this).data('currency') || 'GBP';
+
+        $('#refund_item_title').text(title);
+        $('#refund_paid_display').text(formatCurrencyJS(paidAmount, currency));
+        $('.refund-currency-symbol').text(getCurrencySymbolJS(currency));
+        $('.refund-currency-code').text(currency + ' ' + getCurrencySymbolJS(currency));
+
+        $('#refund_mode_full').prop('checked', true);
+        $('#partial_refund_container').addClass('d-none');
+        $('#refund_partial_amount_input').val('');
+        $('#refund_deduction_pct').val('');
+        $('#refund_deduction_amount').val('0.00');
+
+        let actionUrl = type === 'installment' ? `/admin/installments/${id}/refund` : `/admin/additional-costs/${id}/refund`;
+        $('#processRefundForm').attr('action', actionUrl);
+        $('#processRefundForm').data('max-paid', paidAmount);
+        $('#processRefundForm').data('currency', currency);
+
+        calculateRefundModal();
+
+        var modal = new bootstrap.Modal(document.getElementById('processRefundModal'));
+        modal.show();
+    });
+
+    // Refund Mode Toggle (Full vs Partial)
+    $(document).on('change', 'input[name="refund_mode"]', function() {
+        const isPartial = $(this).val() === 'partial';
+        if (isPartial) {
+            $('#partial_refund_container').removeClass('d-none');
+            const maxPaid = parseFloat($('#processRefundForm').data('max-paid')) || 0;
+            if (!$('#refund_partial_amount_input').val()) {
+                $('#refund_partial_amount_input').val(maxPaid.toFixed(2));
+            }
+            setTimeout(function() {
+                $('#refund_partial_amount_input').focus().select();
+            }, 100);
+        } else {
+            $('#partial_refund_container').addClass('d-none');
+        }
+        calculateRefundModal();
+    });
+
+    // Partial refund input handler
+    $(document).on('input', '#refund_partial_amount_input', function() {
+        calculateRefundModal();
+    });
+
+    // Deduction Fee handlers
+    $(document).on('input', '#refund_deduction_pct', function() {
+        const maxPaid = parseFloat($('#processRefundForm').data('max-paid')) || 0;
+        const pct = parseFloat($(this).val()) || 0;
+        const deduction = (maxPaid * pct) / 100;
+        $('#refund_deduction_amount').val(deduction.toFixed(2));
+        calculateRefundModal();
+    });
+
+    $(document).on('input', '#refund_deduction_amount', function() {
+        const maxPaid = parseFloat($('#processRefundForm').data('max-paid')) || 0;
+        const deduction = parseFloat($(this).val()) || 0;
+        const pct = maxPaid > 0 ? (deduction / maxPaid) * 100 : 0;
+        $('#refund_deduction_pct').val(pct > 0 ? pct.toFixed(1) : '');
+        calculateRefundModal();
+    });
 
     // Handle Active Tab from URL (e.g. ?tab=letters, ?tab=invoices, ?tab=course, ?tab=profile)
     const urlParams = new URLSearchParams(window.location.search);
@@ -2013,4 +2336,102 @@ $(document).ready(function() {
     });
 });
 </script>
+
+<!-- Process Refund Modal -->
+<div class="modal fade" id="processRefundModal" tabindex="-1" aria-labelledby="processRefundModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark border-0">
+                <h5 class="modal-title fw-bold" id="processRefundModalLabel">
+                    <i class="fas fa-undo me-2"></i> Process Payment Refund
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="processRefundForm" method="POST" action="">
+                @csrf
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border-start border-warning border-4 p-3 mb-3">
+                        <div class="fw-bold text-dark" id="refund_item_title">Item Name</div>
+                        <div class="small text-muted">Eligible Paid Balance: <span class="fw-bold text-success" id="refund_paid_display">USD $ 0.00</span></div>
+                    </div>
+
+                    <!-- Refund Type Options (Full vs Partial) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark d-block">Select Refund Option</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="refund_mode" id="refund_mode_full" value="full" checked autocomplete="off">
+                            <label class="btn btn-outline-primary btn-sm fw-bold py-2" for="refund_mode_full">
+                                <i class="fas fa-check-circle me-1"></i> Full Refund
+                            </label>
+
+                            <input type="radio" class="btn-check" name="refund_mode" id="refund_mode_partial" value="partial" autocomplete="off">
+                            <label class="btn btn-outline-warning btn-sm fw-bold py-2" for="refund_mode_partial">
+                                <i class="fas fa-adjust me-1"></i> Partial Refund
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Partial Refund Input Box (Hidden by default) -->
+                    <div id="partial_refund_container" class="p-3 bg-warning bg-opacity-10 rounded border border-warning mb-3 d-none">
+                        <label class="form-label fw-bold text-dark small">
+                            <i class="fas fa-edit me-1 text-warning"></i> Type Partial Refund Amount to Return <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-white refund-currency-symbol fw-bold">$</span>
+                            <input type="number" id="refund_partial_amount_input" class="form-control form-control-lg fw-bold text-dark border-warning" min="0.01" step="0.01" placeholder="e.g. 1000">
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded border">
+                            <small class="text-muted fw-semibold">Remaining Paid Balance After Refund:</small>
+                            <span class="fw-bold text-primary fs-6" id="refund_remaining_balance_display">USD $ 0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Deduction Percentage -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Deduction Fee (%)</label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" id="refund_deduction_pct" name="deduction_percentage" class="form-control" min="0" max="100" step="0.1" placeholder="e.g. 10">
+                                <span class="input-group-text bg-light">%</span>
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">Optional % fee cut</small>
+                        </div>
+
+                        <!-- Deduction Amount -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Deduction Fee Amount</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-light refund-currency-symbol">$</span>
+                                <input type="number" id="refund_deduction_amount" name="deduction_amount" class="form-control" min="0" step="0.01" value="0.00">
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">Amount retained by institute</small>
+                        </div>
+
+                        <!-- Net Refund Amount (Readonly) -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-primary">Net Refund Amount to Student <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-primary text-white fw-bold refund-currency-code">USD $</span>
+                                <input type="number" name="refund_amount" id="refund_net_amount" class="form-control form-control-lg fw-bold text-primary bg-light" min="0.00" step="0.01" readonly required>
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">Calculated automatically based on option & deduction</small>
+                        </div>
+
+                        <!-- Reason / Note -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Reason for Refund & Fee Deduction <span class="text-danger">*</span></label>
+                            <textarea name="reason_note" class="form-control form-control-sm" rows="3" required placeholder="Write details / note explaining why refund or fee deduction is being processed..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-warning rounded-pill px-4 fw-bold">
+                        <i class="fas fa-check-circle me-1"></i> Confirm & Issue Refund
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endpush
