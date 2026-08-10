@@ -70,7 +70,16 @@
                             <span class="nav-link-text ps-1">My Pre-Assessment</span>
                         </div>
                     </a>
+
+                    <!-- Direct Chatting -->
+                    <a class="nav-link" href="<?php echo e(route('student.chat.index')); ?>" role="button">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-comments"></span></span>
+                            <span class="nav-link-text ps-1">Chat / Messages</span>
+                        </div>
+                    </a>
                 </li>
+
                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if (\Illuminate\Support\Facades\Blade::check('hasrole', 'Student')): ?>
@@ -234,7 +243,18 @@
                 <?php endif; ?>
 
                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$isStudent): ?>
+                <!-- ==================== Student Chatting ==================== -->
+                <li class="nav-item">
+                    <a class="nav-link" href="<?php echo e(route('admin.chats.index')); ?>">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-comments"></span></span>
+                            <span class="nav-link-text ps-1">Student Chatting</span>
+                        </div>
+                    </a>
+                </li>
+
                 <!-- ==================== Pre-Assessment ==================== -->
+
                 <li class="nav-item">
                     <a class="nav-link" href="<?php echo e(route('admin.pre.assessments.index')); ?>">
                         <div class="d-flex align-items-center">

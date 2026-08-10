@@ -70,7 +70,16 @@
                             <span class="nav-link-text ps-1">My Pre-Assessment</span>
                         </div>
                     </a>
+
+                    <!-- Direct Chatting -->
+                    <a class="nav-link" href="{{ route('student.chat.index') }}" role="button">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-comments"></span></span>
+                            <span class="nav-link-text ps-1">Chat / Messages</span>
+                        </div>
+                    </a>
                 </li>
+
                 @endhasrole
 
                 @hasrole('Student')
@@ -234,7 +243,18 @@
                 @endcanany
 
                 @if(!$isStudent)
+                <!-- ==================== Student Chatting ==================== -->
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('admin.chats.index') }}">
+                        <div class="d-flex align-items-center">
+                            <span class="nav-link-icon"><span class="fas fa-comments"></span></span>
+                            <span class="nav-link-text ps-1">Student Chatting</span>
+                        </div>
+                    </a>
+                </li>
+
                 <!-- ==================== Pre-Assessment ==================== -->
+
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('admin.pre.assessments.index') }}">
                         <div class="d-flex align-items-center">

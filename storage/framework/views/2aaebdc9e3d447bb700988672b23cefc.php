@@ -51,15 +51,19 @@
 /* Custom Unified Nav Bar Styling */
 .custom-profile-tabs {
     border-bottom: none;
+    white-space: nowrap;
+    display: flex;
+    flex-wrap: nowrap !important;
 }
 .custom-profile-tabs .nav-link {
-    font-size: 0.92rem;
+    font-size: 0.86rem;
     color: #475569;
     border-radius: 8px 8px 0 0;
     border: none;
     border-bottom: 3px solid transparent;
-    padding: 0.75rem 1.25rem;
+    padding: 0.55rem 0.85rem;
     transition: all 0.2s ease-in-out;
+    white-space: nowrap;
 }
 .custom-profile-tabs .nav-link:hover {
     color: #1e293b;
@@ -181,10 +185,10 @@
                 </div>
             </div>
 
-            <!-- Unified Top Navigation Bar (Profile, Course, Letters, Invoices, Chatting, Email, Support) -->
-            <div class="px-3 pt-2 bg-light border-bottom">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <ul class="nav nav-tabs custom-profile-tabs border-0 align-items-center flex-wrap" id="studentProfileTabs" role="tablist">
+            <!-- Unified Top Navigation Bar (Profile, Course, Letters, Invoices, Chatting, Email, Support, Terminate) -->
+            <div class="px-3 pt-2 bg-light border-bottom overflow-auto" style="scrollbar-width: thin;">
+                <div class="d-flex justify-content-between align-items-center flex-nowrap gap-1">
+                    <ul class="nav nav-tabs custom-profile-tabs border-0 align-items-center flex-nowrap" id="studentProfileTabs" role="tablist" style="white-space: nowrap;">
                         <!-- 1. Profile Tab -->
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="tab-profile-btn" data-bs-toggle="tab" data-bs-target="#tab-profile" type="button" role="tab" aria-controls="tab-profile" aria-selected="true">
@@ -212,22 +216,37 @@
                             </button>
                         </li>
                         <!-- 5. Chatting Button -->
-                        <li class="nav-item my-1 ms-md-2">
-                            <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Chatting', text: 'Chatting option is coming soon!', icon: 'info'})">
+                        <li class="nav-item my-1 ms-md-1">
+                            <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 text-nowrap" style="font-size: 0.82rem;" onclick="Swal.fire({title: 'Chatting', text: 'Chatting option is coming soon!', icon: 'info'})">
                                 <i class="fas fa-comments me-1 text-info"></i> Chatting
                             </a>
                         </li>
                         <!-- 6. Email Button -->
                         <li class="nav-item my-1 ms-1">
-                            <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Email', text: 'Email communication option is coming soon!', icon: 'info'})">
+                            <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 text-nowrap" style="font-size: 0.82rem;" onclick="Swal.fire({title: 'Email', text: 'Email communication option is coming soon!', icon: 'info'})">
                                 <i class="fas fa-envelope me-1 text-warning"></i> Email
                             </a>
                         </li>
                         <!-- 7. Support Button -->
                         <li class="nav-item my-1 ms-1">
-                            <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="Swal.fire({title: 'Support', text: 'Support ticket/queries option is coming soon!', icon: 'info'})">
+                            <a href="#" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 text-nowrap" style="font-size: 0.82rem;" onclick="Swal.fire({title: 'Support', text: 'Support ticket/queries option is coming soon!', icon: 'info'})">
                                 <i class="fas fa-headset me-1 text-success"></i> Support
                             </a>
+                        </li>
+                        <!-- 8. Terminate / Re-enroll Student Button -->
+                        <li class="nav-item my-1 ms-1">
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($student->enrolment_status === 'terminated'): ?>
+                                <form action="<?php echo e(route('admin.students.reinstall', $student->id)); ?>" method="POST" class="d-inline">
+                                    <?php echo csrf_field(); ?>
+                                    <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-2.5 py-1 text-nowrap fw-semibold" style="font-size: 0.82rem;" title="Re-enroll Student">
+                                        <i class="fas fa-undo me-1 text-success"></i> Re-enroll Student
+                                    </button>
+                                </form>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 text-nowrap fw-semibold" style="font-size: 0.82rem;" data-bs-toggle="modal" data-bs-target="#terminateStudentModal" title="Terminate / Discontinue Student">
+                                    <i class="fas fa-user-slash me-1 text-danger"></i> Terminate Student
+                                </button>
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </li>
                     </ul>
                 </div>
@@ -991,6 +1010,7 @@
                                                                     </button>
                                                                     <?php
                                                                         $instPaidVal = floatval($inst->paid_amount ?? 0);
+                                                                        $instDueVal = max(0, floatval($inst->amount - $instPaidVal));
                                                                     ?>
                                                                     <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($instPaidVal > 0): ?>
                                                                         <button type="button" 
@@ -1011,6 +1031,30 @@
                                                                                 data-bs-toggle="tooltip" 
                                                                                 title="No paid amount to refund">
                                                                             <i class="fas fa-undo"></i>
+                                                                        </button>
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!in_array($inst->status, ['paid', 'waived', 'refunded']) && $instDueVal > 0): ?>
+                                                                        <button type="button" 
+                                                                                class="btn btn-xs btn-outline-purple apply-discount-btn" 
+                                                                                style="color: #6f42c1; border-color: #6f42c1;"
+                                                                                data-type="installment"
+                                                                                data-id="<?php echo e($inst->id); ?>" 
+                                                                                data-title="Installment <?php echo e($inst->installment_number); ?>" 
+                                                                                data-amount="<?php echo e($inst->amount); ?>" 
+                                                                                data-paid="<?php echo e($instPaidVal); ?>" 
+                                                                                data-due="<?php echo e($instDueVal); ?>" 
+                                                                                data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
+                                                                                data-bs-toggle="tooltip" 
+                                                                                title="Apply Discount">
+                                                                            <i class="fas fa-percent"></i>
+                                                                        </button>
+                                                                    <?php else: ?>
+                                                                        <button type="button" 
+                                                                                class="btn btn-xs btn-outline-secondary" 
+                                                                                disabled 
+                                                                                data-bs-toggle="tooltip" 
+                                                                                title="Discount not applicable">
+                                                                            <i class="fas fa-percent"></i>
                                                                         </button>
                                                                     <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                 </div>
@@ -1138,6 +1182,7 @@
                                                                         </button>
                                                                         <?php
                                                                             $costPaidVal = floatval($cost->paid_amount > 0 ? $cost->paid_amount : ($cost->status === 'paid' ? $cost->amount : 0));
+                                                                            $costDueVal = max(0, floatval($cost->amount - $costPaidVal));
                                                                         ?>
                                                                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($costPaidVal > 0): ?>
                                                                             <button type="button" 
@@ -1158,6 +1203,30 @@
                                                                                     data-bs-toggle="tooltip" 
                                                                                     title="No paid amount to refund">
                                                                                 <i class="fas fa-undo"></i>
+                                                                            </button>
+                                                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!in_array($cost->status, ['paid', 'waived', 'refunded']) && $costDueVal > 0): ?>
+                                                                            <button type="button" 
+                                                                                    class="btn btn-xs btn-outline-purple apply-discount-btn" 
+                                                                                    style="color: #6f42c1; border-color: #6f42c1;"
+                                                                                    data-type="additional_cost"
+                                                                                    data-id="<?php echo e($cost->id); ?>" 
+                                                                                    data-title="<?php echo e($cost->cost_name); ?>" 
+                                                                                    data-amount="<?php echo e($cost->amount); ?>" 
+                                                                                    data-paid="<?php echo e($costPaidVal); ?>" 
+                                                                                    data-due="<?php echo e($costDueVal); ?>" 
+                                                                                    data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
+                                                                                    data-bs-toggle="tooltip" 
+                                                                                    title="Apply Discount">
+                                                                                <i class="fas fa-percent"></i>
+                                                                            </button>
+                                                                        <?php else: ?>
+                                                                            <button type="button" 
+                                                                                    class="btn btn-xs btn-outline-secondary" 
+                                                                                    disabled 
+                                                                                    data-bs-toggle="tooltip" 
+                                                                                    title="Discount not applicable">
+                                                                                <i class="fas fa-percent"></i>
                                                                             </button>
                                                                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                     </div>
@@ -2202,7 +2271,9 @@ $(document).ready(function() {
         modal.show();
     });
     function getCurrencySymbolJS(code) {
-        code = (code || 'GBP').toUpperCase().trim();
+        if (!code) return '£';
+        const codeStr = String(code).trim();
+        const upper = codeStr.toUpperCase();
         const symbols = {
             'USD': '$',
             'GBP': '£',
@@ -2216,16 +2287,50 @@ $(document).ready(function() {
             'AED': 'AED',
             'SAR': 'SAR'
         };
-        return symbols[code] || '$';
+
+        if (symbols[upper]) {
+            return symbols[upper];
+        }
+
+        for (let key in symbols) {
+            if (symbols[key] === codeStr) {
+                return codeStr;
+            }
+        }
+
+        const match = codeStr.match(/\(([^)]+)\)/);
+        if (match && match[1]) {
+            return match[1].trim();
+        }
+
+        for (let c in symbols) {
+            if (upper.includes(c)) {
+                return symbols[c];
+            }
+            if (codeStr.includes(symbols[c])) {
+                return symbols[c];
+            }
+        }
+
+        return codeStr;
     }
 
     function formatCurrencyJS(amount, code) {
-        code = (code || 'GBP').toUpperCase().trim();
-        const symbol = getCurrencySymbolJS(code);
+        const codeRaw = String(code || 'GBP').trim();
+        const symbol = getCurrencySymbolJS(codeRaw);
+        let cleanCode = codeRaw.replace(/\s*\(.*?\)/, '').toUpperCase().trim();
+        if (cleanCode === symbol) {
+            cleanCode = '';
+        }
+
         const num = parseFloat(amount) || 0;
         const formatted = Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const prefix = num < 0 ? '-' : '';
-        return `${prefix}${code} ${symbol} ${formatted}`;
+
+        if (cleanCode && cleanCode !== symbol) {
+            return `${prefix}${cleanCode} ${symbol} ${formatted}`;
+        }
+        return `${prefix}${symbol} ${formatted}`;
     }
 
     function calculateRefundModal() {
@@ -2324,6 +2429,90 @@ $(document).ready(function() {
         const pct = maxPaid > 0 ? (deduction / maxPaid) * 100 : 0;
         $('#refund_deduction_pct').val(pct > 0 ? pct.toFixed(1) : '');
         calculateRefundModal();
+    });
+
+    // Discount Modal Calculation Logic
+    function calculateDiscountModal() {
+        const remainingDue = parseFloat($('#applyDiscountForm').data('due')) || 0;
+        const currency = $('#applyDiscountForm').data('currency') || 'GBP';
+        const mode = $('input[name="discount_mode"]:checked').val();
+        let discountAmt = 0;
+
+        if (mode === 'full_waive') {
+            discountAmt = remainingDue;
+        } else if (mode === 'percentage') {
+            const pct = parseFloat($('#discount_value_input').val()) || 0;
+            discountAmt = (remainingDue * Math.min(100, Math.max(0, pct))) / 100;
+        } else {
+            discountAmt = parseFloat($('#discount_value_input').val()) || 0;
+        }
+
+        if (discountAmt > remainingDue) {
+            discountAmt = remainingDue;
+        }
+
+        const newDue = Math.max(0, remainingDue - discountAmt);
+
+        $('#discount_calculated_display').text(formatCurrencyJS(discountAmt, currency));
+        $('#discount_new_due_display').text(formatCurrencyJS(newDue, currency));
+    }
+
+    // Apply Discount Button Click Handler
+    $(document).on('click', '.apply-discount-btn', function() {
+        const type = $(this).data('type');
+        const id = $(this).data('id');
+        const title = $(this).data('title');
+        const totalAmt = parseFloat($(this).data('amount')) || 0;
+        const paidAmt = parseFloat($(this).data('paid')) || 0;
+        const dueAmt = parseFloat($(this).data('due')) || 0;
+        const currency = $(this).data('currency') || 'GBP';
+
+        $('#discount_item_title').text(title);
+        $('#discount_total_display').text(formatCurrencyJS(totalAmt, currency));
+        $('#discount_paid_display').text(formatCurrencyJS(paidAmt, currency));
+        $('#discount_due_display').text(formatCurrencyJS(dueAmt, currency));
+        $('.discount-currency-symbol').text(getCurrencySymbolJS(currency));
+
+        $('#discount_mode_amount').prop('checked', true);
+        $('#discount_value_container').removeClass('d-none');
+        $('#discount_value_label').html('Discount Amount <span class="text-danger">*</span>');
+        $('.discount-currency-symbol').removeClass('d-none');
+        $('#discount_value_input').val('').prop('required', true);
+
+        const actionUrl = type === 'installment' ? `/admin/installments/${id}/discount` : `/admin/additional-costs/${id}/discount`;
+        $('#applyDiscountForm').attr('action', actionUrl);
+        $('#applyDiscountForm').data('due', dueAmt);
+        $('#applyDiscountForm').data('currency', currency);
+
+        calculateDiscountModal();
+
+        var modal = new bootstrap.Modal(document.getElementById('applyDiscountModal'));
+        modal.show();
+    });
+
+    // Discount Mode Toggle
+    $(document).on('change', 'input[name="discount_mode"]', function() {
+        const mode = $(this).val();
+        if (mode === 'full_waive') {
+            $('#discount_value_container').addClass('d-none');
+            $('#discount_value_input').prop('required', false);
+        } else if (mode === 'percentage') {
+            $('#discount_value_container').removeClass('d-none');
+            $('#discount_value_label').html('Discount Percentage (%) <span class="text-danger">*</span>');
+            $('.discount-currency-symbol').addClass('d-none');
+            $('#discount_value_input').prop('required', true).focus();
+        } else {
+            $('#discount_value_container').removeClass('d-none');
+            $('#discount_value_label').html('Discount Amount <span class="text-danger">*</span>');
+            $('.discount-currency-symbol').removeClass('d-none');
+            $('#discount_value_input').prop('required', true).focus();
+        }
+        calculateDiscountModal();
+    });
+
+    // Discount value input event handler
+    $(document).on('input', '#discount_value_input', function() {
+        calculateDiscountModal();
     });
 
     // Handle Active Tab from URL (e.g. ?tab=letters, ?tab=invoices, ?tab=course, ?tab=profile)
@@ -2447,6 +2636,89 @@ $(document).ready(function() {
                     <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-sm btn-warning rounded-pill px-4 fw-bold">
                         <i class="fas fa-check-circle me-1"></i> Confirm & Issue Refund
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Discount Modal -->
+<div class="modal fade" id="applyDiscountModal" tabindex="-1" aria-labelledby="applyDiscountModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header text-white border-0" style="background-color: #6f42c1;">
+                <h5 class="modal-title fw-bold text-white" id="applyDiscountModalLabel">
+                    <i class="fas fa-percent me-2"></i> Apply Discount / Fee Waiver
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="applyDiscountForm" method="POST" action="">
+                <?php echo csrf_field(); ?>
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border-start border-4 p-3 mb-3" style="border-left: 4px solid #6f42c1 !important;">
+                        <div class="fw-bold text-dark" id="discount_item_title">Item Name</div>
+                        <div class="d-flex justify-content-between text-muted small mt-1">
+                            <span>Total Item Fee: <strong class="text-dark" id="discount_total_display">0.00</strong></span>
+                            <span>Paid So Far: <strong class="text-success" id="discount_paid_display">0.00</strong></span>
+                        </div>
+                        <div class="small text-muted mt-1">Current Due Balance: <span class="fw-bold text-danger" id="discount_due_display">0.00</span></div>
+                    </div>
+
+                    <!-- Discount Mode Options -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-dark d-block">Select Discount Mode</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="discount_mode" id="discount_mode_amount" value="amount" checked autocomplete="off">
+                            <label class="btn btn-outline-purple btn-sm fw-bold py-2" for="discount_mode_amount" style="border-color:#6f42c1; color:#6f42c1;">
+                                <i class="fas fa-coins me-1"></i> Fixed Amount
+                            </label>
+
+                            <input type="radio" class="btn-check" name="discount_mode" id="discount_mode_percentage" value="percentage" autocomplete="off">
+                            <label class="btn btn-outline-purple btn-sm fw-bold py-2" for="discount_mode_percentage" style="border-color:#6f42c1; color:#6f42c1;">
+                                <i class="fas fa-percentage me-1"></i> Percentage (%)
+                            </label>
+
+                            <input type="radio" class="btn-check" name="discount_mode" id="discount_mode_full" value="full_waive" autocomplete="off">
+                            <label class="btn btn-outline-danger btn-sm fw-bold py-2" for="discount_mode_full">
+                                <i class="fas fa-slash me-1"></i> Full Waiver (100%)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Discount Input Value Container -->
+                    <div id="discount_value_container" class="mb-3">
+                        <label class="form-label fw-bold text-dark small" id="discount_value_label">
+                            Discount Amount <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light discount-currency-symbol fw-bold">$</span>
+                            <input type="number" id="discount_value_input" name="discount_value" class="form-control form-control-lg fw-bold text-purple border-purple" min="0" step="0.01" placeholder="e.g. 100.00">
+                        </div>
+                    </div>
+
+                    <!-- Calculation Summary Box -->
+                    <div class="p-3 bg-light rounded border mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted">Calculated Discount Amount:</small>
+                            <span class="fw-bold text-success fs-6" id="discount_calculated_display">0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">New Remaining Due Balance:</small>
+                            <span class="fw-bold text-primary fs-6" id="discount_new_due_display">0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Reason / Note -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Reason for Discount / Waiver <span class="text-danger">*</span></label>
+                        <textarea name="reason_note" class="form-control form-control-sm" rows="3" required placeholder="Write brief note / reason for applying discount..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm text-white rounded-pill px-4 fw-bold" style="background-color: #6f42c1;">
+                        <i class="fas fa-check-circle me-1"></i> Apply Discount
                     </button>
                 </div>
             </form>

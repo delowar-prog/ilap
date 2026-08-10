@@ -65,6 +65,11 @@ class StudentProfileController extends Controller
         // Calculate Completion Percentage
         $completionPercent = $student->getCompletionPercentage();
 
+        // Calculate unread chat messages count
+        $unreadChatCount = \App\Models\Message::whereHas('conversation', function ($q) use ($student) {
+            $q->where('student_id', $student->id);
+        })->where('sender_id', '!=', $user->id)->where('is_read', false)->count();
+
         return view('backend.student.student_dashbord', compact(
             'student',
             'preAssessment',
@@ -73,9 +78,11 @@ class StudentProfileController extends Controller
             'referees',
             'documents',
             'application',
-            'completionPercent'
+            'completionPercent',
+            'unreadChatCount'
         ));
     }
+
 
     public function profile()
     {

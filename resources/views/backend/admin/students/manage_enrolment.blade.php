@@ -661,7 +661,9 @@
         });
 
         function getCurrencySymbolJS(code) {
-            code = (code || 'GBP').toUpperCase().trim();
+            if (!code) return '£';
+            const codeStr = String(code).trim();
+            const upper = codeStr.toUpperCase();
             const symbols = {
                 'USD': '$',
                 'GBP': '£',
@@ -675,16 +677,50 @@
                 'AED': 'AED',
                 'SAR': 'SAR'
             };
-            return symbols[code] || '$';
+
+            if (symbols[upper]) {
+                return symbols[upper];
+            }
+
+            for (let key in symbols) {
+                if (symbols[key] === codeStr) {
+                    return codeStr;
+                }
+            }
+
+            const match = codeStr.match(/\(([^)]+)\)/);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+
+            for (let c in symbols) {
+                if (upper.includes(c)) {
+                    return symbols[c];
+                }
+                if (codeStr.includes(symbols[c])) {
+                    return symbols[c];
+                }
+            }
+
+            return codeStr;
         }
 
         function formatCurrencyJS(amount, code) {
-            code = (code || 'GBP').toUpperCase().trim();
-            const symbol = getCurrencySymbolJS(code);
+            const codeRaw = String(code || 'GBP').trim();
+            const symbol = getCurrencySymbolJS(codeRaw);
+            let cleanCode = codeRaw.replace(/\s*\(.*?\)/, '').toUpperCase().trim();
+            if (cleanCode === symbol) {
+                cleanCode = '';
+            }
+
             const num = parseFloat(amount) || 0;
             const formatted = Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const prefix = num < 0 ? '-' : '';
-            return `${prefix}${code} ${symbol} ${formatted}`;
+
+            if (cleanCode && cleanCode !== symbol) {
+                return `${prefix}${cleanCode} ${symbol} ${formatted}`;
+            }
+            return `${prefix}${symbol} ${formatted}`;
         }
 
         // Perform calculation updates and grand validation in real-time

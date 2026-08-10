@@ -54,6 +54,12 @@ class User extends Authenticatable
         return $this->belongsTo(Campus::class);
     }
 
+    public function conversations()
+    {
+        return $this->hasMany(Conversation::class);
+    }
+
+
 
     /**
      * কে কে Impersonate (Login As) করতে পারবে তা নির্ধারণ করে।

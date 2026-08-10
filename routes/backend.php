@@ -18,6 +18,8 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StateController;
 use App\Http\Controllers\Student\PreAssessmentController;
 use App\Http\Controllers\Student\StudentProfileController;
+use App\Http\Controllers\Student\StudentChatController;
+use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Lab404\Impersonate\Controllers\ImpersonateController;
@@ -67,11 +69,24 @@ Route::middleware(['auth', 'role:Student', 'pre.assessment'])->prefix('student')
     Route::post('/profile/referees', [StudentProfileController::class, 'updateReferees'])->name('profile.referees');
     Route::post('/profile/upload', [StudentProfileController::class, 'uploadDocument'])->name('profile.upload');
     Route::post('/additional-cost/{cost}/pay', [StudentProfileController::class, 'payAdditionalCost'])->name('additional_cost.pay');
+
+    // Student Chatting Routes
+    Route::get('/chat', [StudentChatController::class, 'index'])->name('chat.index');
+    Route::post('/chat', [StudentChatController::class, 'store'])->name('chat.store');
+    Route::post('/chat/{conversation}/send', [StudentChatController::class, 'sendMessage'])->name('chat.send');
+    Route::get('/chat/{conversation}/fetch', [StudentChatController::class, 'fetchMessages'])->name('chat.fetch');
 });
 
 // ==================== Pre-Assessment Admin Routes ====================
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    // Admin Chatting Routes
+    Route::get('/chats', [AdminChatController::class, 'index'])->name('chats.index');
+    Route::post('/chats/{conversation}/send', [AdminChatController::class, 'sendMessage'])->name('chats.send');
+    Route::post('/chats/{conversation}/toggle-status', [AdminChatController::class, 'toggleStatus'])->name('chats.toggle_status');
+    Route::get('/chats/{conversation}/fetch', [AdminChatController::class, 'fetchMessages'])->name('chats.fetch');
+
     Route::get('/pre-assessments', [PreAssessmentAdminController::class, 'index'])
+
         ->name('pre.assessments.index');
     Route::get('/pre-assessments/{id}', [PreAssessmentAdminController::class, 'show'])
         ->name('pre.assessments.show');
@@ -101,10 +116,12 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::post('/installments/{installment}/approve-payment', [StudentController::class, 'approveInstallmentPayment'])->name('installments.approve_payment');
     Route::post('/installments/{installment}/reject-payment', [StudentController::class, 'rejectInstallmentPayment'])->name('installments.reject_payment');
     Route::post('/installments/{installment}/refund', [StudentController::class, 'refundInstallment'])->name('installments.refund');
+    Route::post('/installments/{installment}/discount', [StudentController::class, 'discountInstallment'])->name('installments.discount');
     Route::post('/additional-costs/{cost}/record-payment', [StudentController::class, 'recordAdditionalCostPayment'])->name('additional_costs.record_payment');
     Route::post('/additional-costs/{cost}/approve-payment', [StudentController::class, 'approveAdditionalCostPayment'])->name('additional_costs.approve_payment');
     Route::post('/additional-costs/{cost}/reject-payment', [StudentController::class, 'rejectAdditionalCostPayment'])->name('additional_costs.reject_payment');
     Route::post('/additional-costs/{cost}/refund', [StudentController::class, 'refundAdditionalCost'])->name('additional_costs.refund');
+    Route::post('/additional-costs/{cost}/discount', [StudentController::class, 'discountAdditionalCost'])->name('additional_costs.discount');
     Route::resource('students', StudentController::class)->only(['index', 'show']);
 
     // ── Official Signatures & Seals CRUD ──────────────────────────────

@@ -2,10 +2,15 @@
 
 if (!function_exists('get_currency_symbol')) {
     /**
-     * Get currency symbol for a currency code.
+     * Get currency symbol for a currency code or symbol string.
      */
     function get_currency_symbol($code = 'GBP') {
-        $code = strtoupper(trim($code ?? 'GBP'));
+        if (empty($code)) {
+            return '£';
+        }
+        $codeStr = trim($code);
+        $upper = strtoupper($codeStr);
+
         $symbols = [
             'USD' => '$',
             'GBP' => '£',
@@ -19,26 +24,54 @@ if (!function_exists('get_currency_symbol')) {
             'AED' => 'AED',
             'SAR' => 'SAR',
         ];
-        return $symbols[$code] ?? '$';
+
+        if (isset($symbols[$upper])) {
+            return $symbols[$upper];
+        }
+
+        if (in_array($codeStr, $symbols, true)) {
+            return $codeStr;
+        }
+
+        if (preg_match('/\(([^)]+)\)/', $codeStr, $matches)) {
+            return trim($matches[1]);
+        }
+
+        foreach ($symbols as $c => $s) {
+            if (str_contains($upper, $c)) {
+                return $s;
+            }
+            if (str_contains($codeStr, $s)) {
+                return $s;
+            }
+        }
+
+        return $codeStr;
     }
 }
 
 if (!function_exists('format_currency')) {
     /**
-     * Format currency amount with currency code and symbol before amount.
+     * Format currency amount with currency code and matching symbol before amount.
+     * Example: format_currency(100, 'GBP') -> "GBP £ 100.00"
      * Example: format_currency(100, 'USD') -> "USD $ 100.00"
-     * Example: format_currency(-500, 'USD') -> "-USD $ 500.00"
+     * Example: format_currency(100, 'BDT') -> "BDT ৳ 100.00"
      */
     function format_currency($amount, $code = 'GBP', $showCode = true) {
-        $code = strtoupper(trim($code ?? 'GBP'));
-        $symbol = get_currency_symbol($code);
+        $codeRaw = trim($code ?? 'GBP');
+        $symbol = get_currency_symbol($codeRaw);
+        
+        $cleanCode = strtoupper(trim(preg_replace('/\s*\(.*?\)/', '', $codeRaw)));
+        if ($cleanCode === $symbol) {
+            $cleanCode = '';
+        }
+
         $num = floatval($amount ?? 0);
         $formatted = number_format(abs($num), 2);
-        
         $prefix = ($num < 0) ? '-' : '';
-        
-        if ($showCode && $code) {
-            return "{$prefix}{$code} {$symbol} {$formatted}";
+
+        if ($showCode && !empty($cleanCode) && $cleanCode !== $symbol) {
+            return "{$prefix}{$cleanCode} {$symbol} {$formatted}";
         }
         return "{$prefix}{$symbol} {$formatted}";
     }

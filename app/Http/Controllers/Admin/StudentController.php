@@ -745,4 +745,166 @@ class StudentController extends Controller
 
         return back()->with('success', 'Refund of ' . format_currency($refundAmount, $application->course->currency ?? 'GBP') . ' for cost "' . $cost->cost_name . '" processed successfully.');
     }
+
+    public function discountInstallment(Request $request, $installmentId)
+    {
+        $installment = \App\Models\StudentApplicationInstallment::findOrFail($installmentId);
+        $application = $installment->application;
+
+        $paidAmount = floatval($installment->paid_amount ?? 0);
+        $currentAmount = floatval($installment->amount ?? 0);
+        $remainingDue = max(0, $currentAmount - $paidAmount);
+
+        if ($remainingDue <= 0) {
+            return back()->with('error', 'This installment has no remaining due balance eligible for discount.');
+        }
+
+        $request->validate([
+            'discount_mode' => 'required|in:amount,percentage,full_waive',
+            'discount_value' => 'nullable|numeric|min:0',
+            'reason_note' => 'required|string|max:1000',
+        ]);
+
+        $mode = $request->discount_mode;
+        $val = floatval($request->discount_value ?? 0);
+        $discountAmount = 0;
+
+        if ($mode === 'full_waive') {
+            $discountAmount = $remainingDue;
+        } elseif ($mode === 'percentage') {
+            if ($val <= 0 || $val > 100) {
+                return back()->with('error', 'Discount percentage must be between 0 and 100.');
+            }
+            $discountAmount = round(($remainingDue * $val) / 100, 2);
+        } else {
+            if ($val <= 0) {
+                return back()->with('error', 'Discount amount must be greater than zero.');
+            }
+            $discountAmount = round($val, 2);
+        }
+
+        if ($discountAmount > $remainingDue + 0.01) {
+            return back()->with('error', 'Discount amount cannot exceed the remaining due of ' . format_currency($remainingDue, $application->course->currency ?? 'GBP') . '.');
+        }
+
+        $discountAmount = min($remainingDue, $discountAmount);
+
+        \DB::transaction(function() use ($request, $installment, $application, $remainingDue, $discountAmount, $paidAmount) {
+            $currency = $application->course->currency ?? 'GBP';
+            $formattedDiscount = format_currency($discountAmount, $currency);
+            $reasonNote = trim($request->reason_note);
+            $noteText = "Discount applied: {$formattedDiscount} ({$reasonNote})";
+
+            $newAmount = max($paidAmount, $installment->amount - $discountAmount);
+            $installment->amount = $newAmount;
+
+            if ($installment->note) {
+                $installment->note .= " | " . $noteText;
+            } else {
+                $installment->note = $noteText;
+            }
+
+            if ($discountAmount >= $remainingDue) {
+                if ($paidAmount > 0) {
+                    $installment->status = 'paid';
+                } else {
+                    $installment->status = 'waived';
+                }
+            } else {
+                if ($paidAmount > 0) {
+                    $installment->status = 'partially_paid';
+                } else {
+                    $installment->status = 'pending';
+                }
+            }
+            $installment->save();
+
+            // Recalculate Application Total Fees
+            $netCourseFee = $application->installments()->sum('amount');
+            $additionalCostsFee = $application->additionalCosts()->sum('amount');
+            $application->net_course_fee = $netCourseFee;
+            $application->total_fee = $netCourseFee + $additionalCostsFee;
+            $application->save();
+        });
+
+        return back()->with('success', 'Discount of ' . format_currency($discountAmount, $application->course->currency ?? 'GBP') . ' applied successfully.');
+    }
+
+    public function discountAdditionalCost(Request $request, $costId)
+    {
+        $cost = \App\Models\StudentApplicationAdditionalCost::findOrFail($costId);
+        $application = $cost->application;
+
+        $paidAmount = floatval($cost->paid_amount ?? 0);
+        $currentAmount = floatval($cost->amount ?? 0);
+        $remainingDue = max(0, $currentAmount - $paidAmount);
+
+        if ($remainingDue <= 0) {
+            return back()->with('error', 'This additional cost item has no remaining due balance eligible for discount.');
+        }
+
+        $request->validate([
+            'discount_mode' => 'required|in:amount,percentage,full_waive',
+            'discount_value' => 'nullable|numeric|min:0',
+            'reason_note' => 'required|string|max:1000',
+        ]);
+
+        $mode = $request->discount_mode;
+        $val = floatval($request->discount_value ?? 0);
+        $discountAmount = 0;
+
+        if ($mode === 'full_waive') {
+            $discountAmount = $remainingDue;
+        } elseif ($mode === 'percentage') {
+            if ($val <= 0 || $val > 100) {
+                return back()->with('error', 'Discount percentage must be between 0 and 100.');
+            }
+            $discountAmount = round(($remainingDue * $val) / 100, 2);
+        } else {
+            if ($val <= 0) {
+                return back()->with('error', 'Discount amount must be greater than zero.');
+            }
+            $discountAmount = round($val, 2);
+        }
+
+        if ($discountAmount > $remainingDue + 0.01) {
+            return back()->with('error', 'Discount amount cannot exceed the remaining due of ' . format_currency($remainingDue, $application->course->currency ?? 'GBP') . '.');
+        }
+
+        $discountAmount = min($remainingDue, $discountAmount);
+
+        \DB::transaction(function() use ($request, $cost, $application, $remainingDue, $discountAmount, $paidAmount) {
+            $currency = $application->course->currency ?? 'GBP';
+            $formattedDiscount = format_currency($discountAmount, $currency);
+            $reasonNote = trim($request->reason_note);
+            $noteText = "Discount applied: {$formattedDiscount} ({$reasonNote})";
+
+            $newAmount = max($paidAmount, $cost->amount - $discountAmount);
+            $cost->amount = $newAmount;
+
+            if ($cost->note) {
+                $cost->note .= " | " . $noteText;
+            } else {
+                $cost->note = $noteText;
+            }
+
+            if ($discountAmount >= $remainingDue) {
+                if ($paidAmount > 0) {
+                    $cost->status = 'paid';
+                } else {
+                    $cost->status = 'waived';
+                }
+            }
+            $cost->save();
+
+            // Recalculate Application Total Fees
+            $netCourseFee = $application->installments()->sum('amount');
+            $additionalCostsFee = $application->additionalCosts()->sum('amount');
+            $application->net_course_fee = $netCourseFee;
+            $application->total_fee = $netCourseFee + $additionalCostsFee;
+            $application->save();
+        });
+
+        return back()->with('success', 'Discount of ' . format_currency($discountAmount, $application->course->currency ?? 'GBP') . ' for cost "' . $cost->cost_name . '" applied successfully.');
+    }
 }

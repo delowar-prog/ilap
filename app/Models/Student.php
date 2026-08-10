@@ -53,6 +53,12 @@ class Student extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function conversations()
+    {
+        return $this->hasMany(Conversation::class);
+    }
+
+
     public function agent()
     {
         return $this->belongsTo(Agent::class);
