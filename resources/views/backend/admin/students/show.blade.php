@@ -1372,7 +1372,6 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
                                 <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-envelope-open-text text-primary me-2"></i> Generated Letters History</h5>
-                                <p class="text-muted small mb-0">View, preview, download, or send generated letters to this student.</p>
                             </div>
                             <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#generateLetterModal">
                                 <i class="fas fa-plus-circle me-1"></i> Add More
@@ -1380,8 +1379,27 @@
                         </div>
 
                         @if(isset($letterHistory) && $letterHistory->count() > 0)
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="small text-muted fw-semibold">Show</span>
+                                <select id="letterPerPageSelect" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <span class="small text-muted fw-semibold">entries</span>
+                            </div>
+                            <div>
+                                <div class="input-group input-group-sm" style="min-width: 260px;">
+                                    <span class="input-group-text bg-white text-muted border-end-0"><i class="fas fa-search"></i></span>
+                                    <input type="text" id="searchLetterInput" class="form-control form-control-sm border-start-0 ps-0" placeholder="Search letters...">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
-                            <table class="table table-hover table-striped align-middle border rounded-3 overflow-hidden">
+                            <table class="table table-hover table-striped align-middle border rounded-3 overflow-hidden" id="studentLettersTable">
                                 <thead class="table-light">
                                     <tr>
                                         <th>#</th>
@@ -1440,6 +1458,13 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-2 border-top gap-2">
+                            <div id="lettersTableInfo" class="small text-muted"></div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0" id="lettersPagination"></ul>
+                            </nav>
+                        </div>
                         @else
                         <div class="card border-dashed p-5 text-center bg-light">
                             <i class="fas fa-envelope-open text-muted fa-3x mb-3"></i>
@@ -1461,7 +1486,6 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <div>
                                 <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-file-invoice-dollar text-success me-2"></i> Generated Invoices History</h5>
-                                <p class="text-muted small mb-0">View, preview, download, or send generated invoice receipts to this student.</p>
                             </div>
                             <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm fw-bold" data-bs-toggle="modal" data-bs-target="#generateInvoiceModal">
                                 <i class="fas fa-plus-circle me-1"></i> Add More
@@ -1469,8 +1493,27 @@
                         </div>
 
                         @if(isset($invoiceHistory) && $invoiceHistory->count() > 0)
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="small text-muted fw-semibold">Show</span>
+                                <select id="invoicePerPageSelect" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="10" selected>10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <span class="small text-muted fw-semibold">entries</span>
+                            </div>
+                            <div>
+                                <div class="input-group input-group-sm" style="min-width: 260px;">
+                                    <span class="input-group-text bg-white text-muted border-end-0"><i class="fas fa-search"></i></span>
+                                    <input type="text" id="searchInvoiceInput" class="form-control form-control-sm border-start-0 ps-0" placeholder="Search invoices...">
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
-                            <table class="table table-hover table-striped align-middle border rounded-3 overflow-hidden">
+                            <table class="table table-hover table-striped align-middle border rounded-3 overflow-hidden" id="studentInvoicesTable">
                                 <thead class="table-light">
                                     <tr>
                                         <th>#</th>
@@ -1528,6 +1571,13 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                        </div>
+
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 pt-2 border-top gap-2">
+                            <div id="invoicesTableInfo" class="small text-muted"></div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0" id="invoicesPagination"></ul>
+                            </nav>
                         </div>
                         @else
                         <div class="card border-dashed p-5 text-center bg-light">
@@ -2259,7 +2309,128 @@ function openInvoiceModalForInstallment(installmentId) {
     }
 }
 
+function initTableSearchAndPagination(inputId, tableId, paginationId, infoId, perPageSelectId = null, defaultItemsPerPage = 10) {
+    const $input = $('#' + inputId);
+    const $table = $('#' + tableId);
+    const $pagination = $('#' + paginationId);
+    const $info = $('#' + infoId);
+    const $perPageSelect = perPageSelectId ? $('#' + perPageSelectId) : null;
+    
+    if (!$table.length) return;
+
+    let currentPage = 1;
+
+    function getItemsPerPage() {
+        if ($perPageSelect && $perPageSelect.length && $perPageSelect.val()) {
+            return parseInt($perPageSelect.val());
+        }
+        return defaultItemsPerPage;
+    }
+
+    function render() {
+        const itemsPerPage = getItemsPerPage();
+        const query = $input.val().toLowerCase().trim();
+        const $allRows = $table.find('tbody tr');
+        let $matchedRows = $allRows.filter(function() {
+            if (!query) return true;
+            return $(this).text().toLowerCase().indexOf(query) > -1;
+        });
+
+        $allRows.hide();
+
+        const totalItems = $matchedRows.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const startIdx = (currentPage - 1) * itemsPerPage;
+        const endIdx = startIdx + itemsPerPage;
+
+        $matchedRows.slice(startIdx, endIdx).show();
+
+        if (totalItems === 0) {
+            $info.html('<span class="text-muted"><i class="fas fa-info-circle me-1"></i> No matching records found.</span>');
+        } else {
+            const displayStart = startIdx + 1;
+            const displayEnd = Math.min(endIdx, totalItems);
+            $info.html(`Showing <strong>${displayStart}</strong> to <strong>${displayEnd}</strong> of <strong>${totalItems}</strong> entries`);
+        }
+
+        $pagination.empty();
+        if (totalPages <= 1) return;
+
+        const prevDisabled = currentPage === 1 ? 'disabled' : '';
+        $pagination.append(`
+            <li class="page-item ${prevDisabled}">
+                <button type="button" class="page-link page-link-prev" aria-label="Previous">&laquo;</button>
+            </li>
+        `);
+
+        for (let i = 1; i <= totalPages; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            $pagination.append(`
+                <li class="page-item ${activeClass}">
+                    <button type="button" class="page-link page-link-num" data-page="${i}">${i}</button>
+                </li>
+            `);
+        }
+
+        const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+        $pagination.append(`
+            <li class="page-item ${nextDisabled}">
+                <button type="button" class="page-link page-link-next" aria-label="Next">&raquo;</button>
+            </li>
+        `);
+    }
+
+    $input.on('keyup search input', function() {
+        currentPage = 1;
+        render();
+    });
+
+    if ($perPageSelect && $perPageSelect.length) {
+        $perPageSelect.on('change', function() {
+            currentPage = 1;
+            render();
+        });
+    }
+
+    $pagination.on('click', '.page-link-num', function() {
+        currentPage = parseInt($(this).data('page'));
+        render();
+    });
+
+    $pagination.on('click', '.page-link-prev', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            render();
+        }
+    });
+
+    $pagination.on('click', '.page-link-next', function() {
+        const itemsPerPage = getItemsPerPage();
+        const totalItems = $table.find('tbody tr').filter(function() {
+            const query = $input.val().toLowerCase().trim();
+            if (!query) return true;
+            return $(this).text().toLowerCase().indexOf(query) > -1;
+        }).length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+        if (currentPage < totalPages) {
+            currentPage++;
+            render();
+        }
+    });
+
+    render();
+}
+
 $(document).ready(function() {
+    // Initialize search and pagination for Student Letters and Invoices tables
+    initTableSearchAndPagination('searchLetterInput', 'studentLettersTable', 'lettersPagination', 'lettersTableInfo', 'letterPerPageSelect', 10);
+    initTableSearchAndPagination('searchInvoiceInput', 'studentInvoicesTable', 'invoicesPagination', 'invoicesTableInfo', 'invoicePerPageSelect', 10);
+
     // Summernote Initialization
     $('#modal_custom_content').summernote({
         height: 380,
