@@ -165,12 +165,21 @@ class StudentLetterController extends Controller
             return response()->json(['success' => false, 'html' => '<div class="alert alert-warning">Please select a valid template.</div>']);
         }
 
-        $parsedContent = $this->parsePlaceholders($template->content_body, $student, true);
+        $letterHeadImage = null;
+        if ($template->letter_head_id) {
+            $lh = DropdownOption::find($template->letter_head_id);
+            if ($lh && $lh->image_path) {
+                $letterHeadImage = asset('storage/' . $lh->image_path);
+            }
+        }
 
         return response()->json([
-            'success' => true,
-            'subject' => $this->parsePlaceholders($template->subject ?? '', $student, false),
-            'content' => $parsedContent
+            'success'           => true,
+            'subject'           => $template->title,
+            'content'           => $parsedContent,
+            'template_type'     => $template->type,
+            'letter_head_id'    => $template->letter_head_id,
+            'letter_head_image' => $letterHeadImage
         ]);
     }
 
@@ -197,16 +206,26 @@ class StudentLetterController extends Controller
                 : $template->content_body;
 
             $parsedContent = $this->parsePlaceholders($contentBody, $student, true);
-            $parsedSubject = $this->parsePlaceholders($template->subject ?? $template->title, $student, false);
+            $parsedSubject = $template->title;
+
+            $letterHeadId = $request->letter_head_id ?? ($template->letter_head_id ?? null);
+            $letterHeadImage = null;
+            if ($letterHeadId) {
+                $lh = \App\Models\DropdownOption::find($letterHeadId);
+                if ($lh && $lh->image_path && Storage::disk('public')->exists($lh->image_path)) {
+                    $letterHeadImage = Storage::disk('public')->path($lh->image_path);
+                }
+            }
 
             // Generate PDF
             $pdf = Pdf::loadView('backend.pdf.letter_layout', [
-                'content'          => $parsedContent,
-                'title'            => $parsedSubject,
-                'header_image'     => $template->header_image,
-                'footer_image'     => $template->footer_image,
-                'student'          => $student,
-                'activeSignatures' => $this->activeSignatures
+                'content'           => $parsedContent,
+                'title'             => $parsedSubject,
+                'header_image'      => $template->header_image,
+                'footer_image'      => $template->footer_image,
+                'letter_head_image' => $letterHeadImage,
+                'student'           => $student,
+                'activeSignatures'  => $this->activeSignatures
             ]);
 
             $fileName = 'generated_letters/' . $student->id . '_' . time() . '.pdf';
@@ -216,6 +235,7 @@ class StudentLetterController extends Controller
             $record = GeneratedLetter::create([
                 'student_id'         => $student->id,
                 'letter_template_id' => $template->id,
+                'letter_head_id'     => $letterHeadId,
                 'letter_title'       => $template->title,
                 'file_path'          => $fileName,
                 'file_type'          => 'pdf',

@@ -56,7 +56,8 @@ class InvoiceTemplateController extends Controller
     {
         $types = $this->getInvoiceTypes();
         $officialSignatures = \App\Models\OfficialSignature::where('status', 'active')->get();
-        return view('backend.invoice_templates.create', compact('types', 'officialSignatures'));
+        $letterHeads = DropdownOption::where('category', 'letter_head')->where('is_active', true)->orderBy('sort_order')->get();
+        return view('backend.invoice_templates.create', compact('types', 'officialSignatures', 'letterHeads'));
     }
 
     /**
@@ -65,14 +66,12 @@ class InvoiceTemplateController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title'        => 'required|string|max:255',
-            'type'         => 'required|string|max:100',
-            'custom_type'  => 'nullable|string|max:100',
-            'subject'      => 'nullable|string|max:255',
-            'content_body' => 'required|string',
-            'header_image' => 'nullable|image|mimes:jpeg,jpg,png,svg|max:4096',
-            'footer_image' => 'nullable|image|mimes:jpeg,jpg,png,svg|max:4096',
-            'status'       => 'nullable|boolean',
+            'title'          => 'required|string|max:255',
+            'type'           => 'required|string|max:100',
+            'custom_type'    => 'nullable|string|max:100',
+            'letter_head_id' => 'nullable|exists:dropdown_options,id',
+            'content_body'   => 'required|string',
+            'status'         => 'nullable|boolean',
         ]);
 
         $finalType = ($request->type === 'other' || $request->type === 'add_new') && $request->filled('custom_type')
@@ -88,20 +87,12 @@ class InvoiceTemplateController extends Controller
         }
 
         $data = [
-            'title'        => $request->title,
-            'type'         => $finalType,
-            'subject'      => $request->subject,
-            'content_body' => $request->content_body,
-            'status'       => $request->has('status') ? ($request->status ? 1 : 0) : 1,
+            'title'          => $request->title,
+            'type'           => $finalType,
+            'letter_head_id' => $request->letter_head_id,
+            'content_body'   => $request->content_body,
+            'status'         => 1,
         ];
-
-        if ($request->hasFile('header_image')) {
-            $data['header_image'] = $request->file('header_image')->store('invoice_headers', 'public');
-        }
-
-        if ($request->hasFile('footer_image')) {
-            $data['footer_image'] = $request->file('footer_image')->store('invoice_footers', 'public');
-        }
 
         InvoiceTemplate::create($data);
 
@@ -116,7 +107,8 @@ class InvoiceTemplateController extends Controller
     {
         $types = $this->getInvoiceTypes();
         $officialSignatures = \App\Models\OfficialSignature::where('status', 'active')->get();
-        return view('backend.invoice_templates.edit', compact('invoiceTemplate', 'types', 'officialSignatures'));
+        $letterHeads = DropdownOption::where('category', 'letter_head')->where('is_active', true)->orderBy('sort_order')->get();
+        return view('backend.invoice_templates.edit', compact('invoiceTemplate', 'types', 'officialSignatures', 'letterHeads'));
     }
 
     /**
@@ -125,14 +117,12 @@ class InvoiceTemplateController extends Controller
     public function update(Request $request, InvoiceTemplate $invoiceTemplate)
     {
         $request->validate([
-            'title'        => 'required|string|max:255',
-            'type'         => 'required|string|max:100',
-            'custom_type'  => 'nullable|string|max:100',
-            'subject'      => 'nullable|string|max:255',
-            'content_body' => 'required|string',
-            'header_image' => 'nullable|image|mimes:jpeg,jpg,png,svg|max:4096',
-            'footer_image' => 'nullable|image|mimes:jpeg,jpg,png,svg|max:4096',
-            'status'       => 'nullable|boolean',
+            'title'          => 'required|string|max:255',
+            'type'           => 'required|string|max:100',
+            'custom_type'    => 'nullable|string|max:100',
+            'letter_head_id' => 'nullable|exists:dropdown_options,id',
+            'content_body'   => 'required|string',
+            'status'         => 'nullable|boolean',
         ]);
 
         $finalType = ($request->type === 'other' || $request->type === 'add_new') && $request->filled('custom_type')
@@ -147,26 +137,12 @@ class InvoiceTemplateController extends Controller
         }
 
         $data = [
-            'title'        => $request->title,
-            'type'         => $finalType,
-            'subject'      => $request->subject,
-            'content_body' => $request->content_body,
-            'status'       => $request->has('status') ? 1 : 0,
+            'title'          => $request->title,
+            'type'           => $finalType,
+            'letter_head_id' => $request->letter_head_id,
+            'content_body'   => $request->content_body,
+            'status'         => $request->has('status') ? 1 : 0,
         ];
-
-        if ($request->hasFile('header_image')) {
-            if ($invoiceTemplate->header_image && Storage::disk('public')->exists($invoiceTemplate->header_image)) {
-                Storage::disk('public')->delete($invoiceTemplate->header_image);
-            }
-            $data['header_image'] = $request->file('header_image')->store('invoice_headers', 'public');
-        }
-
-        if ($request->hasFile('footer_image')) {
-            if ($invoiceTemplate->footer_image && Storage::disk('public')->exists($invoiceTemplate->footer_image)) {
-                Storage::disk('public')->delete($invoiceTemplate->footer_image);
-            }
-            $data['footer_image'] = $request->file('footer_image')->store('invoice_footers', 'public');
-        }
 
         $invoiceTemplate->update($data);
 

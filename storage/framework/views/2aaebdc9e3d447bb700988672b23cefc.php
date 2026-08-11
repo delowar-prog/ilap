@@ -2083,6 +2083,20 @@ function fetchTemplatePreview(templateId) {
             if (data.success) {
                 document.getElementById('preview_container').classList.remove('d-none');
                 $('#modal_custom_content').summernote('code', data.content);
+                if (data.letter_head_image) {
+                    $('#preview_container .note-editable').css({
+                        'background-image': 'url("' + data.letter_head_image + '")',
+                        'background-size': '100% 100%',
+                        'background-repeat': 'no-repeat',
+                        'background-position': 'center top',
+                        'min-height': '1050px'
+                    });
+                } else {
+                    $('#preview_container .note-editable').css({
+                        'background-image': 'none',
+                        'min-height': '350px'
+                    });
+                }
             }
         })
         .catch(err => console.error('Error fetching preview:', err));
@@ -2239,6 +2253,20 @@ function fetchInvoiceTemplatePreview(templateId) {
             if (data.success) {
                 document.getElementById('inv_preview_container').classList.remove('d-none');
                 $('#modal_invoice_custom_content').summernote('code', data.content);
+                if (data.letter_head_image) {
+                    $('#inv_preview_container .note-editable').css({
+                        'background-image': 'url("' + data.letter_head_image + '")',
+                        'background-size': '100% 100%',
+                        'background-repeat': 'no-repeat',
+                        'background-position': 'center top',
+                        'min-height': '1050px'
+                    });
+                } else {
+                    $('#inv_preview_container .note-editable').css({
+                        'background-image': 'none',
+                        'min-height': '350px'
+                    });
+                }
             }
         })
         .catch(err => console.error('Error fetching invoice preview:', err));
@@ -2259,7 +2287,7 @@ $(document).ready(function() {
     // Summernote Initialization
     $('#modal_custom_content').summernote({
         height: 380,
-        placeholder: 'Template preview will appear here after selecting a template above...',
+        placeholder: '',
         toolbar: [
             ['style', ['bold', 'italic', 'underline', 'clear']],
             ['font', ['fontsize']],
@@ -2272,7 +2300,7 @@ $(document).ready(function() {
 
     $('#modal_invoice_custom_content').summernote({
         height: 380,
-        placeholder: 'Template preview will appear here after selecting a template above...',
+        placeholder: '',
         toolbar: [
             ['style', ['bold', 'italic', 'underline', 'clear']],
             ['font', ['fontsize']],

@@ -12,6 +12,7 @@ class InvoiceTemplate extends Model
     protected $fillable = [
         'title',
         'type',
+        'letter_head_id',
         'subject',
         'content_body',
         'header_image',
@@ -22,6 +23,11 @@ class InvoiceTemplate extends Model
     protected $casts = [
         'status' => 'boolean',
     ];
+
+    public function letterHead()
+    {
+        return $this->belongsTo(DropdownOption::class, 'letter_head_id');
+    }
 
     public function generatedInvoices()
     {

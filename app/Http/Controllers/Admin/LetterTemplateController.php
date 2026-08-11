@@ -97,7 +97,8 @@ class LetterTemplateController extends Controller
         $officialSignatures = \App\Models\OfficialSignature::where('status', 'active')->get();
         $tags = \App\Models\Tag::all();
         $studentFields = $this->getStudentFields();
-        return view('backend.letter_templates.create', compact('types', 'officialSignatures', 'tags', 'studentFields'));
+        $letterHeads = DropdownOption::where('category', 'letter_head')->where('is_active', true)->orderBy('sort_order')->get();
+        return view('backend.letter_templates.create', compact('types', 'officialSignatures', 'tags', 'studentFields', 'letterHeads'));
     }
 
     /**
@@ -106,14 +107,12 @@ class LetterTemplateController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title'        => 'required|string|max:255',
-            'type'         => 'required|string|max:100',
-            'custom_type'  => 'nullable|string|max:100',
-            'subject'      => 'nullable|string|max:255',
-            'content_body' => 'required|string',
-            'header_image' => 'nullable|image|mimes:jpeg,jpg,png,svg|max:4096',
-            'footer_image' => 'nullable|image|mimes:jpeg,jpg,png,svg|max:4096',
-            'status'       => 'nullable|boolean',
+            'title'          => 'required|string|max:255',
+            'type'           => 'required|string|max:100',
+            'custom_type'    => 'nullable|string|max:100',
+            'letter_head_id' => 'nullable|exists:dropdown_options,id',
+            'content_body'   => 'required|string',
+            'status'         => 'nullable|boolean',
         ]);
 
         $finalType = ($request->type === 'other' || $request->type === 'add_new') && $request->filled('custom_type')
@@ -129,20 +128,12 @@ class LetterTemplateController extends Controller
         }
 
         $data = [
-            'title'        => $request->title,
-            'type'         => $finalType,
-            'subject'      => $request->subject,
-            'content_body' => $request->content_body,
-            'status'       => $request->has('status') ? 1 : 0,
+            'title'          => $request->title,
+            'type'           => $finalType,
+            'letter_head_id' => $request->letter_head_id,
+            'content_body'   => $request->content_body,
+            'status'         => 1,
         ];
-
-        if ($request->hasFile('header_image')) {
-            $data['header_image'] = $request->file('header_image')->store('letter_headers', 'public');
-        }
-
-        if ($request->hasFile('footer_image')) {
-            $data['footer_image'] = $request->file('footer_image')->store('letter_footers', 'public');
-        }
 
         LetterTemplate::create($data);
 
@@ -159,7 +150,8 @@ class LetterTemplateController extends Controller
         $officialSignatures = \App\Models\OfficialSignature::where('status', 'active')->get();
         $tags = \App\Models\Tag::all();
         $studentFields = $this->getStudentFields();
-        return view('backend.letter_templates.edit', compact('letterTemplate', 'types', 'officialSignatures', 'tags', 'studentFields'));
+        $letterHeads = DropdownOption::where('category', 'letter_head')->where('is_active', true)->orderBy('sort_order')->get();
+        return view('backend.letter_templates.edit', compact('letterTemplate', 'types', 'officialSignatures', 'tags', 'studentFields', 'letterHeads'));
     }
 
     /**
@@ -168,14 +160,12 @@ class LetterTemplateController extends Controller
     public function update(Request $request, LetterTemplate $letterTemplate)
     {
         $request->validate([
-            'title'        => 'required|string|max:255',
-            'type'         => 'required|string|max:100',
-            'custom_type'  => 'nullable|string|max:100',
-            'subject'      => 'nullable|string|max:255',
-            'content_body' => 'required|string',
-            'header_image' => 'nullable|image|mimes:jpeg,jpg,png,svg|max:4096',
-            'footer_image' => 'nullable|image|mimes:jpeg,jpg,png,svg|max:4096',
-            'status'       => 'nullable|boolean',
+            'title'          => 'required|string|max:255',
+            'type'           => 'required|string|max:100',
+            'custom_type'    => 'nullable|string|max:100',
+            'letter_head_id' => 'nullable|exists:dropdown_options,id',
+            'content_body'   => 'required|string',
+            'status'         => 'nullable|boolean',
         ]);
 
         $finalType = ($request->type === 'other' || $request->type === 'add_new') && $request->filled('custom_type')
@@ -190,26 +180,12 @@ class LetterTemplateController extends Controller
         }
 
         $data = [
-            'title'        => $request->title,
-            'type'         => $finalType,
-            'subject'      => $request->subject,
-            'content_body' => $request->content_body,
-            'status'       => $request->has('status') ? 1 : 0,
+            'title'          => $request->title,
+            'type'           => $finalType,
+            'letter_head_id' => $request->letter_head_id,
+            'content_body'   => $request->content_body,
+            'status'         => $request->has('status') ? 1 : 0,
         ];
-
-        if ($request->hasFile('header_image')) {
-            if ($letterTemplate->header_image && Storage::disk('public')->exists($letterTemplate->header_image)) {
-                Storage::disk('public')->delete($letterTemplate->header_image);
-            }
-            $data['header_image'] = $request->file('header_image')->store('letter_headers', 'public');
-        }
-
-        if ($request->hasFile('footer_image')) {
-            if ($letterTemplate->footer_image && Storage::disk('public')->exists($letterTemplate->footer_image)) {
-                Storage::disk('public')->delete($letterTemplate->footer_image);
-            }
-            $data['footer_image'] = $request->file('footer_image')->store('letter_footers', 'public');
-        }
 
         $letterTemplate->update($data);
 

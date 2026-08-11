@@ -29,8 +29,9 @@ class DropdownOptionController extends Controller
 
         $categoryName = DropdownOption::$categories[$category];
         $options = DropdownOption::forCategory($category);
+        $templateTypes = DropdownOption::whereIn('category', ['letter_type', 'invoice_type'])->where('is_active', true)->pluck('label')->unique()->values();
 
-        return view('backend.config.dropdown_options.category', compact('category', 'categoryName', 'options'));
+        return view('backend.config.dropdown_options.category', compact('category', 'categoryName', 'options', 'templateTypes'));
     }
 
     /** Store a new option */
@@ -39,9 +40,11 @@ class DropdownOptionController extends Controller
         abort_unless(array_key_exists($category, DropdownOption::$categories), 404);
 
         $request->validate([
-            'label' => 'required|string|max:255',
+            'label'   => 'required|string|max:255',
+            'type'    => 'nullable|string|max:255',
             'country' => 'nullable|string|max:255',
             'website' => 'nullable|url|max:255',
+            'image'   => 'nullable|image|mimes:jpeg,jpg,png,svg,webp|max:10240',
         ]);
 
         // Check duplicate within category
@@ -55,11 +58,18 @@ class DropdownOptionController extends Controller
 
         $maxOrder = DropdownOption::where('category', $category)->max('sort_order') ?? -1;
 
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('letter_heads', 'public');
+        }
+
         DropdownOption::create([
             'category'   => $category,
             'label'      => $request->label,
+            'type'       => $request->type,
             'country'    => $request->country,
             'website'    => $request->website,
+            'image_path' => $imagePath,
             'sort_order' => $maxOrder + 1,
             'is_active'  => true,
         ]);
@@ -72,17 +82,29 @@ class DropdownOptionController extends Controller
     {
         $request->validate([
             'label'     => 'required|string|max:255',
+            'type'      => 'nullable|string|max:255',
             'country'   => 'nullable|string|max:255',
             'website'   => 'nullable|url|max:255',
+            'image'     => 'nullable|image|mimes:jpeg,jpg,png,svg,webp|max:10240',
             'is_active' => 'nullable|boolean',
         ]);
 
-        $dropdownOption->update([
+        $data = [
             'label'     => $request->label,
+            'type'      => $request->type,
             'country'   => $request->country,
             'website'   => $request->website,
             'is_active' => $request->boolean('is_active', true),
-        ]);
+        ];
+
+        if ($request->hasFile('image')) {
+            if ($dropdownOption->image_path && \Storage::disk('public')->exists($dropdownOption->image_path)) {
+                \Storage::disk('public')->delete($dropdownOption->image_path);
+            }
+            $data['image_path'] = $request->file('image')->store('letter_heads', 'public');
+        }
+
+        $dropdownOption->update($data);
 
         return back()->with('success', 'Option updated successfully.');
     }

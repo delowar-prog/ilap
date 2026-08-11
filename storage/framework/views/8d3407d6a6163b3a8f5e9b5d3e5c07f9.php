@@ -64,21 +64,26 @@ unset($__errorArgs, $__bag); ?>" onchange="toggleCustomType(this.value)" require
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Subject / Title Heading in Letter</label>
-                        <input type="text" name="subject" class="form-control" placeholder="e.g. LETTER OF ACCEPTANCE FOR ACADEMIC ADMISSION" value="<?php echo e(old('subject')); ?>">
-                    </div>
+                        <label class="form-label fw-bold"><i class="fas fa-file-invoice me-1 text-primary"></i> Select Letter Head Pad</label>
+                        <select name="letter_head_id" id="letter_head_select" class="form-select <?php $__errorArgs = ['letter_head_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                            <option value="">-- No Letter Head Pad --</option>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($letterHeads)): ?>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $letterHeads; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $lh): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                    <option value="<?php echo e($lh->id); ?>" data-type="<?php echo e($lh->type ?? 'all'); ?>" data-image="<?php echo e(asset('storage/' . $lh->image_path)); ?>" <?php echo e(old('letter_head_id') == $lh->id ? 'selected' : ''); ?>>
+                                        <?php echo e($lh->label); ?> <?php echo e($lh->type ? '('.$lh->type.')' : ''); ?>
 
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold"><i class="fas fa-image me-1 text-info"></i> Letterhead Header Image (Optional)</label>
-                            <input type="file" name="header_image" class="form-control" accept="image/*">
-                            <small class="text-muted">Will appear at top of generated PDF</small>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold"><i class="fas fa-image me-1 text-info"></i> Footer Pad Image (Optional)</label>
-                            <input type="file" name="footer_image" class="form-control" accept="image/*">
-                            <small class="text-muted">Will appear at bottom footer of generated PDF</small>
-                        </div>
+                                    </option>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                        </select>
+                        <small class="text-muted">Selecting a letterhead pad will set its image (A4 or custom size) as background in the editor and PDF.</small>
                     </div>
 
                     <div class="mb-3">
@@ -220,9 +225,49 @@ unset($__errorArgs, $__bag); ?>" rows="12" required><?php echo e(old('content_bo
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
 <script>
+function updateEditorLetterHead(imageUrl) {
+    if (imageUrl) {
+        $('.note-editable').css({
+            'background-image': 'url("' + imageUrl + '")',
+            'background-size': '100% 100%',
+            'background-repeat': 'no-repeat',
+            'background-position': 'center top',
+            'min-height': '1050px'
+        });
+    } else {
+        $('.note-editable').css({
+            'background-image': 'none',
+            'min-height': '350px'
+        });
+    }
+}
+
+function filterLetterHeadsByType(selectedType) {
+    $('#letter_head_select option').each(function() {
+        const padType = $(this).data('type');
+        if (!padType || padType === 'all' || !selectedType || padType === selectedType) {
+            $(this).show().prop('disabled', false);
+        } else {
+            $(this).hide().prop('disabled', true);
+        }
+    });
+
+    const currentSelected = $('#letter_head_select option:selected');
+    if (currentSelected.length && currentSelected.is(':disabled')) {
+        $('#letter_head_select').val('');
+        $('#letter_head_select').trigger('change');
+    }
+}
+
 $(document).ready(function() {
+    filterLetterHeadsByType($('#type_select').val());
+
+    $(document).on('change', '#type_select', function() {
+        filterLetterHeadsByType($(this).val());
+    });
+
     $('#editor').summernote({
-        placeholder: 'Write your letter content here... You can use Bold, Underline, Bullet points, Tables, and Dynamic tags.',
+        placeholder: '',
         tabsize: 2,
         height: 350,
         toolbar: [
@@ -234,7 +279,18 @@ $(document).ready(function() {
             ['table', ['table']],
             ['insert', ['link', 'hr']],
             ['view', ['fullscreen', 'codeview', 'help']]
-        ]
+        ],
+        callbacks: {
+            onInit: function() {
+                const initialImg = $('#letter_head_select').find('option:selected').data('image');
+                updateEditorLetterHead(initialImg);
+            }
+        }
+    });
+
+    $(document).on('change', '#letter_head_select', function() {
+        const imageUrl = $(this).find('option:selected').data('image') || '';
+        updateEditorLetterHead(imageUrl);
     });
 });
 

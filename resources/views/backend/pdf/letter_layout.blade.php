@@ -8,6 +8,16 @@
         @page {
             margin: 130px 0px 250px 0px; /* Extra bottom margin creates space for signature block above footer */
         }
+        @if(!empty($letter_head_image) && file_exists($letter_head_image))
+        .letterhead-bg {
+            position: fixed;
+            top: -130px;
+            left: 0px;
+            width: 100%;
+            height: 100%;
+            z-index: -1000;
+        }
+        @endif
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 13px;
@@ -65,7 +75,12 @@
 </head>
 <body>
 
+    @if(!empty($letter_head_image) && file_exists($letter_head_image))
+        <img src="{{ $letter_head_image }}" class="letterhead-bg">
+    @endif
+
     <!-- ═══════════════ PREMIUM FULL-WIDTH HEADER ═══════════════ -->
+    @if(empty($letter_head_image))
     <div class="header">
         <table style="width: 100%; border-collapse: collapse; margin: 0; padding: 20px 55px 0 55px;">
             <tr>
@@ -118,6 +133,7 @@
         <!-- Blue Accent Line spanning 100% Page Width -->
         <div style="width: 100%; height: 3px; background-color: #003366; margin-top: 10px;"></div>
     </div>
+    @endif
 
     <!-- ═══════════════ CONTENT AREA ═══════════════ -->
     <div class="content">
@@ -170,6 +186,7 @@
     </div>
 
     <!-- ═══════════════ PREMIUM FULL-WIDTH FOOTER ═══════════════ -->
+    @if(empty($letter_head_image))
     <div class="footer">
         <!-- Gray separator line -->
         <div style="width: 100%; height: 1px; background-color: #e0e0e0; margin-bottom: 8px;"></div>
@@ -211,6 +228,7 @@
             </table>
         </div>
     </div>
+    @endif
 
 </body>
 </html>

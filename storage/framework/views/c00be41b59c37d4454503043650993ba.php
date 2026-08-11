@@ -53,19 +53,22 @@
                                 </td>
                                 <td>
                                     
-                                    <form action="<?php echo e(route('admin.config.dropdown.update', $opt->id)); ?>" method="POST"
+                                    <form action="<?php echo e(route('admin.config.dropdown.update', $opt->id)); ?>" method="POST" enctype="multipart/form-data"
                                           class="d-flex gap-2 align-items-center" id="edit-form-<?php echo e($opt->id); ?>">
                                         <?php echo csrf_field(); ?> <?php echo method_field('PUT'); ?>
                                         <div class="d-flex flex-column gap-1">
-                                            <div class="d-flex gap-2 align-items-center">
-                                                <input type="text" name="label" value="<?php echo e($opt->label); ?>"
-                                                       class="form-control form-control-sm"
-                                                       style="max-width:280px;" required placeholder="Label">
-                                                <input type="hidden" name="is_active" value="<?php echo e($opt->is_active ? '1' : '0'); ?>">
-                                                <button type="submit" class="btn btn-sm btn-outline-primary px-2" title="Save">
-                                                    <i class="fas fa-save"></i>
-                                                </button>
-                                            </div>
+                                             <div class="d-flex gap-2 align-items-center">
+                                                 <input type="text" name="label" value="<?php echo e($opt->label); ?>"
+                                                        class="form-control form-control-sm"
+                                                        style="max-width:280px;" required placeholder="Label">
+                                                 <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($category === 'letter_head' && $opt->type): ?>
+                                                     <span class="badge bg-info text-dark" title="Assigned Type"><?php echo e($opt->type); ?></span>
+                                                 <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                 <input type="hidden" name="is_active" value="<?php echo e($opt->is_active ? '1' : '0'); ?>">
+                                                 <button type="submit" class="btn btn-sm btn-outline-primary px-2" title="Save">
+                                                     <i class="fas fa-save"></i>
+                                                 </button>
+                                             </div>
                                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($category === 'department'): ?>
                                             <div class="d-flex gap-2 align-items-center mt-1">
                                                 <input type="text" name="country" value="<?php echo e($opt->country); ?>"
@@ -74,6 +77,24 @@
                                                 <input type="url" name="website" value="<?php echo e($opt->website); ?>"
                                                        class="form-control form-control-sm"
                                                        style="max-width:180px;" placeholder="Website (url)">
+                                            </div>
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($category === 'letter_head'): ?>
+                                            <div class="d-flex gap-2 align-items-center mt-1">
+                                                <select name="type" class="form-select form-select-sm" style="max-width:180px;" title="Assigned Template Type">
+                                                    <option value="">-- All Types --</option>
+                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($templateTypes)): ?>
+                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $templateTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tType): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                                            <option value="<?php echo e($tType); ?>" <?php echo e($opt->type == $tType ? 'selected' : ''); ?>><?php echo e($tType); ?></option>
+                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
+                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                </select>
+                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($opt->image_path): ?>
+                                                    <a href="<?php echo e(asset('storage/' . $opt->image_path)); ?>" target="_blank">
+                                                        <img src="<?php echo e(asset('storage/' . $opt->image_path)); ?>" alt="Pad" class="img-thumbnail" style="height:35px; width:auto;" title="View Pad Image">
+                                                    </a>
+                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                <input type="file" name="image" class="form-control form-control-sm" accept="image/*" title="Change Pad Image">
                                             </div>
                                             <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </div>
@@ -119,7 +140,7 @@
                 <h6 class="mb-0 fw-semibold"><i class="fas fa-plus-circle me-2 text-success"></i>Add New Option</h6>
             </div>
             <div class="card-body">
-                <form action="<?php echo e(route('admin.config.dropdown.store', $category)); ?>" method="POST">
+                <form action="<?php echo e(route('admin.config.dropdown.store', $category)); ?>" method="POST" enctype="multipart/form-data">
                     <?php echo csrf_field(); ?>
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">LABEL / NAME</label>
@@ -131,7 +152,7 @@ $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>"
-                               placeholder="e.g. Higher Secondary" value="<?php echo e(old('label')); ?>" required>
+                               placeholder="<?php echo e($category === 'letter_head' ? 'e.g. Official A4 Pad' : 'e.g. Higher Secondary'); ?>" value="<?php echo e(old('label')); ?>" required>
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['label'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -178,6 +199,42 @@ endif;
 unset($__errorArgs, $__bag); ?>"
                                placeholder="https://..." value="<?php echo e(old('website')); ?>">
                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['website'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                            <div class="invalid-feedback"><?php echo e($message); ?></div>
+                        <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    </div>
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($category === 'letter_head'): ?>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">ASSIGN TO TEMPLATE TYPE</label>
+                        <select name="type" class="form-select">
+                            <option value="">-- All Template Types --</option>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($templateTypes)): ?>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $templateTypes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tType): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                    <option value="<?php echo e($tType); ?>" <?php echo e(old('type') == $tType ? 'selected' : ''); ?>><?php echo e($tType); ?></option>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                        </select>
+                        <small class="text-muted d-block mt-1">Select specific template type or leave blank for all types.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">LETTER HEAD PAD IMAGE (ANY SIZE / A4)</label>
+                        <input type="file" name="image" class="form-control <?php $__errorArgs = ['image'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" accept="image/*" required>
+                        <small class="text-muted d-block mt-1">Upload letterhead background pad image of any size (PNG, JPG, WebP, SVG).</small>
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php $__errorArgs = ['image'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }

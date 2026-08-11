@@ -53,19 +53,22 @@
                                 </td>
                                 <td>
                                     {{-- Inline edit form --}}
-                                    <form action="{{ route('admin.config.dropdown.update', $opt->id) }}" method="POST"
+                                    <form action="{{ route('admin.config.dropdown.update', $opt->id) }}" method="POST" enctype="multipart/form-data"
                                           class="d-flex gap-2 align-items-center" id="edit-form-{{ $opt->id }}">
                                         @csrf @method('PUT')
                                         <div class="d-flex flex-column gap-1">
-                                            <div class="d-flex gap-2 align-items-center">
-                                                <input type="text" name="label" value="{{ $opt->label }}"
-                                                       class="form-control form-control-sm"
-                                                       style="max-width:280px;" required placeholder="Label">
-                                                <input type="hidden" name="is_active" value="{{ $opt->is_active ? '1' : '0' }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-primary px-2" title="Save">
-                                                    <i class="fas fa-save"></i>
-                                                </button>
-                                            </div>
+                                             <div class="d-flex gap-2 align-items-center">
+                                                 <input type="text" name="label" value="{{ $opt->label }}"
+                                                        class="form-control form-control-sm"
+                                                        style="max-width:280px;" required placeholder="Label">
+                                                 @if($category === 'letter_head' && $opt->type)
+                                                     <span class="badge bg-info text-dark" title="Assigned Type">{{ $opt->type }}</span>
+                                                 @endif
+                                                 <input type="hidden" name="is_active" value="{{ $opt->is_active ? '1' : '0' }}">
+                                                 <button type="submit" class="btn btn-sm btn-outline-primary px-2" title="Save">
+                                                     <i class="fas fa-save"></i>
+                                                 </button>
+                                             </div>
                                             @if($category === 'department')
                                             <div class="d-flex gap-2 align-items-center mt-1">
                                                 <input type="text" name="country" value="{{ $opt->country }}"
@@ -74,6 +77,24 @@
                                                 <input type="url" name="website" value="{{ $opt->website }}"
                                                        class="form-control form-control-sm"
                                                        style="max-width:180px;" placeholder="Website (url)">
+                                            </div>
+                                            @endif
+                                            @if($category === 'letter_head')
+                                            <div class="d-flex gap-2 align-items-center mt-1">
+                                                <select name="type" class="form-select form-select-sm" style="max-width:180px;" title="Assigned Template Type">
+                                                    <option value="">-- All Types --</option>
+                                                    @if(isset($templateTypes))
+                                                        @foreach($templateTypes as $tType)
+                                                            <option value="{{ $tType }}" {{ $opt->type == $tType ? 'selected' : '' }}>{{ $tType }}</option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                                @if($opt->image_path)
+                                                    <a href="{{ asset('storage/' . $opt->image_path) }}" target="_blank">
+                                                        <img src="{{ asset('storage/' . $opt->image_path) }}" alt="Pad" class="img-thumbnail" style="height:35px; width:auto;" title="View Pad Image">
+                                                    </a>
+                                                @endif
+                                                <input type="file" name="image" class="form-control form-control-sm" accept="image/*" title="Change Pad Image">
                                             </div>
                                             @endif
                                         </div>
@@ -119,12 +140,12 @@
                 <h6 class="mb-0 fw-semibold"><i class="fas fa-plus-circle me-2 text-success"></i>Add New Option</h6>
             </div>
             <div class="card-body">
-                <form action="{{ route('admin.config.dropdown.store', $category) }}" method="POST">
+                <form action="{{ route('admin.config.dropdown.store', $category) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">LABEL / NAME</label>
                         <input type="text" name="label" class="form-control @error('label') is-invalid @enderror"
-                               placeholder="e.g. Higher Secondary" value="{{ old('label') }}" required>
+                               placeholder="{{ $category === 'letter_head' ? 'e.g. Official A4 Pad' : 'e.g. Higher Secondary' }}" value="{{ old('label') }}" required>
                         @error('label')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -143,6 +164,28 @@
                         <input type="url" name="website" class="form-control @error('website') is-invalid @enderror"
                                placeholder="https://..." value="{{ old('website') }}">
                         @error('website')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    @endif
+                    @if($category === 'letter_head')
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">ASSIGN TO TEMPLATE TYPE</label>
+                        <select name="type" class="form-select">
+                            <option value="">-- All Template Types --</option>
+                            @if(isset($templateTypes))
+                                @foreach($templateTypes as $tType)
+                                    <option value="{{ $tType }}" {{ old('type') == $tType ? 'selected' : '' }}>{{ $tType }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <small class="text-muted d-block mt-1">Select specific template type or leave blank for all types.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">LETTER HEAD PAD IMAGE (ANY SIZE / A4)</label>
+                        <input type="file" name="image" class="form-control @error('image') is-invalid @enderror" accept="image/*" required>
+                        <small class="text-muted d-block mt-1">Upload letterhead background pad image of any size (PNG, JPG, WebP, SVG).</small>
+                        @error('image')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

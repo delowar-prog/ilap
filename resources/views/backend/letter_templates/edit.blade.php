@@ -53,31 +53,18 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Subject / Title Heading in Letter</label>
-                        <input type="text" name="subject" class="form-control" value="{{ old('subject', $letterTemplate->subject) }}">
-                    </div>
-
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold"><i class="fas fa-image me-1 text-info"></i> Letterhead Header Image</label>
-                            <input type="file" name="header_image" class="form-control" accept="image/*">
-                            @if($letterTemplate->header_image)
-                                <div class="mt-2">
-                                    <small class="text-success d-block mb-1"><i class="fas fa-check-circle"></i> Current Header Uploaded:</small>
-                                    <img src="{{ asset('storage/' . $letterTemplate->header_image) }}" alt="Header" class="img-thumbnail" style="max-height: 50px;">
-                                </div>
+                        <label class="form-label fw-bold"><i class="fas fa-file-invoice me-1 text-primary"></i> Select Letter Head Pad</label>
+                        <select name="letter_head_id" id="letter_head_select" class="form-select @error('letter_head_id') is-invalid @enderror">
+                            <option value="">-- No Letter Head Pad --</option>
+                            @if(isset($letterHeads))
+                                @foreach($letterHeads as $lh)
+                                    <option value="{{ $lh->id }}" data-type="{{ $lh->type ?? 'all' }}" data-image="{{ asset('storage/' . $lh->image_path) }}" {{ (old('letter_head_id', $letterTemplate->letter_head_id) == $lh->id) ? 'selected' : '' }}>
+                                        {{ $lh->label }} {{ $lh->type ? '('.$lh->type.')' : '' }}
+                                    </option>
+                                @endforeach
                             @endif
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold"><i class="fas fa-image me-1 text-info"></i> Footer Pad Image</label>
-                            <input type="file" name="footer_image" class="form-control" accept="image/*">
-                            @if($letterTemplate->footer_image)
-                                <div class="mt-2">
-                                    <small class="text-success d-block mb-1"><i class="fas fa-check-circle"></i> Current Footer Uploaded:</small>
-                                    <img src="{{ asset('storage/' . $letterTemplate->footer_image) }}" alt="Footer" class="img-thumbnail" style="max-height: 50px;">
-                                </div>
-                            @endif
-                        </div>
+                        </select>
+                        <small class="text-muted">Selecting a letterhead pad will set its image (A4 or custom size) as background in the editor and PDF.</small>
                     </div>
 
                     <div class="mb-3">
@@ -211,9 +198,49 @@
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
 <script>
+function updateEditorLetterHead(imageUrl) {
+    if (imageUrl) {
+        $('.note-editable').css({
+            'background-image': 'url("' + imageUrl + '")',
+            'background-size': '100% 100%',
+            'background-repeat': 'no-repeat',
+            'background-position': 'center top',
+            'min-height': '1050px'
+        });
+    } else {
+        $('.note-editable').css({
+            'background-image': 'none',
+            'min-height': '350px'
+        });
+    }
+}
+
+function filterLetterHeadsByType(selectedType) {
+    $('#letter_head_select option').each(function() {
+        const padType = $(this).data('type');
+        if (!padType || padType === 'all' || !selectedType || padType === selectedType) {
+            $(this).show().prop('disabled', false);
+        } else {
+            $(this).hide().prop('disabled', true);
+        }
+    });
+
+    const currentSelected = $('#letter_head_select option:selected');
+    if (currentSelected.length && currentSelected.is(':disabled')) {
+        $('#letter_head_select').val('');
+        $('#letter_head_select').trigger('change');
+    }
+}
+
 $(document).ready(function() {
+    filterLetterHeadsByType($('#type_select').val());
+
+    $(document).on('change', '#type_select', function() {
+        filterLetterHeadsByType($(this).val());
+    });
+
     $('#editor').summernote({
-        placeholder: 'Write your letter content here... You can use Bold, Underline, Bullet points, Tables, and Dynamic tags.',
+        placeholder: '',
         tabsize: 2,
         height: 350,
         toolbar: [
@@ -225,7 +252,18 @@ $(document).ready(function() {
             ['table', ['table']],
             ['insert', ['link', 'hr']],
             ['view', ['fullscreen', 'codeview', 'help']]
-        ]
+        ],
+        callbacks: {
+            onInit: function() {
+                const initialImg = $('#letter_head_select').find('option:selected').data('image');
+                updateEditorLetterHead(initialImg);
+            }
+        }
+    });
+
+    $(document).on('change', '#letter_head_select', function() {
+        const imageUrl = $(this).find('option:selected').data('image') || '';
+        updateEditorLetterHead(imageUrl);
     });
 });
 

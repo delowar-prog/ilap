@@ -12,6 +12,7 @@ class GeneratedInvoice extends Model
     protected $fillable = [
         'student_id',
         'invoice_template_id',
+        'letter_head_id',
         'invoice_title',
         'file_path',
         'file_type',
@@ -33,6 +34,11 @@ class GeneratedInvoice extends Model
     public function template()
     {
         return $this->belongsTo(InvoiceTemplate::class, 'invoice_template_id');
+    }
+
+    public function letterHead()
+    {
+        return $this->belongsTo(DropdownOption::class, 'letter_head_id');
     }
 
     public function generator()

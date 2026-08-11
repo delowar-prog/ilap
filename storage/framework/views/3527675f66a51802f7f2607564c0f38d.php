@@ -50,7 +50,7 @@
                         <th style="width: 50px;">#</th>
                         <th>Template Title</th>
                         <th>Type</th>
-                        <th>Subject / Heading</th>
+                        <th>Letter Head Pad</th>
                         <th class="text-center">Status</th>
                         <th>Created At</th>
                         <th class="text-end" style="width: 180px;">Actions</th>
@@ -62,14 +62,17 @@
                             <td><?php echo e($templates->firstItem() + $index); ?></td>
                             <td>
                                 <strong><?php echo e($template->title); ?></strong>
-                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($template->header_image): ?>
-                                    <span class="badge bg-info ms-1"><i class="fas fa-image"></i> Header Image</span>
-                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                             </td>
                             <td>
                                 <span class="badge bg-secondary text-uppercase"><?php echo e($template->type); ?></span>
                             </td>
-                            <td><?php echo e(Str::limit($template->subject ?? 'N/A', 40)); ?></td>
+                            <td>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($template->letterHead): ?>
+                                    <span class="badge bg-primary"><i class="fas fa-file-image me-1"></i> <?php echo e($template->letterHead->label); ?></span>
+                                <?php else: ?>
+                                    <span class="text-muted small">None</span>
+                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                            </td>
                             <td class="text-center">
                                 <div class="form-check form-switch d-inline-block m-0">
                                     <input class="form-check-input template-status-toggle" 

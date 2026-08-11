@@ -9,12 +9,13 @@ class DropdownOption extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['category', 'label', 'sort_order', 'is_active', 'country', 'website'];
+    protected $fillable = ['category', 'label', 'sort_order', 'is_active', 'country', 'website', 'image_path', 'type'];
 
     protected $casts = ['is_active' => 'boolean'];
 
     // Available categories with their display names
     public static array $categories = [
+        'letter_head' => 'Letter Head Pads (Any Size)',
         'study_destination' => 'Preferred Study Destination',
         'study_method' => 'Preferred Study Method',
         'level_of_study' => 'Level of Study',

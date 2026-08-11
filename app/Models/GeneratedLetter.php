@@ -12,6 +12,7 @@ class GeneratedLetter extends Model
     protected $fillable = [
         'student_id',
         'letter_template_id',
+        'letter_head_id',
         'letter_title',
         'file_path',
         'file_type',
@@ -33,6 +34,11 @@ class GeneratedLetter extends Model
     public function template()
     {
         return $this->belongsTo(LetterTemplate::class, 'letter_template_id');
+    }
+
+    public function letterHead()
+    {
+        return $this->belongsTo(DropdownOption::class, 'letter_head_id');
     }
 
     public function generator()
