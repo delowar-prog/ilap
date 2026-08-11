@@ -39,6 +39,7 @@ class CourseController extends Controller
     {
         $categories   = DropdownOption::active('course_category');
         $levels       = DropdownOption::active('level_of_study');
+        $subjectAreas = DropdownOption::active('subject_area');
         $studyMethods = DropdownOption::active('study_method');
         $currencies   = DropdownOption::active('currency');
         $intakes      = DropdownOption::active('intake');
@@ -47,13 +48,21 @@ class CourseController extends Controller
         $ilapInstitutes = \App\Models\DropdownOption::where('category', 'department')->where('is_active', true)->orderBy('sort_order')->get();
 
         return view('backend.courses.create', compact(
-            'categories', 'levels', 'studyMethods', 'currencies', 'intakes', 'englishTests', 'partnerInstitutes', 'ilapInstitutes'
+            'categories', 'levels', 'subjectAreas', 'studyMethods', 'currencies', 'intakes', 'englishTests', 'partnerInstitutes', 'ilapInstitutes'
         ));
     }
 
     public function store(Request $request)
     {
         $validated = $this->validateCourse($request);
+
+        // Auto-register new custom subject_area if not in DropdownOption system
+        if (!empty($validated['subject_area'])) {
+            DropdownOption::firstOrCreate(
+                ['category' => 'subject_area', 'label' => $validated['subject_area']],
+                ['sort_order' => 99, 'is_active' => true]
+            );
+        }
 
         // Handle file uploads
         if ($request->hasFile('thumbnail')) {
@@ -90,6 +99,7 @@ class CourseController extends Controller
         
         $categories   = DropdownOption::active('course_category');
         $levels       = DropdownOption::active('level_of_study');
+        $subjectAreas = DropdownOption::active('subject_area');
         $studyMethods = DropdownOption::active('study_method');
         $currencies   = DropdownOption::active('currency');
         $intakes      = DropdownOption::active('intake');
@@ -98,7 +108,7 @@ class CourseController extends Controller
         $ilapInstitutes = \App\Models\DropdownOption::where('category', 'department')->where('is_active', true)->orderBy('sort_order')->get();
 
         return view('backend.courses.edit', compact(
-            'course', 'categories', 'levels', 'studyMethods', 'currencies', 'intakes', 'englishTests', 'partnerInstitutes', 'ilapInstitutes'
+            'course', 'categories', 'levels', 'subjectAreas', 'studyMethods', 'currencies', 'intakes', 'englishTests', 'partnerInstitutes', 'ilapInstitutes'
         ));
     }
 

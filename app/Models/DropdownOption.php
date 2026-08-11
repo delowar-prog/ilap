@@ -15,7 +15,6 @@ class DropdownOption extends Model
 
     // Available categories with their display names
     public static array $categories = [
-        'letter_head' => 'Letter Head Pads (Any Size)',
         'study_destination' => 'Preferred Study Destination',
         'study_method' => 'Preferred Study Method',
         'level_of_study' => 'Level of Study',
@@ -29,8 +28,10 @@ class DropdownOption extends Model
         'campus_type' => 'Campus Types',
         'currency' => 'Currencies',
         'course_category' => 'Course Categories',
+        'subject_area' => 'Subject Areas',
         'intake' => 'Intakes',
         'additional_cost' => 'Additional Cost Types',
+        'letter_head' => 'Letter Head Pads (Any Size)',
     ];
 
     /**

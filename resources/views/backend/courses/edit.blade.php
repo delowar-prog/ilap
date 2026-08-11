@@ -179,18 +179,6 @@
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Category</label>
-                    <select name="category" class="form-select">
-                        <option value="">-- Select --</option>
-                        @foreach($categories as $cat)
-                            <option value="{{ $cat }}" {{ old('category', $course->category) == $cat ? 'selected' : '' }}>
-                                {{ ucfirst($cat) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-4">
                     <label class="form-label">Level</label>
                     <select name="level" class="form-select">
                         <option value="">-- Select --</option>
@@ -203,9 +191,29 @@
                 </div>
 
                 <div class="col-md-4">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-select">
+                        <option value="">-- Select --</option>
+                        @foreach($categories as $cat)
+                            <option value="{{ $cat }}" {{ old('category', $course->category) == $cat ? 'selected' : '' }}>
+                                {{ ucfirst($cat) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-4">
                     <label class="form-label">Subject Area</label>
-                    <input type="text" name="subject_area" class="form-control" 
-                           value="{{ old('subject_area', $course->subject_area) }}" placeholder="e.g., Business, IT">
+                    <select name="subject_area" class="form-select">
+                        <option value="">-- Select --</option>
+                        @if(isset($subjectAreas))
+                            @foreach($subjectAreas as $sa)
+                                <option value="{{ $sa }}" {{ old('subject_area', $course->subject_area) == $sa ? 'selected' : '' }}>
+                                    {{ $sa }}
+                                </option>
+                            @endforeach
+                        @endif
+                    </select>
                 </div>
 
                 <div class="col-12"><hr><h6 class="fw-bold">⏱️ Duration & Mode</h6></div>
