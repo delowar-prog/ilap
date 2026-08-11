@@ -14,26 +14,28 @@
 .profile-header {
     background: linear-gradient(135deg, #1b2a47 0%, #2c3e7a 100%);
     color: #fff;
-    padding: 2.5rem;
+    padding: 1.25rem 1.5rem;
     position: relative;
 }
 .profile-avatar-container {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 .profile-avatar {
-    width: 130px;
-    height: 130px;
-    border-radius: 50%;
-    border: 4px solid rgba(255,255,255,0.2);
+    width: 175px;
+    height: 175px;
+    border-radius: 16px;
+    border: 4px solid rgba(255,255,255,0.35);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
     object-fit: cover;
     background: rgba(255,255,255,0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
+    font-size: 3.2rem;
     color: #fff;
+    flex-shrink: 0;
 }
 .profile-header-info h2 {
     margin: 0 0 0.2rem;
@@ -155,11 +157,51 @@
                             {{ strtoupper(substr($student->first_name,0,1)) }}{{ strtoupper(substr($student->surname,0,1)) }}
                         </div>
                     @endif
+                    @php
+                        $usedPromoCode = $student->promo_code;
+                        $referrerName = 'Direct Join';
+                        
+                        if ($student->agent) {
+                            $referrerName = ($student->agent->full_name ?: $student->agent->name) . ' (Agent)';
+                            if (!$usedPromoCode && $student->agent->agent_code) {
+                                $usedPromoCode = $student->agent->agent_code;
+                            }
+                        } elseif ($usedPromoCode) {
+                            $agentByCode = \App\Models\Agent::where('agent_code', strtoupper($usedPromoCode))->first();
+                            if ($agentByCode) {
+                                $referrerName = ($agentByCode->full_name ?: $agentByCode->name) . ' (Agent)';
+                            } else {
+                                $referrerUser = \App\Models\User::where('referral_code', strtoupper($usedPromoCode))->first();
+                                if ($referrerUser) {
+                                    $refUserName = trim(($referrerUser->user_first_name ?? '') . ' ' . ($referrerUser->user_last_name ?? '')) ?: ($referrerUser->name ?? 'Referral Student');
+                                    $referrerName = $refUserName . ' (Student)';
+                                } else {
+                                    $referrerName = 'Promo Code: ' . $usedPromoCode;
+                                }
+                            }
+                        }
+                    @endphp
                     <div class="profile-header-info">
                         <h2>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</h2>
-                        <p><i class="fas fa-id-badge me-1"></i> {{ $student->student_id }} &nbsp;|&nbsp; <i class="fas fa-envelope me-1"></i> {{ $student->email }}</p>
-                        <div class="mt-2 text-white-50 small">
-                            Profile Completion: <strong class="text-white me-3">{{ $completionPercent }}%</strong>
+                        <p class="mb-1 text-white fw-medium" style="font-size: 0.95rem;">
+                            <i class="fas fa-id-badge me-1 text-warning" title="Student ID"></i> {{ $student->student_id }} 
+                            <span class="text-white-50 mx-2">|</span> 
+                            <i class="fas fa-envelope me-1 text-info" title="Email"></i> {{ $student->email ?? 'N/A' }} 
+                            <span class="text-white-50 mx-2">|</span> 
+                            <i class="fas fa-phone-alt me-1 text-success" title="Phone"></i> {{ $student->phone ?? ($preAssessment->contact_number ?? 'N/A') }}
+                        </p>
+                        <p class="mb-1 text-white fw-medium" style="font-size: 0.92rem;">
+                            <i class="fas fa-university me-1 text-info"></i> <strong>Campus Name:</strong> {{ $student->campus->name ?? 'N/A' }}
+                            <span class="text-white-50 mx-2">|</span>
+                            <strong>Campus Code:</strong> {{ $student->campus->campus_code ?? 'N/A' }}
+                        </p>
+                        <p class="mb-1 text-white fw-medium" style="font-size: 0.92rem;">
+                            <i class="fas fa-user-tag me-1 text-warning"></i> <strong>Referrer Name:</strong> {{ $referrerName }}
+                            <span class="text-white-50 mx-2">|</span>
+                            <i class="fas fa-ticket-alt me-1 text-success"></i> <strong>Promocode:</strong> {{ $usedPromoCode ?? 'None' }}
+                        </p>
+                        <div class="mt-2 text-white fw-medium small">
+                            Profile Completion: <strong class="text-white fw-bold me-3">{{ $completionPercent }}%</strong>
                             Status: 
                             @if($student->enrolment_status === 'approved')
                                 <span class="badge bg-success">Approved</span>
@@ -983,6 +1025,10 @@
                                                                             data-receiver-name="{{ auth()->user()->name ?? 'System Admin' }}"
                                                                             data-amount="{{ format_currency($inst->amount, $application->course->currency ?? 'GBP') }}"
                                                                             data-paid="{{ format_currency($inst->paid_amount, $application->course->currency ?? 'GBP') }}"
+                                                                            data-bank-fee="{{ $inst->bank_fee ?? 0 }}"
+                                                                            data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                            data-raw-amount="{{ $inst->amount }}"
+                                                                            data-raw-paid="{{ $inst->paid_amount }}"
                                                                             data-due-date="{{ $inst->due_date ? $inst->due_date->format('d M, Y') : 'N/A' }}"
                                                                             data-paid-date="{{ $inst->paid_at ? $inst->paid_at->format('d M, Y h:i A') : 'N/A' }}"
                                                                             data-payment-method="{{ $inst->payment_method ?? 'N/A' }}"
@@ -1154,6 +1200,10 @@
                                                                                 data-receiver-name="{{ auth()->user()->name ?? 'System Admin' }}"
                                                                                 data-amount="{{ format_currency($cost->amount, $application->course->currency ?? 'GBP') }}"
                                                                                 data-paid="{{ format_currency($cost->status === 'paid' ? $cost->amount : 0, $application->course->currency ?? 'GBP') }}"
+                                                                                data-bank-fee="{{ $cost->bank_fee ?? 0 }}"
+                                                                                data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                data-raw-amount="{{ $cost->amount }}"
+                                                                                data-raw-paid="{{ $cost->status === 'paid' ? $cost->amount : 0 }}"
                                                                                 data-due-date="{{ $cost->paid_at ? $cost->paid_at->format('d M, Y') : 'N/A' }}"
                                                                                 data-paid-date="{{ $cost->paid_at ? $cost->paid_at->format('d M, Y h:i A') : 'N/A' }}"
                                                                                 data-payment-method="{{ $cost->payment_method ?? 'N/A' }}"
@@ -1709,7 +1759,7 @@
                     </div>
                     <hr class="my-3">
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Amount to Pay (<span class="currency-label">GBP</span>) <span class="text-danger">*</span></label>
+                        <label class="form-label fw-bold">Amount of Pay (<span class="currency-label">GBP</span>) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text currency-label">GBP</span>
                             <input type="number" name="amount_paid" id="amount_paid_input" class="form-control" step="0.01" min="0.01" readonly required>
@@ -1723,6 +1773,30 @@
                             <option value="Online Payment">Online Payment</option>
                             <option value="Cheque">Cheque</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-3" id="toggle_inst_bank_fee_btn">
+                            <i class="fas fa-university me-1"></i> Bank Fee
+                        </button>
+                    </div>
+                    <div id="inst_bank_fee_wrapper" style="display: none;" class="p-3 bg-light rounded border mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small mb-1">Bank Fee (<span class="currency-label">GBP</span>)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text currency-label">GBP</span>
+                                    <input type="number" name="bank_fee" id="inst_bank_fee_input" class="form-control" step="0.01" min="0" placeholder="0.00" value="0.00">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small mb-1">Net Amount (<span class="currency-label">GBP</span>)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text currency-label">GBP</span>
+                                    <input type="text" id="inst_net_amount_input" class="form-control bg-white fw-bold text-success" readonly value="0.00">
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 11px;"><i class="fas fa-info-circle me-1"></i> Net amount = Amount of pay - Bank fee</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Transaction Reference / TXN ID (Optional)</label>
@@ -1771,6 +1845,30 @@
                             <option value="Online Payment">Online Payment</option>
                             <option value="Cheque">Cheque</option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-3" id="toggle_cost_bank_fee_btn">
+                            <i class="fas fa-university me-1"></i> Bank Fee
+                        </button>
+                    </div>
+                    <div id="cost_bank_fee_wrapper" style="display: none;" class="p-3 bg-light rounded border mb-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small mb-1">Bank Fee (<span class="currency-label">GBP</span>)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text currency-label">GBP</span>
+                                    <input type="number" name="bank_fee" id="cost_bank_fee_input" class="form-control" step="0.01" min="0" placeholder="0.00" value="0.00">
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small mb-1">Net Amount (<span class="currency-label">GBP</span>)</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text currency-label">GBP</span>
+                                    <input type="text" id="cost_net_amount_input" class="form-control bg-white fw-bold text-success" readonly value="0.00">
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 11px;"><i class="fas fa-info-circle me-1"></i> Net amount = Full payment amount - Bank fee</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Transaction Reference / TXN ID (Optional)</label>
@@ -1833,8 +1931,18 @@
                         <span class="fw-bold text-dark fs-6" id="det_amount">0.00 GBP</span>
                     </div>
                     <div class="col-6">
-                        <small class="text-muted d-block">Total Paid Amount</small>
+                        <small class="text-muted d-block">Total Amount of Pay</small>
                         <span class="fw-bold text-success fs-6" id="det_paid">0.00 GBP</span>
+                    </div>
+
+                    <!-- Bank Fee & Net Amount -->
+                    <div class="col-6 det-bank-fee-row" style="display: none;">
+                        <small class="text-muted d-block">Bank Fee</small>
+                        <span class="fw-bold text-danger fs-6" id="det_bank_fee">0.00 GBP</span>
+                    </div>
+                    <div class="col-6 det-bank-fee-row" style="display: none;">
+                        <small class="text-muted d-block">Net Amount</small>
+                        <span class="fw-bold text-primary fs-6" id="det_net_amount">0.00 GBP</span>
                     </div>
 
                     <!-- Dates & Methods -->
@@ -2160,7 +2268,34 @@ $(document).ready(function() {
         }
     });
 
-    // Record Payment Modal logic
+    function getCurrencySymbolJS(code) {
+        const symbols = {
+            'GBP': '£',
+            'USD': '$',
+            'EUR': '€',
+            'BDT': '৳',
+            'AUD': 'A$',
+            'CAD': 'C$',
+            'INR': '₹',
+            'MYR': 'RM',
+            'SGD': 'S$'
+        };
+        const clean = (code || 'GBP').replace(/\s*\(.*?\)/, '').trim().toUpperCase();
+        return symbols[clean] || '$';
+    }
+
+    function formatCurrencyJS(amount, code) {
+        const cleanCode = (code || 'GBP').replace(/\s*\(.*?\)/, '').trim().toUpperCase();
+        const symbol = getCurrencySymbolJS(cleanCode);
+        const num = parseFloat(amount || 0);
+        const formatted = num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (cleanCode && cleanCode !== symbol) {
+            return `${cleanCode} ${symbol} ${formatted}`;
+        }
+        return `${symbol} ${formatted}`;
+    }
+
+    // Record Payment Modal logic (Installment)
     $(document).on('click', '.record-payment-btn', function() {
         const id = $(this).data('id');
         const number = $(this).data('inst');
@@ -2177,18 +2312,43 @@ $(document).ready(function() {
         $('.currency-label').text(currency);
         
         $('#amount_paid_input').val(remaining.toFixed(2));
+        $('#inst_bank_fee_input').val('');
+        $('#inst_net_amount_input').val(remaining.toFixed(2));
+        $('#inst_bank_fee_wrapper').hide();
+
         $('#recordPaymentForm').attr('action', `/admin/installments/${id}/record-payment`);
         $('#recordPaymentModal').modal('show');
     });
 
+    $(document).on('click', '#toggle_inst_bank_fee_btn', function() {
+        $('#inst_bank_fee_wrapper').slideToggle(200, function() {
+            if ($(this).is(':visible')) {
+                $('#inst_bank_fee_input').focus();
+            }
+        });
+    });
+
+    $(document).on('input change', '#inst_bank_fee_input', function() {
+        const amountPay = parseFloat($('#amount_paid_input').val()) || 0;
+        const fee = parseFloat($(this).val()) || 0;
+        const net = Math.max(0, amountPay - fee);
+        $('#inst_net_amount_input').val(net.toFixed(2));
+    });
+
+    // Record Payment Modal logic (Additional Cost)
     $(document).on('click', '.record-cost-payment-btn', function() {
         const costId = $(this).data('id');
         const costName = $(this).data('name');
-        const amount = parseFloat($(this).data('amount')).toFixed(2);
+        const amount = parseFloat($(this).data('amount'));
         const currency = $(this).data('currency');
 
         $('#modal_cost_name').val(costName);
-        $('#modal_cost_amount').val(amount + ' ' + currency);
+        $('#modal_cost_amount').val(amount.toFixed(2) + ' ' + currency);
+        $('#recordCostPaymentForm').data('raw-amount', amount);
+
+        $('#cost_bank_fee_input').val('');
+        $('#cost_net_amount_input').val(amount.toFixed(2));
+        $('#cost_bank_fee_wrapper').hide();
 
         const actionUrl = "{{ url('/admin/additional-costs') }}/" + costId + "/record-payment";
         $('#recordCostPaymentForm').attr('action', actionUrl);
@@ -2196,6 +2356,22 @@ $(document).ready(function() {
         $('#recordCostPaymentModal').modal('show');
     });
 
+    $(document).on('click', '#toggle_cost_bank_fee_btn', function() {
+        $('#cost_bank_fee_wrapper').slideToggle(200, function() {
+            if ($(this).is(':visible')) {
+                $('#cost_bank_fee_input').focus();
+            }
+        });
+    });
+
+    $(document).on('input change', '#cost_bank_fee_input', function() {
+        const rawAmount = parseFloat($('#recordCostPaymentForm').data('raw-amount')) || 0;
+        const fee = parseFloat($(this).val()) || 0;
+        const net = Math.max(0, rawAmount - fee);
+        $('#cost_net_amount_input').val(net.toFixed(2));
+    });
+
+    // View Payment Details
     $(document).on('click', '.payment-details-btn', function() {
         const type = $(this).data('item-type');
         const title = $(this).data('item-title');
@@ -2204,6 +2380,9 @@ $(document).ready(function() {
         const receiverName = $(this).data('receiver-name');
         const amount = $(this).data('amount');
         const paid = $(this).data('paid');
+        const bankFee = parseFloat($(this).data('bank-fee')) || 0;
+        const currency = $(this).data('currency') || 'GBP';
+        const rawPaid = parseFloat($(this).data('raw-paid')) || 0;
         const dueDate = $(this).data('due-date');
         const paidDate = $(this).data('paid-date') || 'N/A';
         const method = $(this).data('payment-method') || 'N/A';
@@ -2222,6 +2401,15 @@ $(document).ready(function() {
         $('#det_paid_date').text(paidDate);
         $('#det_payment_method').text(method);
         $('#det_transaction_id').text(txnId);
+
+        if (bankFee > 0) {
+            const netPaid = Math.max(0, rawPaid - bankFee);
+            $('#det_bank_fee').text(formatCurrencyJS(bankFee, currency));
+            $('#det_net_amount').text(formatCurrencyJS(netPaid, currency));
+            $('.det-bank-fee-row').show();
+        } else {
+            $('.det-bank-fee-row').hide();
+        }
 
         if (attachmentUrl) {
             $('#det_attachment_container').html(`

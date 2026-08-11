@@ -489,6 +489,7 @@ class StudentController extends Controller
 
         $request->validate([
             'amount_paid' => 'required|numeric|min:0.01|max:' . $maxAllowed,
+            'bank_fee' => 'nullable|numeric|min:0',
             'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
         ]);
 
@@ -498,6 +499,7 @@ class StudentController extends Controller
         }
 
         $installment->pending_paid_amount = $request->amount_paid;
+        $installment->bank_fee = $request->bank_fee ?? 0;
         $installment->payment_method = $request->payment_method ?? 'Cash';
         $installment->transaction_id = $request->transaction_id ?? null;
         if ($attachmentPath) {
@@ -563,6 +565,7 @@ class StudentController extends Controller
         $application = $cost->application;
 
         $request->validate([
+            'bank_fee' => 'nullable|numeric|min:0',
             'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120',
         ]);
 
@@ -571,6 +574,7 @@ class StudentController extends Controller
             $attachmentPath = $request->file('attachment')->store('payment_attachments', 'public');
         }
 
+        $cost->bank_fee = $request->bank_fee ?? 0;
         $cost->payment_method = $request->payment_method ?? 'Cash/Direct';
         $cost->transaction_id = $request->transaction_id ?? null;
         if ($attachmentPath) {

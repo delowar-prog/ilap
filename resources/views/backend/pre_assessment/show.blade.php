@@ -24,8 +24,9 @@
 .profile-avatar {
     width: 200px;
     height: 200px;
-    border-radius: 50%;
-    border: 4px solid rgba(255,255,255,0.2);
+    border-radius: 14px;
+    border: 3px solid rgba(255,255,255,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     object-fit: cover;
     background: rgba(255,255,255,0.1);
     display: flex;

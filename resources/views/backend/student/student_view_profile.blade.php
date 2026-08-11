@@ -25,8 +25,9 @@
 .profile-avatar {
     width: 200px;
     height: 200px;
-    border-radius: 50%;
-    border: 4px solid rgba(255,255,255,0.2);
+    border-radius: 14px;
+    border: 3px solid rgba(255,255,255,0.3);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     object-fit: cover;
     background: rgba(255,255,255,0.1);
     display: flex;
@@ -121,10 +122,50 @@
                         <input type="file" id="header_profile_picture" name="profile_picture" accept="image/*" onchange="uploadHeaderProfilePicture(this)">
                     </form>
                     
+                    @php
+                        $usedPromoCode = $student->promo_code;
+                        $referrerName = 'Direct Join';
+                        
+                        if ($student->agent) {
+                            $referrerName = ($student->agent->full_name ?: $student->agent->name) . ' (Agent)';
+                            if (!$usedPromoCode && $student->agent->agent_code) {
+                                $usedPromoCode = $student->agent->agent_code;
+                            }
+                        } elseif ($usedPromoCode) {
+                            $agentByCode = \App\Models\Agent::where('agent_code', strtoupper($usedPromoCode))->first();
+                            if ($agentByCode) {
+                                $referrerName = ($agentByCode->full_name ?: $agentByCode->name) . ' (Agent)';
+                            } else {
+                                $referrerUser = \App\Models\User::where('referral_code', strtoupper($usedPromoCode))->first();
+                                if ($referrerUser) {
+                                    $refUserName = trim(($referrerUser->user_first_name ?? '') . ' ' . ($referrerUser->user_last_name ?? '')) ?: ($referrerUser->name ?? 'Referral Student');
+                                    $referrerName = $refUserName . ' (Student)';
+                                } else {
+                                    $referrerName = 'Promo Code: ' . $usedPromoCode;
+                                }
+                            }
+                        }
+                    @endphp
                     <div class="profile-header-info">
                         <h2>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</h2>
-                        <p><i class="fas fa-id-badge me-1"></i> {{ $student->student_id }} &nbsp;|&nbsp; <i class="fas fa-envelope me-1"></i> {{ $student->email }}</p>
-                        <div class="mt-2 text-white-50 small">Profile Completion: <strong class="text-white">{{ $completionPercent }}%</strong></div>
+                        <p class="mb-1 text-white fw-medium" style="font-size: 0.95rem;">
+                            <i class="fas fa-id-badge me-1 text-warning" title="Student ID"></i> {{ $student->student_id }} 
+                            <span class="text-white-50 mx-2">|</span> 
+                            <i class="fas fa-envelope me-1 text-info" title="Email"></i> {{ $student->email ?? 'N/A' }} 
+                            <span class="text-white-50 mx-2">|</span> 
+                            <i class="fas fa-phone-alt me-1 text-success" title="Phone"></i> {{ $student->phone ?? 'N/A' }}
+                        </p>
+                        <p class="mb-1 text-white fw-medium" style="font-size: 0.92rem;">
+                            <i class="fas fa-university me-1 text-info"></i> <strong>Campus Name:</strong> {{ $student->campus->name ?? 'N/A' }}
+                            <span class="text-white-50 mx-2">|</span>
+                            <strong>Campus Code:</strong> {{ $student->campus->campus_code ?? 'N/A' }}
+                        </p>
+                        <p class="mb-1 text-white fw-medium" style="font-size: 0.92rem;">
+                            <i class="fas fa-user-tag me-1 text-warning"></i> <strong>Referrer Name:</strong> {{ $referrerName }}
+                            <span class="text-white-50 mx-2">|</span>
+                            <i class="fas fa-ticket-alt me-1 text-success"></i> <strong>Promocode:</strong> {{ $usedPromoCode ?? 'None' }}
+                        </p>
+                        <div class="mt-2 text-white fw-medium small">Profile Completion: <strong class="text-white fw-bold">{{ $completionPercent }}%</strong></div>
                     </div>
                 </div>
             </div>

@@ -29,10 +29,12 @@ class StudentApplicationInstallment extends Model
         'approval_status',
         'refunded_amount',
         'deducted_amount',
+        'bank_fee',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'bank_fee' => 'decimal:2',
         'paid_amount' => 'decimal:2',
         'refunded_amount' => 'decimal:2',
         'deducted_amount' => 'decimal:2',
