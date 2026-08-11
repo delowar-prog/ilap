@@ -43,7 +43,7 @@
                     </div>
 
                     <div class="col-md-2">
-                        <select name="status" class="form-select form-select-sm">
+                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                             <option value="">All Status</option>
                             <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
@@ -51,7 +51,14 @@
                     </div>
 
                     <div class="col-md-2">
-                        <select name="per_page" class="form-select form-select-sm">
+                        <select name="sort_dir" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="desc" {{ request('sort_dir', 'desc') == 'desc' ? 'selected' : '' }}>Newest First (DESC)</option>
+                            <option value="asc" {{ request('sort_dir') == 'asc' ? 'selected' : '' }}>Oldest First (ASC)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <select name="per_page" class="form-select form-select-sm" onchange="this.form.submit()">
                             <option value="10" {{ request('per_page') == '10' ? 'selected' : '' }}>10 Rows</option>
                             <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25 Rows</option>
                             <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50 Rows</option>
@@ -59,9 +66,9 @@
                         </select>
                     </div>
 
-                    <div class="col-md-2">
+                    <div class="col-md-1">
                         <button class="btn btn-primary btn-sm w-100">
-                            <i class="fas fa-search me-1"></i> Filter
+                            <i class="fas fa-search"></i>
                         </button>
                     </div>
 

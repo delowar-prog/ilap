@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::create('agent_commissions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('agent_id')->constrained('agents')->cascadeOnDelete();
-            $table->foreignId('course_id')->nullable()->constrained('courses')->nullOnDelete(); // Null হলে সব কোর্সের জন্য প্রযোজ্য
+            $table->foreignId('course_id')->nullable()->constrained('courses')->nullOnDelete(); // Null means applicable to all courses
             $table->enum('commission_type', ['flat', 'percentage']);
             $table->decimal('amount', 10, 2); 
             $table->string('currency', 10)->default('USD'); // GBP, USD, BDT, etc.

@@ -41,10 +41,17 @@
                 </div>
 
                 <div class="col-md-2">
-                    <select name="commission_type" class="form-select form-select-sm">
+                    <select name="commission_type" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All Types</option>
                         <option value="flat" {{ request('commission_type') == 'flat' ? 'selected' : '' }}>Flat</option>
                         <option value="percentage" {{ request('commission_type') == 'percentage' ? 'selected' : '' }}>Percentage</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <select name="sort_dir" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="desc" {{ request('sort_dir', 'desc') == 'desc' ? 'selected' : '' }}>Newest First (DESC)</option>
+                        <option value="asc" {{ request('sort_dir') == 'asc' ? 'selected' : '' }}>Oldest First (ASC)</option>
                     </select>
                 </div>
 

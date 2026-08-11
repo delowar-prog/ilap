@@ -25,6 +25,11 @@
                                 @endforeach
                             </select>
                             <span class="text-muted" style="font-size:0.82rem;">entries</span>
+
+                            <select name="sort_dir" class="form-select form-select-sm ms-2" style="width:160px;" onchange="this.form.submit()">
+                                <option value="desc" {{ ($sortDir ?? 'desc') == 'desc' ? 'selected' : '' }}>Newest First (DESC)</option>
+                                <option value="asc" {{ ($sortDir ?? 'desc') == 'asc' ? 'selected' : '' }}>Oldest First (ASC)</option>
+                            </select>
                         </div>
                         {{-- Right: search + button --}}
                         <div class="d-flex align-items-center gap-2">

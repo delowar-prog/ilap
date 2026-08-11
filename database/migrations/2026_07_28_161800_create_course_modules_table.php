@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('course_id')->constrained('courses')->onDelete('cascade');
             $table->string('code')->nullable();
-            $table->string('title');
+            $table->string('title')->nullable();
             $table->string('credit')->nullable();
+            $table->string('glh')->nullable();
             $table->boolean('is_mandatory')->default(false);
             $table->integer('priority')->default(0);
             $table->timestamps();

@@ -15,10 +15,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->foreignId('letter_template_id')->nullable()->constrained('letter_templates')->onDelete('set null');
+            $table->unsignedBigInteger('letter_head_id')->nullable();
             $table->string('letter_title');
             $table->string('file_path');
             $table->string('file_type')->default('pdf'); 
             $table->foreignId('generated_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->boolean('sent_to_student')->default(false);
+            $table->timestamp('sent_at')->nullable();
             $table->timestamps();
         });
     }

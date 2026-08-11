@@ -21,13 +21,13 @@
     <div class="card-body">
 
         <form method="GET" action="{{ route('admin.invoice-templates.index') }}" class="row g-2 mb-4">
-            <div class="col-md-5">
+            <div class="col-md-4">
                 <div class="input-group">
                     <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
                     <input type="text" name="search" class="form-control" placeholder="Search templates by title or type..." value="{{ request('search') }}">
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <select name="type" class="form-select" onchange="this.form.submit()">
                     <option value="">-- All Template Types --</option>
                     @if(isset($types))
@@ -37,9 +37,15 @@
                     @endif
                 </select>
             </div>
-            <div class="col-md-3 d-flex gap-2">
+            <div class="col-md-3">
+                <select name="sort_dir" class="form-select" onchange="this.form.submit()">
+                    <option value="desc" {{ request('sort_dir', 'desc') == 'desc' ? 'selected' : '' }}>Newest First (DESC)</option>
+                    <option value="asc" {{ request('sort_dir') == 'asc' ? 'selected' : '' }}>Oldest First (ASC)</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
                 <button type="submit" class="btn btn-secondary w-100">Filter</button>
-                @if(request('search') || request('type'))
+                @if(request('search') || request('type') || request('sort_dir'))
                     <a href="{{ route('admin.invoice-templates.index') }}" class="btn btn-outline-danger" title="Reset Filters"><i class="fas fa-redo"></i></a>
                 @endif
             </div>

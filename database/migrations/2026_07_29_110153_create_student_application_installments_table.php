@@ -16,9 +16,22 @@ return new class extends Migration
             $table->unsignedBigInteger('student_application_id');
             $table->integer('installment_number');
             $table->decimal('amount', 10, 2);
+            $table->decimal('bank_fee', 10, 2)->default(0.00);
             $table->date('due_date');
-            $table->enum('status', ['pending', 'paid', 'partially_paid'])->default('pending');
+            $table->string('status')->default('pending');
             $table->decimal('paid_amount', 10, 2)->default(0.00);
+            $table->timestamp('paid_at')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->string('transaction_id')->nullable();
+            $table->boolean('is_invoiced')->default(false);
+
+            $table->string('payment_approval_status')->default('pending');
+            $table->string('payment_attachment')->nullable();
+            $table->text('approval_note')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('approved_at')->nullable();
+            $table->text('note')->nullable();
+
             $table->timestamps();
 
             $table->foreign('student_application_id', 'sa_inst_app_id_foreign')

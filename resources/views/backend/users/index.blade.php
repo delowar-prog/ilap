@@ -56,7 +56,7 @@
                     </div>
 
                     <div class="col-md-2">
-                        <select name="status" class="form-select form-select-sm">
+                        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                             <option value="">All Status</option>
                             <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive
@@ -65,8 +65,15 @@
                     </div>
 
                     <div class="col-md-2">
+                        <select name="sort_dir" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="desc" {{ request('sort_dir', 'desc') == 'desc' ? 'selected' : '' }}>Newest First (DESC)</option>
+                            <option value="asc" {{ request('sort_dir') == 'asc' ? 'selected' : '' }}>Oldest First (ASC)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-1">
                         <button class="btn btn-primary btn-sm w-100">
-                            <i class="fas fa-search me-1"></i> Filter
+                            <i class="fas fa-search"></i>
                         </button>
                     </div>
                 </div>
@@ -128,7 +135,7 @@
                             </td>
 
                             <td class="text-start">
-                                {{-- প্যাকেজটি অটোমেটিক্যালি canImpersonate() এবং canBeImpersonated() চেক করে নেয় --}}
+                                {{-- Impersonation check for privileged users --}}
                                 @if (auth()->user()->canImpersonate() && $user->canBeImpersonated())
                                     <form action="{{ route('impersonate', $user->id) }}" method="POST" class="d-inline">
                                         @csrf

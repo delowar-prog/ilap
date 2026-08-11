@@ -14,14 +14,20 @@ return new class extends Migration
         Schema::create('campuses', function (Blueprint $table) {
             $table->id();
             $table->string('campus_code', 20)->unique()->comment('e.g., UGBSLC1, UKBDLC2, USNYLC3');
+            $table->foreignId('campus_type_id')->nullable()->constrained('campus_types')->nullOnDelete();
             $table->string('name');
             $table->boolean('is_main_campus')->default(0);
             $table->unsignedInteger('campus_number')->nullable()->default(1);
             $table->string('country', 100);
+            $table->string('state')->nullable();
             $table->string('city', 100);
             $table->text('address')->nullable();
+            $table->string('post_code')->nullable();
             $table->string('phone', 30)->nullable();
             $table->string('email', 150)->nullable();
+            $table->string('contact_person_name')->nullable();
+            $table->string('contact_person_phone')->nullable();
+            $table->string('contact_person_email')->nullable();
             $table->string('logo', 255)->nullable();
             $table->string('currency', 10)->default('GBP')->comment('GBP, BDT, USD');
             $table->string('timezone', 50)->default('Europe/London');

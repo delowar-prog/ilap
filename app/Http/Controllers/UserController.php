@@ -21,10 +21,10 @@ class UserController extends Controller
         $isSuperAdmin = $user->hasRole('Super Admin');
 
         $query = User::with('campus')
-            // ১. ব্রাঞ্চ রেজুল্টেশন: সুপার এডমিন না হলে শুধু নিজের ব্রাঞ্চের ইউজার দেখবে
+            // 1. Branch resolution: filter by campus if not Super Admin
             ->when(! $isSuperAdmin, fn ($q) => $q->where('campus_id', $user->campus_id))
 
-            // ২. সার্চ ফিল্টার (OR কন্ডিশন গ্রুপ করা হয়েছে)
+            // 2. Search filter
             ->when(request('search'), function ($q) {
                 $search = request('search');
                 $q->where(function ($subQuery) use ($search) {
@@ -34,21 +34,19 @@ class UserController extends Controller
                 });
             })
 
-            // ৩. ব্রাঞ্চ ফিল্টার (শুধুমাত্র সুপার এডমিনের জন্য)
+            // 3. Campus filter for Super Admin
             ->when($isSuperAdmin && request('campus_id'), fn ($q) => $q->where('campus_id', request('campus_id')))
 
-            // ৪. রোল ফিল্টার
+            // 4. Role filter
             ->when(request('role'), fn ($q) => $q->role(request('role')))
 
-            // ৫. স্ট্যাটাস ফিল্টার
-            ->when(request('status'), fn ($q) => $q->where('status', request('status')))
+            // 5. Status filter
+            ->when(request('status'), fn ($q) => $q->where('status', request('status')));
 
-            // নতুন ইউজাররা আগে দেখাবে (Optional but recommended)
-            ->latest();
+        $sortDir = request('sort_dir', 'desc') === 'asc' ? 'asc' : 'desc';
+        $users = $query->orderBy('id', $sortDir)->paginate(request('per_page', 10))->withQueryString();
 
-        $users = $query->paginate(request('per_page', 10));
-
-        // ড্রপডাউনের জন্য অপ্টিমাইজড ডেটা (শুধুমাত্র প্রয়োজনীয় কলাম লোড করা হয়েছে)
+        // Fetch data for dropdowns
         $campuses = Campus::where('status', 'active')->select('id', 'name')->get();
         $roles = Role::where('name', '!=', 'Super Admin')->select('id', 'name')->get();
 
@@ -63,7 +61,7 @@ class UserController extends Controller
         $currentUser = auth()->user();
         $isPrivilegedUser = $currentUser->hasRole('Super Admin') || $currentUser->hasRole('HQ Admin');
 
-        // ব্রাঞ্চ ফিল্টারিং
+        // Branch filtering
         $campusesQuery = Campus::where('status', 'active');
 
         if (! $isPrivilegedUser) {
@@ -72,14 +70,14 @@ class UserController extends Controller
 
         $campuses = $campusesQuery->orderBy('name')->get();
 
-        // রোল ফিল্টারিং
+        // Role filtering
         $rolesQuery = Role::query();
 
         if ($isPrivilegedUser) {
-            // Super Admin/HQ Admin: সব রোল দেখবে (Super Admin বাদে)
+            // Super Admin/HQ Admin: all roles except Super Admin
             $rolesQuery->where('name', '!=', 'Super Admin');
         } else {
-            // ব্রাঞ্চ ইউজার: শুধু এই রোলগুলো দেখবে
+            // Branch user: allowed branch roles
             $allowedRoles = ['Campus Admin', 'Staff', 'Student'];
             $rolesQuery->whereIn('name', $allowedRoles);
         }
@@ -94,16 +92,14 @@ class UserController extends Controller
      */
     public function store(UserCreateRequest $request)
     {
-        
-        // DB Transaction ব্যবহার করছি যাতে ইউজার তৈরি হলে রোল অ্যাসাইনও নিশ্চিত হয়
         DB::transaction(function () use ($request) {
-            // ১. ছবি আপলোড হ্যান্ডলিং
+            // 1. Photo upload handling
             $photoPath = null;
             if ($request->hasFile('photo')) {
                 $photoPath = $request->file('photo')->store('users/photos', 'public');
             }
 
-            // ২. ইউজার তৈরি
+            // 2. Create user record
             $user = User::create([
                 'user_first_name' => $request->user_first_name,
                 'user_middle_name' => $request->user_middle_name,
@@ -116,7 +112,7 @@ class UserController extends Controller
                 'status'          => $request->status,
             ]);
 
-            // ৩. রোল অ্যাসাইন করা (Spatie Permission)
+            // 3. Assign role
             $user->assignRole($request->role);
         });
 

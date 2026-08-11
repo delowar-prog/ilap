@@ -13,6 +13,8 @@ return new class extends Migration
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
             $table->string('education_level'); // 10th, 12th, Bachelor, Master, Research
             $table->string('country')->nullable();
+            $table->string('city')->nullable();
+            $table->string('zip_code')->nullable();
             $table->string('institution_name')->nullable();
             $table->text('institution_address')->nullable();
             $table->string('course_name')->nullable();

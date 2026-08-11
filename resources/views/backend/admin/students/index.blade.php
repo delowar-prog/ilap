@@ -54,7 +54,7 @@
                     <input type="hidden" name="sort_by" value="{{ $sortBy }}">
                     <input type="hidden" name="sort_dir" value="{{ $sortDir }}">
                     <div class="d-flex align-items-center justify-content-between gap-2 p-2 rounded" style="background:#f8f9fc; border:1px solid #e3e6f0;">
-                        {{-- Left: per-page --}}
+                        {{-- Left: per-page & sort direction --}}
                         <div class="d-flex align-items-center gap-2">
                             <label class="text-muted fw-semibold mb-0 text-nowrap" style="font-size:0.82rem;">Show</label>
                             <select name="per_page" id="per_page_st" class="form-select form-select-sm" style="width:75px;" onchange="this.form.submit()">
@@ -63,6 +63,11 @@
                                 @endforeach
                             </select>
                             <span class="text-muted" style="font-size:0.82rem;">entries</span>
+
+                            <select name="sort_dir" class="form-select form-select-sm ms-2" style="width:160px;" onchange="this.form.submit()">
+                                <option value="desc" {{ $sortDir == 'desc' ? 'selected' : '' }}>Newest First (DESC)</option>
+                                <option value="asc" {{ $sortDir == 'asc' ? 'selected' : '' }}>Oldest First (ASC)</option>
+                            </select>
                         </div>
                         {{-- Right: search + button --}}
                         <div class="d-flex align-items-center gap-2">

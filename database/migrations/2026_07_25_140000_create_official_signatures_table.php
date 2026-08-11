@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('designation')->nullable();
             $table->string('tag_key')->unique(); // e.g. principal_signature -> {{principal_signature}}
             $table->string('signature_path');
+            $table->string('seal_path')->nullable();
             $table->string('type')->default('signature'); // signature, seal
             $table->string('status')->default('active'); // active, inactive
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');

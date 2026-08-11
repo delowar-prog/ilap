@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('type')->default('custom'); // tuition_fee, course_material, registration_fee, custom
+            $table->unsignedBigInteger('letter_head_id')->nullable();
             $table->string('subject')->nullable();
             $table->longText('content_body');
             $table->string('header_image')->nullable();

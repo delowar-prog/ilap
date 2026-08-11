@@ -9,12 +9,15 @@ return new class extends Migration {
     {
         Schema::create('agents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('campus_id')->constrained('campuses')->cascadeOnDelete(); // ব্রাঞ্চ আইসোলেশনের জন্য
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete(); // লগইন করার জন্য
-            $table->foreignId('parent_agent_id')->nullable()->constrained('agents')->nullOnDelete(); // Sub-agent এর জন্য Master Agent ID
-            $table->string('agent_code')->unique(); // Promo Code / Referral Code হিসেবে ব্যবহৃত হবে
+            $table->foreignId('campus_id')->constrained('campuses')->cascadeOnDelete(); // Branch isolation
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete(); // User login account
+            $table->foreignId('parent_agent_id')->nullable()->constrained('agents')->nullOnDelete(); // Parent Master Agent ID for sub-agents
+            $table->string('agent_code')->unique(); // Unique agent referral code
             $table->enum('agent_type', ['master', 'sub_agent'])->default('master');
             $table->string('name');
+            $table->string('first_name')->nullable();
+            $table->string('middle_name')->nullable();
+            $table->string('last_name')->nullable();
             $table->string('email')->unique();
             $table->string('phone')->nullable();
             $table->string('photo')->nullable();

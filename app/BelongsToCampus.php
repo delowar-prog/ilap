@@ -5,14 +5,14 @@ namespace App;
 trait BelongsToCampus
 {
     protected static function bootBelongsToBranch() {
-        // ডেটা সেভ করার সময় অটো campus_id সেট হবে
+        // Automatically set campus_id when creating model
         static::creating(function ($model) {
             if (auth()->check() && !auth()->user()->hasRole('Super Admin')) {
                 $model->campus_id = auth()->user()->campus_id;
             }
         });
 
-        // ডেটা দেখার সময় অটো ফিল্টার হবে
+        // Automatically filter data based on user campus_id
         static::addGlobalScope('campus_scope', function ($builder) {
             if (auth()->check() && !auth()->user()->hasRole('Super Admin')) {
                 $builder->where('campus_id', auth()->user()->campus_id);

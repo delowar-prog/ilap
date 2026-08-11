@@ -18,6 +18,7 @@ return new class extends Migration {
                 'payment_made', 'enrolment_confirmed'
             ])->default('incomplete');
             $table->decimal('total_fee', 10, 2)->default(0);
+            $table->decimal('scholarship_amount', 10, 2)->default(0);
             $table->decimal('paid_amount', 10, 2)->default(0);
             $table->timestamps();
         });

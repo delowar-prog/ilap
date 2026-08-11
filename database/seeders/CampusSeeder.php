@@ -14,7 +14,7 @@ class CampusSeeder extends Seeder
     public function run(): void
     {
         Campus::updateOrCreate(
-            ['id' => 1], // id=1 ফিক্সড রাখার জন্য শর্ত
+            ['id' => 1], // Keep id=1 fixed for head office
             [
                 'campus_code'    => 'HO-001',
                 'name'           => 'Head Office',
@@ -25,7 +25,7 @@ class CampusSeeder extends Seeder
                 'address'        => 'House #00, Road #00, Dhanmondi, Dhaka-1205',
                 'phone'          => '+8801700000000',
                 'email'          => 'headoffice@yourdomain.com',
-                'logo'           => null, // পরে ড্যাশবোর্ড থেকে আপলোড করা যাবে
+                'logo'           => null,
                 'currency'       => 'BDT',
                 'timezone'       => 'Asia/Dhaka',
                 'status'         => 'active',

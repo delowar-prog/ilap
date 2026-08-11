@@ -35,9 +35,10 @@ class CampusController extends Controller
             })
             ->when(request('status') !== null, function ($q) {
                 $q->where('status', request('status'));
-            })
-            ->latest()
-            ->paginate(request('per_page', 10));
+            });
+
+        $sortDir = request('sort_dir', 'desc') === 'asc' ? 'asc' : 'desc';
+        $campuses = $campuses->orderBy('id', $sortDir)->paginate(request('per_page', 10))->withQueryString();
 
         $countries = Campus::query()
             ->when(! auth()->user()->hasRole('Super Admin'), function ($q) {

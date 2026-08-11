@@ -19,11 +19,11 @@ class AgentCommissionController extends Controller
         $isSuperAdmin = $user->hasRole('Super Admin');
         $isMasterAgent = $user->hasRole('Master Agent');
 
-        // HQ সব দেখতে পারবে, Master Agent শুধু নিজের Sub-Agent এর কমিশন
+        // HQ sees all, Master Agent sees own and sub-agent commissions
         $query = AgentCommission::with(['agent', 'course', 'agent.campus'])
             ->when(!$isSuperAdmin, function ($q) use ($user) {
                 if ($user->hasRole('Master Agent')) {
-                    // Master Agent এর নিজের এবং Sub-Agent এর কমিশন
+                    // Master Agent own and sub-agent commissions
                     $subAgentIds = Agent::where('parent_agent_id', $user->agent->id ?? 0)->pluck('id');
                     $q->whereIn('agent_id', $subAgentIds->push($user->agent->id ?? 0));
                 } else {
@@ -39,12 +39,12 @@ class AgentCommissionController extends Controller
             })
             ->when(request('agent_id'), fn($q) => $q->where('agent_id', request('agent_id')))
             ->when(request('commission_type'), fn($q) => $q->where('commission_type', request('commission_type')))
-            ->when(request('course_id'), fn($q) => $q->where('course_id', request('course_id')))
-            ->latest();
+            ->when(request('course_id'), fn($q) => $q->where('course_id', request('course_id')));
 
-        $commissions = $query->paginate(15);
+        $sortDir = request('sort_dir', 'desc') === 'asc' ? 'asc' : 'desc';
+        $commissions = $query->orderBy('id', $sortDir)->paginate(15)->withQueryString();
 
-        // Dropdown এর জন্য ডেটা
+        // Fetch agents data for dropdown
         $agents = Agent::when(!$isSuperAdmin, function ($q) use ($user) {
                 if ($user->hasRole('Master Agent')) {
                     $subAgentIds = Agent::where('parent_agent_id', $user->agent->id ?? 0)->pluck('id');
@@ -73,7 +73,7 @@ class AgentCommissionController extends Controller
         $isSuperAdmin = $user->hasRole('Super Admin');
         $isMasterAgent = $user->hasRole('Master Agent');
 
-        // HQ সব Agent দেখতে পারবে, Master Agent শুধু নিজের Sub-Agent
+        // HQ sees all agents, Master Agent sees own sub-agents
         $agents = Agent::when(!$isSuperAdmin, function ($q) use ($user) {
                 if ($user->hasRole('Master Agent')) {
                     $q->where('parent_agent_id', $user->agent->id ?? 0)
@@ -112,11 +112,11 @@ class AgentCommissionController extends Controller
             'currency'        => 'required|string|max:10',
         ]);
 
-        // 🔒 Permission Check
+        // Permission check
         $agent = Agent::findOrFail($validated['agent_id']);
         
         if ($user->hasRole('Master Agent')) {
-            // Master Agent শুধু নিজের এবং নিজের Sub-Agent এর কমিশন সেট করতে পারবে
+            // Master Agent can only set commission for self or sub-agents
             if ($agent->id != $user->agent->id && $agent->parent_agent_id != $user->agent->id) {
                 abort(403, 'You can only set commission for yourself or your sub-agents.');
             }
@@ -124,7 +124,7 @@ class AgentCommissionController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        // 🛡️ Duplicate Check (একই agent + course এর জন্য আগে থেকে কমিশন আছে কিনা)
+        // Duplicate Check
         $existing = AgentCommission::where('agent_id', $validated['agent_id'])
             ->where(function ($q) use ($validated) {
                 if ($validated['course_id']) {
@@ -164,7 +164,7 @@ class AgentCommissionController extends Controller
         $commission = AgentCommission::with('agent', 'course')->findOrFail($id);
         $user = auth()->user();
 
-        // 🔒 Permission Check
+        // Permission check
         $this->authorizeCommissionAccess($commission, $user);
 
         $agents = Agent::when(!$user->hasRole('Super Admin'), function ($q) use ($user) {
@@ -196,7 +196,7 @@ class AgentCommissionController extends Controller
         $commission = AgentCommission::findOrFail($id);
         $user = auth()->user();
 
-        // 🔒 Permission Check
+        // Permission check
         $this->authorizeCommissionAccess($commission, $user);
 
         $validated = $request->validate([
@@ -207,7 +207,7 @@ class AgentCommissionController extends Controller
             'currency'        => 'required|string|max:10',
         ]);
 
-        // 🛡️ Duplicate Check (নিজেকে বাদ দিয়ে)
+        // Duplicate check (excluding current record)
         $existing = AgentCommission::where('agent_id', $validated['agent_id'])
             ->where('id', '!=', $commission->id)
             ->where(function ($q) use ($validated) {
@@ -250,7 +250,7 @@ class AgentCommissionController extends Controller
 
         $this->authorizeCommissionAccess($commission, $user);
 
-        // 🛡️ চেক করা: এই কমিশনের বিপরীতে কোনো transaction হয়েছে কিনা
+        // Check if commission has associated transactions
         $hasTransactions = $commission->agent
             ->masterTransactions()
             ->orWhere('sub_agent_id', $commission->agent_id)
@@ -271,12 +271,12 @@ class AgentCommissionController extends Controller
     private function authorizeCommissionAccess($commission, $user)
     {
         if ($user->hasRole('Super Admin')) {
-            return; // HQ সব করতে পারবে
+            return; // HQ super admin access
         }
 
         if ($user->hasRole('Master Agent')) {
             $agentId = $user->agent->id ?? 0;
-            // Master Agent শুধু নিজের এবং নিজের Sub-Agent এর কমিশন এডিট করতে পারবে
+            // Master Agent can edit own and sub-agent commissions
             if ($commission->agent_id == $agentId) {
                 return;
             }

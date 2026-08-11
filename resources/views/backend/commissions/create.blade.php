@@ -176,7 +176,7 @@
             // Update prefix
             amountPrefix.textContent = type === 'percentage' ? '%' : '';
 
-            // Percentage এর জন্য max 100
+            // Set max to 100 for percentage
             if (type === 'percentage') {
                 amount.max = 100;
             } else {

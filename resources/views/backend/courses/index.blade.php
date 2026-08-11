@@ -28,14 +28,14 @@
                         placeholder="Search name, code or institute..." value="{{ request('search') }}">
                 </div>
                 <div class="col-md-2">
-                    <select name="course_type" class="form-select form-select-sm">
+                    <select name="course_type" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All Types</option>
                         <option value="ilap" {{ request('course_type') == 'ilap' ? 'selected' : '' }}>iLAP Own</option>
                         <option value="external" {{ request('course_type') == 'external' ? 'selected' : '' }}>External</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select name="category" class="form-select form-select-sm">
+                    <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All Categories</option>
                         <option value="short" {{ request('category') == 'short' ? 'selected' : '' }}>Short</option>
                         <option value="long" {{ request('category') == 'long' ? 'selected' : '' }}>Long</option>
@@ -43,15 +43,21 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select name="status" class="form-select form-select-sm">
+                    <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                         <option value="">All Status</option>
                         <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                         <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <select name="sort_dir" class="form-select form-select-sm" onchange="this.form.submit()">
+                        <option value="asc" {{ request('sort_dir', 'asc') == 'asc' ? 'selected' : '' }}>Ascending (A-Z)</option>
+                        <option value="desc" {{ request('sort_dir') == 'desc' ? 'selected' : '' }}>Descending (Z-A)</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
                     <button class="btn btn-primary btn-sm w-100">
-                        <i class="fas fa-search me-1"></i> Filter
+                        <i class="fas fa-search"></i>
                     </button>
                 </div>
             </div>

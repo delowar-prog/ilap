@@ -11,6 +11,13 @@ class CourseController extends Controller
 {
     public function index()
     {
+        $sortDir = request('sort_dir', 'asc') === 'desc' ? 'desc' : 'asc';
+        $sortBy = request('sort_by', 'name');
+        $allowedSorts = ['name', 'course_code', 'category', 'fee', 'created_at', 'sort_order'];
+        if (! in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'name';
+        }
+
         $courses = Course::when(request('search'), function ($q) {
                 $search = request('search');
                 $q->where(function ($sub) use ($search) {
@@ -28,9 +35,9 @@ class CourseController extends Controller
             })
             ->when(request('category'), fn($q) => $q->where('category', request('category')))
             ->when(request('status'), fn($q) => $q->where('status', request('status')))
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->paginate(15);
+            ->orderBy($sortBy, $sortDir)
+            ->paginate(15)
+            ->withQueryString();
 
         return view('backend.courses.index', compact('courses'));
     }

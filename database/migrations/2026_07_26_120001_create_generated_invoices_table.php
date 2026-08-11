@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->foreignId('invoice_template_id')->nullable()->constrained('invoice_templates')->onDelete('set null');
+            $table->unsignedBigInteger('letter_head_id')->nullable();
             $table->string('invoice_title');
             $table->string('file_path');
             $table->string('file_type')->default('pdf');

@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('student_referees', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained('students')->cascadeOnDelete();
+            $table->string('reference_type')->nullable();
             $table->string('full_name')->nullable();
             $table->string('job_title')->nullable();
             $table->string('email')->nullable();

@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->string('iso3', 3)->unique()->nullable(); // (BGD, USA, GBR)
             $table->string('phone_code', 10)->nullable(); // +880, +1, +44
             $table->string('currency', 10)->nullable(); // BDT, USD, GBP
-            $table->string('currency_symbol', 10)->nullable(); // ৳, $, £
+            $table->string('currency_symbol', 10)->nullable(); // e.g. $, £, BDT
             $table->string('capital', 100)->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();

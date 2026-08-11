@@ -26,10 +26,10 @@
             style="background: red; color: white; text-align: center; padding: 10px; position: fixed; top: 0; width: 100%; z-index: 9999;">
             ⚠️ You are currently viewing <strong>{{ auth()->user()->name }}</strong> account.
 
-            {{-- POST রিকোয়েস্ট পাঠানোর জন্য ছোট ফর্ম --}}
+            {{-- Leave impersonation form --}}
             <form action="{{ route('impersonate.leave.custom') }}" method="POST" style="display: inline; margin-left: 10px;">
                 @csrf
-                {{-- বাটনটিকে CSS দিয়ে সাধারণ লিংকের মতো স্টাইল করা হয়েছে --}}
+                {{-- Submit button styled as link --}}
                 <button type="submit"
                     style="
                 background: none; 
@@ -46,7 +46,7 @@
             </form>
         </div>
 
-        {{-- ব্যানারের কারণে মূল কন্টেন্ট যেন ঢাকা না পড়ে --}}
+        {{-- Offset for impersonation banner --}}
         <div style="margin-top: 50px;"></div>
     @endImpersonating
     <!-- ===============================================-->
@@ -57,7 +57,7 @@
         <div class="container-fluid" data-layout="container">
 
 
-            <!-- navbar deafult end here  -->
+            <!-- navbar default end here  -->
             {{-- navbar 5 --}}
             @includeIf('backend/admin_component/navbar0_dubble_top')
             @includeIf('backend/admin_component/navbar1_verticale')
@@ -88,7 +88,7 @@
 
     @includeIf('backend/admin_component/offcanvas_customize')
     @includeIf('backend/admin_component/js/script')
-    {{-- 🎯 সেন্ট্রাল মেসেজ এরিয়া --}}
+    {{-- Central Alert Messages --}}
     @include('partials.alerts')
 
 

@@ -138,7 +138,7 @@ $(document).ready(function() {
   const imageInput = document.getElementById('imageInput');
   const previewContainer = document.getElementById('previewContainer');
 
-  // যদি imageInput না থাকে, তাহলে কোনো event listener দেবো না
+  // Exit early if imageInput or previewContainer does not exist
   if (!imageInput || !previewContainer) return;
 
   imageInput.addEventListener('change', function () {

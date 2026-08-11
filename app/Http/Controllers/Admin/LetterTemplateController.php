@@ -44,7 +44,8 @@ class LetterTemplateController extends Controller
             $query->where('type', $request->type);
         }
 
-        $templates = $query->latest()->paginate(10);
+        $sortDir = $request->get('sort_dir', 'desc') === 'asc' ? 'asc' : 'desc';
+        $templates = $query->orderBy('id', $sortDir)->paginate(10)->withQueryString();
         $types = $this->getLetterTypes();
 
         return view('backend.letter_templates.index', compact('templates', 'types'));

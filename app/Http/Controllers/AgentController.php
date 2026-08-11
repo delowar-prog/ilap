@@ -21,10 +21,10 @@ class AgentController extends Controller
         $isSuperAdmin = $user->hasRole('Super Admin');
 
         $query = Agent::with(['campus', 'parentAgent'])
-            // ১. ব্রাঞ্চ আইসোলেশন: সুপার এডমিন না হলে শুধু নিজের ব্রাঞ্চের এজেন্ট দেখবে
+            // 1. Branch isolation: filter by campus if not super admin
             ->when(! $isSuperAdmin, fn ($q) => $q->where('campus_id', $user->campus_id))
 
-            // ২. সার্চ ফিল্টার
+            // 2. Search filter
             ->when(request('search'), function ($q) {
                 $search = request('search');
                 $q->where(function ($subQuery) use ($search) {
@@ -36,22 +36,21 @@ class AgentController extends Controller
                 });
             })
 
-            // ৩. ব্রাঞ্চ ফিল্টার (শুধুমাত্র সুপার এডমিনের জন্য)
+            // 3. Campus filter for super admin
             ->when($isSuperAdmin && request('campus_id'), fn ($q) => $q->where('campus_id', request('campus_id')))
 
-            // ৪. এজেন্ট টাইপ ফিল্টার
+            // 4. Agent type filter
             ->when(request('agent_type'), fn ($q) => $q->where('agent_type', request('agent_type')))
 
-            // ৫. স্ট্যাটাস ফিল্টার
-            ->when(request('status'), fn ($q) => $q->where('status', request('status')))
+            // 5. Status filter
+            ->when(request('status'), fn ($q) => $q->where('status', request('status')));
 
-            ->latest();
-
-        $agents = $query->paginate(request('per_page', 10));
+        $sortDir = request('sort_dir', 'desc') === 'asc' ? 'asc' : 'desc';
+        $agents = $query->orderBy('id', $sortDir)->paginate(request('per_page', 10))->withQueryString();
 
         $campuses = Campus::where('status', 'active')->select('id', 'name')->get();
 
-        // শুধুমাত্র Master Agent দের দেখাবো Sub-Agent সিলেক্ট করার জন্য
+        // Fetch Master Agents for Sub-Agent dropdown selection
         $masterAgents = Agent::where('agent_type', 'master')
             ->when(! $isSuperAdmin, fn ($q) => $q->where('campus_id', $user->campus_id))
             ->select('id', 'name', 'agent_code')
@@ -104,7 +103,7 @@ class AgentController extends Controller
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'nullable|in:active,inactive',
         ]);
-        // Agent Code (Promo Code) জেনারেট
+        // Generate Agent Code (Promo Code)
         $agentCode = $validated['agent_code'] ?? $this->generateAgentCode(
             $validated['campus_id'] ?? auth()->user()->campus_id,
             $validated['first_name'],
@@ -112,7 +111,7 @@ class AgentController extends Controller
         );
 
         DB::transaction(function () use ($request, $validated, $agentCode) {
-            // ১. ছবি ও লোগো আপলোড
+            // 1. Upload photo and logo
             $photoPath = null;
             if ($request->hasFile('photo')) {
                 $photoPath = $request->file('photo')->store('agents/photos', 'public');
@@ -123,10 +122,10 @@ class AgentController extends Controller
                 $logoPath = $request->file('logo')->store('agents/logos', 'public');
             }
 
-            // ২. Full Name তৈরি (legacy 'name' কলামের জন্য)
+            // 2. Generate full name
             $fullName = trim("{$validated['first_name']} ".($validated['middle_name'] ?? '')." {$validated['last_name']}");
 
-            // ইউজার তৈরি
+            // Create user account
             $user = User::create([
                 'user_first_name' => $validated['first_name'],
                 'user_middle_name' => $validated['middle_name'] ?? null,
@@ -139,7 +138,7 @@ class AgentController extends Controller
                 'status' => $validated['status'] ?? 'active',
             ]);
 
-            // ৪. Agent তৈরি
+            // 3. Create Agent record
             Agent::create([
                 'campus_id' => $validated['campus_id'] ?? auth()->user()->campus_id,
                 'parent_agent_id' => $validated['agent_type'] === 'sub_agent' ? $validated['parent_agent_id'] : null,
@@ -170,7 +169,7 @@ class AgentController extends Controller
      */
     private function generateAgentCode($campusId, $firstName, $lastName): string
     {
-        // ১. Campus Code বের করা
+        // 1. Resolve Campus Code
         $campusCode = 'HQ'; // Default fallback
         if ($campusId) {
             $campus = Campus::find($campusId);
@@ -179,20 +178,20 @@ class AgentController extends Controller
             }
         }
 
-        // ২. নামের প্রথম অক্ষর (Uppercase)
+        // 2. Extract uppercase initials
         $firstChar = strtoupper(substr(trim($firstName), 0, 1));
         $lastChar = strtoupper(substr(trim($lastName), 0, 1));
 
-        // ৩. যদি নামের অক্ষর না থাকে (edge case), তাহলে 'X' ব্যবহার
+        // 3. Fallback character if empty
         $firstChar = $firstChar ?: 'X';
         $lastChar = $lastChar ?: 'X';
 
-        // ৪. Unique কোড জেনারেট (retry সহ)
+        // 4. Generate unique code
         $maxAttempts = 10;
         $attempts = 0;
 
         do {
-            $random5Digit = rand(10000, 99999); // 5 digit numeric
+            $random5Digit = rand(10000, 99999);
             $generatedCode = $campusCode.'AGT'.$random5Digit.$firstChar.$lastChar;
             $attempts++;
         } while (Agent::where('agent_code', $generatedCode)->exists() && $attempts < $maxAttempts);
@@ -215,23 +214,23 @@ class AgentController extends Controller
     {
         $agent = Agent::findOrFail($id);
 
-        // 🔒 Branch Isolation Check
+        // Branch Isolation Check
         $user = auth()->user();
         if (! $user->hasRole('Super Admin') && $agent->campus_id != $user->campus_id) {
             abort(403, 'Unauthorized action. You cannot edit agents from other campuses.');
         }
 
-        // ক্যাম্পাস লিস্ট (Super Admin হলে সব, না হলে শুধু নিজের ক্যাম্পাস)
+        // Fetch campuses (All for Super Admin, own campus for others)
         $campuses = Campus::when(! $user->hasRole('Super Admin'), fn ($q) => $q->where('id', $user->campus_id))
             ->where('status', 'active')
             ->select('id', 'name', 'campus_code')
             ->get();
 
-        // মাস্টার এজেন্ট লিস্ট (নিজেকে বাদ দিয়ে)
+        // Fetch Master Agents excluding self
         $masterAgents = Agent::where('agent_type', 'master')
             ->when(! $user->hasRole('Super Admin'), fn ($q) => $q->where('campus_id', $user->campus_id))
             ->where('status', 'active')
-            ->where('id', '!=', $agent->id) // নিজে নিজের parent হতে পারবে না
+            ->where('id', '!=', $agent->id)
             ->select('id', 'name', 'agent_code', 'first_name', 'last_name')
             ->get();
 
@@ -279,7 +278,7 @@ class AgentController extends Controller
 
             $fullName = trim("{$validated['first_name']} ".($validated['middle_name'] ?? '')." {$validated['last_name']}");
 
-            // Agent Code - ম্যানুয়ালি না দিলে নতুন করে জেনারেট হবে না, আগটাই থাকবে
+            // Agent Code - keep existing code if not manually specified
             $agentCode = $validated['agent_code'] ?? $agent->agent_code;
 
             $agent->update([
@@ -310,13 +309,13 @@ class AgentController extends Controller
     {
         $agent = Agent::findOrFail($id);
 
-        // 🔒 Branch Isolation Check
+        // Branch Isolation Check
         $user = auth()->user();
         if (! $user->hasRole('Super Admin') && $agent->campus_id != $user->campus_id) {
             abort(403, 'Unauthorized action.');
         }
 
-        // 🛡️ Safe Delete Checks
+        // Safe Delete Checks
         $subAgentsCount = $agent->subAgents()->count();
         if ($subAgentsCount > 0) {
             return back()->with('error', "Cannot delete! This agent has {$subAgentsCount} sub-agent(s) under it. Please reassign them first.");
@@ -332,7 +331,7 @@ class AgentController extends Controller
             return back()->with('error', "Cannot delete! This agent has {$commissionsCount} commission setup(s). Please remove commissions first.");
         }
 
-        // 🗑️ Delete Files from Storage
+        // Delete Files from Storage
         if ($agent->photo && Storage::disk('public')->exists($agent->photo)) {
             Storage::disk('public')->delete($agent->photo);
         }

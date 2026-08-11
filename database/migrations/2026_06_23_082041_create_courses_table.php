@@ -36,7 +36,9 @@ return new class extends Migration {
             $table->string('duration')->nullable()
                 ->comment('e.g., 1 year, 6 months, 4 years');
             $table->integer('duration_months')->nullable();
-            $table->enum('study_method', ['online', 'on_campus', 'blended'])->nullable();
+            $table->string('study_method')->nullable();
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
             
             // 💰 Fees
             $table->decimal('fee', 12, 2)->default(0);
@@ -50,7 +52,7 @@ return new class extends Migration {
             
             // 📊 Entry Requirements
             $table->text('entry_requirements')->nullable();
-            $table->decimal('ielts_required', 3, 1)->nullable();
+            $table->string('english_test_required')->nullable();
             
             // 🌐 Visibility
             $table->boolean('is_featured')->default(false)

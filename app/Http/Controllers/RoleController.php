@@ -20,19 +20,12 @@ class RoleController extends Controller
     }
 
     /**
-     * পারমিশন অ্যাসাইনমেন্ট ফর্ম দেখানো
+     * Show permission assignment form
      */
     public function editPermissions(Role $role)
     {
-        // সুপার এডমিনের পারমিশন এডিট করা যাবে না
-        // if ($role->name === 'Super Admin') {
-        //     return redirect()
-        //         ->route('roles.index')
-        //         ->with('error', 'সুপার এডমিনের পারমিশন এডিট করা যাবে না।');
-        // }
-
         $allPermissions = Permission::all()->groupBy(function ($permission) {
-            // পারমিশন নাম থেকে গ্রুপ তৈরি (যেমন: 'campus view' -> 'campus')
+            // Group permissions by prefix (e.g. 'campus view' -> 'campus')
             return explode(' ', $permission->name)[0] ?? 'general';
         });
 
@@ -42,30 +35,23 @@ class RoleController extends Controller
     }
 
     /**
-     * পারমিশন আপডেট করা
+     * Update permissions for role
      */
     public function updatePermissions(Request $request, Role $role)
     {
-        // সুপার এডমিনের পারমিশন আপডেট ব্লক
-        // if ($role->name === 'Super Admin') {
-        //     return redirect()
-        //         ->route('roles.index')
-        //         ->with('error', 'সুপার এডমিনের পারমিশন পরিবর্তন করা যাবে না।');
-        // }
-
         $request->validate([
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,name',
         ]);
 
         DB::transaction(function () use ($role, $request) {
-            // আগের সব পারমিশন রিমুভ করে নতুন পারমিশন সেট করা
+            // Sync new permissions with role
             $role->syncPermissions($request->permissions ?? []);
         });
 
         return redirect()
             ->route('roles.index')
-            ->with('success', 'পারমিশন সফলভাবে আপডেট করা হয়েছে।');
+            ->with('success', 'Permissions updated successfully.');
     }
 
     /**

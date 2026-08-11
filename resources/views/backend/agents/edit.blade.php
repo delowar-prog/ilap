@@ -247,9 +247,7 @@
             }
         }
 
-        agentTypeSelect.addEventListener('change', toggleParentAgent);
-        
-        // পেজ লোড হলে ইনিশিয়াল চেক
+        // Initial check on page load
         toggleParentAgent(); 
     });
 </script>

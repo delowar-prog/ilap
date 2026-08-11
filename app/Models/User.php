@@ -62,28 +62,20 @@ class User extends Authenticatable
 
 
     /**
-     * কে কে Impersonate (Login As) করতে পারবে তা নির্ধারণ করে।
+     * Determine who can impersonate other users
      */
-    public function canImpersonate()
+    public function canImpersonate(): bool
     {
-        // ধরে নিচ্ছি আপনার users টেবিলে 'role' নামে একটি কলাম আছে।
-        // Super Admin এবং HQ Admin উভয়কেই অনুমতি দেওয়া হলো।
+        // Only Super Admin and HQ Admin can impersonate
         return $this->hasAnyRole(['Super Admin', 'HQ Admin']);
-        
-        /* 
-         * নোট: আপনি যদি Spatie Laravel Permission প্যাকেজ ব্যবহার করেন, 
-         * তবে লজিকটি এমন হবে:
-         * return $this->hasAnyRole(['Super Admin', 'HQ Admin']);
-         */
     }
 
     /**
-     * কাকে Impersonate করা যাবে না (সিকিউরিটির জন্য)।
+     * Determine who can be impersonated
      */
-    public function canBeImpersonated()
+    public function canBeImpersonated(): bool
     {
-        // Super Admin এবং HQ Admin কে অন্য কেউ impersonate করতে পারবে না।
-        // এটি একটি ক্রিটিকাল সিকিউরিটি প্র্যাকটিস।
+        // Prevent Super Admin and HQ Admin from being impersonated
         return ! $this->hasAnyRole(['Super Admin', 'HQ Admin']);
     }
 }
