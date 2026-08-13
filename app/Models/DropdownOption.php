@@ -118,6 +118,7 @@ class DropdownOption extends Model
         'intake' => 'Intakes',
         'additional_cost' => 'Additional Cost Types',
         'letter_head' => 'Letter Head Pads (Any Size)',
+        'visa_required_countries' => 'Visa Required Countries',
     ];
 
     /**

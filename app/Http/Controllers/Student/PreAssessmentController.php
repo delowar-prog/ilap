@@ -49,12 +49,14 @@ class PreAssessmentController extends Controller
         $qualificationOptions = DropdownOption::active('highest_qualification');
         $financialSourceOptions = DropdownOption::active('financial_source');
         $englishProficiencyOptions = DropdownOption::active('english_proficiency');
+        $visaRequiredCountries = DropdownOption::active('visa_required_countries');
 
         return view('student.pre_assessment_form', compact(
             'assessment', 'student',
             'studyDestinations', 'studyMethods',
             'levelOfStudyOptions', 'qualificationOptions',
-            'financialSourceOptions', 'englishProficiencyOptions'
+            'financialSourceOptions', 'englishProficiencyOptions',
+            'visaRequiredCountries'
         ));
     }
 

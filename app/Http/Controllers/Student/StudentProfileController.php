@@ -187,6 +187,7 @@ class StudentProfileController extends Controller
         $citiesList = City::where('status', 'active')->orderBy('name')->pluck('name')->toArray();
         $countries = Country::orderBy('name')->get();
         $docOptions = DropdownOption::active('document_type');
+        $visaRequiredCountries = DropdownOption::active('visa_required_countries');
 
         return view('backend.student.student_profile', compact(
             'student',
@@ -210,7 +211,8 @@ class StudentProfileController extends Controller
             'countriesList',
             'citiesList',
             'countries',
-            'docOptions'
+            'docOptions',
+            'visaRequiredCountries'
         ));
     }
 

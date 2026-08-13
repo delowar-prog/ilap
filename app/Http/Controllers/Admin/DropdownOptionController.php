@@ -39,8 +39,7 @@ class DropdownOptionController extends Controller
     {
         abort_unless(array_key_exists($category, DropdownOption::$categories), 404);
 
-        $request->validate([
-            'label'         => 'required|string|max:255',
+        $rules = [
             'type'          => 'nullable|string|max:255',
             'country'       => 'nullable|string|max:255',
             'website'       => 'nullable|url|max:255',
@@ -49,17 +48,18 @@ class DropdownOptionController extends Controller
             'margin_bottom' => 'nullable|numeric|min:0|max:500',
             'margin_left'   => 'nullable|numeric|min:0|max:500',
             'margin_right'  => 'nullable|numeric|min:0|max:500',
-        ]);
+        ];
 
-        // Check duplicate within category
-        $exists = DropdownOption::where('category', $category)
-            ->where('label', $request->label)
-            ->exists();
-
-        if ($exists) {
-            return back()->withErrors(['label' => 'This option already exists in this category.'])->withInput();
+        if (is_array($request->label)) {
+            $rules['label'] = 'required|array|min:1';
+            $rules['label.*'] = 'required|string|max:255';
+        } else {
+            $rules['label'] = 'required|string|max:255';
         }
 
+        $request->validate($rules);
+
+        $labels = is_array($request->label) ? $request->label : [$request->label];
         $maxOrder = DropdownOption::where('category', $category)->max('sort_order') ?? -1;
 
         $imagePath = null;
@@ -79,22 +79,40 @@ class DropdownOptionController extends Controller
             }
         }
 
-        DropdownOption::create([
-            'category'      => $category,
-            'label'         => $request->label,
-            'type'          => $request->type,
-            'country'       => $request->country,
-            'website'       => $request->website,
-            'image_path'    => $imagePath,
-            'margin_top'    => $marginTop ?? 130,
-            'margin_bottom' => $marginBottom ?? 120,
-            'margin_left'   => $marginLeft,
-            'margin_right'  => $marginRight,
-            'sort_order'    => $maxOrder + 1,
-            'is_active'     => true,
-        ]);
+        $addedCount = 0;
+        foreach ($labels as $label) {
+            // Check duplicate within category
+            $exists = DropdownOption::where('category', $category)
+                ->where('label', $label)
+                ->exists();
 
-        return back()->with('success', "Option \"{$request->label}\" added successfully.");
+            if ($exists) {
+                continue; // Skip existing
+            }
+
+            DropdownOption::create([
+                'category'      => $category,
+                'label'         => $label,
+                'type'          => $request->type,
+                'country'       => $request->country,
+                'website'       => $request->website,
+                'image_path'    => $imagePath,
+                'margin_top'    => $marginTop ?? 130,
+                'margin_bottom' => $marginBottom ?? 120,
+                'margin_left'   => $marginLeft,
+                'margin_right'  => $marginRight,
+                'sort_order'    => ++$maxOrder,
+                'is_active'     => true,
+            ]);
+            $addedCount++;
+        }
+
+        if ($addedCount === 0 && count($labels) === 1) {
+            return back()->withErrors(['label' => 'This option already exists in this category.'])->withInput();
+        }
+
+        $msg = is_array($request->label) ? "$addedCount option(s) added successfully." : "Option \"{$labels[0]}\" added successfully.";
+        return back()->with('success', $msg);
     }
 
     /** Update label or toggle active */

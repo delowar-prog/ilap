@@ -151,8 +151,19 @@
                     @csrf
                     <div class="mb-3">
                         <label class="form-label text-muted small fw-bold">LABEL / NAME</label>
-                        <input type="text" name="label" class="form-control @error('label') is-invalid @enderror"
-                               placeholder="{{ $category === 'letter_head' ? 'e.g. Official A4 Pad' : 'e.g. Higher Secondary' }}" value="{{ old('label') }}" required>
+                        @if($category === 'visa_required_countries')
+                            <div class="custom-multi-select-wrap">
+                                <select id="visa_country_select" name="label[]" class="form-select select2-multiple @error('label') is-invalid @enderror" multiple="multiple" data-placeholder="Select countries..." required>
+                                    @foreach(\App\Models\Country::orderBy('name')->get() as $c)
+                                        <option value="{{ $c->name }}">{{ $c->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div id="selected_countries_container" class="mt-2 d-flex flex-wrap gap-2"></div>
+                        @else
+                            <input type="text" name="label" class="form-control @error('label') is-invalid @enderror"
+                                   placeholder="{{ $category === 'letter_head' ? 'e.g. Official A4 Pad' : 'e.g. Higher Secondary' }}" value="{{ old('label') }}" required>
+                        @endif
                         @error('label')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -241,7 +252,42 @@
 </div>
 @endsection
 
+@push('css')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container--default .select2-selection--multiple {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        min-height: 38px;
+    }
+    .custom-multi-select-wrap .select2-selection__choice {
+        display: none !important;
+    }
+    .selected-tag {
+        display: inline-flex;
+        align-items: center;
+        background: #e9ecef;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #495057;
+    }
+    .selected-tag .remove-tag {
+        cursor: pointer;
+        margin-left: 6px;
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .selected-tag .remove-tag:hover {
+        color: #bd2130;
+    }
+</style>
+@endpush
+
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
     const tbody = document.getElementById('sortable-body');
@@ -323,5 +369,50 @@
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
         new bootstrap.Tooltip(el);
     });
+
+    if ($.fn.select2) {
+        $('.select2-multiple').select2({
+            placeholder: "Select options...",
+            allowClear: true,
+            width: '100%'
+        });
+
+        const $select = $('#visa_country_select');
+        const $container = $('#selected_countries_container');
+
+        if ($select.length && $container.length) {
+            function renderTags() {
+                $container.empty();
+                const selectedData = $select.select2('data');
+                selectedData.forEach(item => {
+                    if (item.id) {
+                        const tag = $(`
+                            <div class="selected-tag">
+                                ${item.text}
+                                <span class="remove-tag" data-id="${item.id}">&times;</span>
+                            </div>
+                        `);
+                        $container.append(tag);
+                    }
+                });
+            }
+
+            $select.on('change', renderTags);
+            
+            $container.on('click', '.remove-tag', function() {
+                const idToRemove = $(this).data('id');
+                const currentVals = $select.val() || [];
+                const newVals = currentVals.filter(val => val !== String(idToRemove));
+                $select.val(newVals).trigger('change');
+                // Close select2 dropdown if it's open
+                if ($select.data('select2').isOpen()) {
+                    $select.select2('close');
+                }
+            });
+
+            // Initial render
+            renderTags();
+        }
+    }
 </script>
 @endpush

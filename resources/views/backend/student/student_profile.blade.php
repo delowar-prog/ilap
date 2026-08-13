@@ -515,16 +515,18 @@
                     <div class="card border-0 bg-light rounded-3 p-3 mb-3">
                       <div class="mb-0">
                         <label class="form-label fw-bold mb-2">Does this student need a visa to stay in any of the following countries? Please tick all that apply. <span class="text-danger">*</span></label>
-                        <div class="d-flex gap-4 mt-2">
-                          <div class="form-check">
-                            @php
-                              $immCountries = old('immigration_history.countries', $student->immigration_history['countries'] ?? $preAssessment->immigration_history['countries'] ?? []);
-                            @endphp
-                            <input class="form-check-input" type="checkbox" name="immigration_history[countries][]" value="{{ $studyDest }}" id="student_imm_country_chk" onclick="toggleStudentImmigrationNone(false)" {{ (in_array($studyDest, $immCountries)) ? 'checked' : '' }}>
-                            <label class="form-check-label fw-semibold font-13" for="student_imm_country_chk">
-                              {{ $studyDest }}
-                            </label>
-                          </div>
+                        <div class="d-flex flex-wrap gap-4 mt-2">
+                          @php
+                            $immCountries = old('immigration_history.countries', $student->immigration_history['countries'] ?? $preAssessment->immigration_history['countries'] ?? []);
+                          @endphp
+                          @foreach($visaRequiredCountries as $countryName)
+                            <div class="form-check">
+                              <input class="form-check-input student-imm-country-chk" type="checkbox" name="immigration_history[countries][]" value="{{ $countryName }}" id="student_imm_country_{{ Str::slug($countryName) }}" onclick="toggleStudentImmigrationNone(false)" {{ (in_array($countryName, $immCountries)) ? 'checked' : '' }}>
+                              <label class="form-check-label fw-semibold font-13" for="student_imm_country_{{ Str::slug($countryName) }}">
+                                {{ $countryName }}
+                              </label>
+                            </div>
+                          @endforeach
                           <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="immigration_history[countries][]" value="None" id="student_imm_none_chk" onclick="toggleStudentImmigrationNone(true)" {{ (in_array('None', $immCountries) || empty($immCountries)) ? 'checked' : '' }}>
                             <label class="form-check-label fw-semibold font-13" for="student_imm_none_chk">None</label>
@@ -1775,15 +1777,14 @@ function toggleStudentVisaRefusalFields(show) {
     });
 }
 
-const studentImmCountryChk = document.getElementById('student_imm_country_chk');
-function toggleStudentImmigrationNone(isNoneChecked) {
-    if (isNoneChecked) {
-        if (studentImmCountryChk) studentImmCountryChk.checked = false;
-    } else {
-        const noneChk = document.getElementById('student_imm_none_chk');
-        if (noneChk) noneChk.checked = false;
+    function toggleStudentImmigrationNone(isNoneChecked) {
+        if (isNoneChecked) {
+            document.querySelectorAll('.student-imm-country-chk').forEach(chk => chk.checked = false);
+        } else {
+            const noneChk = document.getElementById('student_imm_none_chk');
+            if (noneChk) noneChk.checked = false;
+        }
     }
-}
 
 let studentTravelIndex = {{ count($travelEntries) }};
 function addStudentTravelRow() {
