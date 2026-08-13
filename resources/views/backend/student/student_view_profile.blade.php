@@ -147,7 +147,7 @@
                         }
                     @endphp
                     <div class="profile-header-info">
-                        <h2>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</h2>
+                        <h2>{{ ucwords(trim($student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</h2>
                         <p class="mb-1 text-white fw-medium" style="font-size: 0.95rem;">
                             <i class="fas fa-id-badge me-1 text-warning" title="Student ID"></i> {{ $student->student_id }} 
                             <span class="text-white-50 mx-2">|</span> 
@@ -206,9 +206,9 @@
                     <div class="info-item"><label>First Name</label><span>{{ $student->first_name }}</span></div>
                     <div class="info-item"><label>Middle Name</label><span>{{ $student->middle_name ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Last Name (Surname)</label><span>{{ $student->surname }}</span></div>
-                    <div class="info-item"><label>Preferred Institute</label><span><span class="badge bg-primary">{{ $student->institute ? $student->institute->name : 'N/A' }}</span></span></div>
-                    <div class="info-item"><label>Date of Birth</label><span>{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</span></div>
+                    <div class="info-item"><label>Title</label><span>{{ $student->title ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Date of Birth</label><span>{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Nationality</label><span>{{ $student->nationality ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Residence</label><span>{{ $student->country ? $student->country->name : 'N/A' }}</span></div>
@@ -216,10 +216,10 @@
                     <div class="info-item">
                         <label>WhatsApp Status</label>
                         <span>
-                            @if($student->has_whatsapp)
-                                <span class="badge bg-success"><i class="fab fa-whatsapp me-1"></i> Available on {{ $student->phone }}</span>
+                            @if(!empty($student->has_whatsapp))
+                                <i class="fab fa-whatsapp text-success fs-5" title="WhatsApp Available"></i>
                             @else
-                                <span class="badge bg-secondary">Not Marked</span>
+                                N/A
                             @endif
                         </span>
                     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\LetterTemplate;
+use App\Models\InvoiceTemplate;
 use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,9 +18,10 @@ class LetterTemplateController extends Controller
     private function getLetterTypes(): array
     {
         $dynamicTypes = DropdownOption::active('letter_type');
-        $existingTypes = LetterTemplate::select('type')->whereNotNull('type')->distinct()->pluck('type')->toArray();
+        $existingLetterTypes = LetterTemplate::select('type')->whereNotNull('type')->distinct()->pluck('type')->toArray();
+        $existingInvoiceTypes = InvoiceTemplate::select('type')->whereNotNull('type')->distinct()->pluck('type')->toArray();
         
-        $merged = array_unique(array_merge($dynamicTypes, $existingTypes));
+        $merged = array_unique(array_merge($dynamicTypes, $existingLetterTypes, $existingInvoiceTypes));
         sort($merged);
         return array_values($merged);
     }
@@ -133,7 +135,7 @@ class LetterTemplateController extends Controller
             'type'           => $finalType,
             'letter_head_id' => $request->letter_head_id,
             'content_body'   => $request->content_body,
-            'status'         => 1,
+            'status'         => $request->has('status') ? ($request->status ? 1 : 0) : 1,
         ];
 
         LetterTemplate::create($data);
@@ -185,8 +187,11 @@ class LetterTemplateController extends Controller
             'type'           => $finalType,
             'letter_head_id' => $request->letter_head_id,
             'content_body'   => $request->content_body,
-            'status'         => $request->has('status') ? 1 : 0,
         ];
+
+        if ($request->has('status')) {
+            $data['status'] = $request->status ? 1 : 0;
+        }
 
         $letterTemplate->update($data);
 
@@ -289,6 +294,32 @@ class LetterTemplateController extends Controller
 
         $content = str_replace(array_keys($dummyData), array_values($dummyData), $content);
 
-        return view('backend.letter_templates.preview', compact('letterTemplate', 'content', 'activeSignatures'));
+        // Split multi-page content by page-break-before divs
+        $pageBreakPattern = '/<div[^>]*style=["\'][^"\']*page-break-before\s*:\s*always[^"\']*["\'][^>]*>\s*<\/div>/i';
+        $pages = preg_split($pageBreakPattern, $content);
+        $pages = array_map('trim', $pages);
+        $pages = array_filter($pages, fn($p) => $p !== '');
+        $pages = array_values($pages);
+        if (empty($pages)) {
+            $pages = [$content];
+        }
+
+        // Pad image info
+        $padImageUrl = null;
+        $padData = null;
+        if ($letterTemplate->letter_head_id) {
+            $lh = \App\Models\DropdownOption::find($letterTemplate->letter_head_id);
+            if ($lh && $lh->image_path) {
+                $padImageUrl = asset('storage/' . $lh->image_path);
+                $padData = [
+                    'marginTop'    => $lh->margin_top ?? 130,
+                    'marginBottom' => $lh->margin_bottom ?? 120,
+                    'marginLeft'   => $lh->margin_left ?? 0,
+                    'marginRight'  => $lh->margin_right ?? 0,
+                ];
+            }
+        }
+
+        return view('backend.letter_templates.preview', compact('letterTemplate', 'content', 'activeSignatures', 'pages', 'padImageUrl', 'padData'));
     }
 }

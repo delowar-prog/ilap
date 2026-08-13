@@ -77,11 +77,11 @@ class StudentController extends Controller
         // Calculate Completion Percentage
         $completionPercent = $student->getCompletionPercentage();
 
-        $letterTemplates = \App\Models\LetterTemplate::where('status', 1)->get();
-        $letterHistory = \App\Models\GeneratedLetter::where('student_id', $student->id)->with('generator')->latest()->get();
+        $letterTemplates = \App\Models\LetterTemplate::where('status', 1)->orderBy('title', 'asc')->get();
+        $letterHistory = \App\Models\GeneratedLetter::where('student_id', $student->id)->with('generator')->oldest('id')->get();
 
-        $invoiceTemplates = \App\Models\InvoiceTemplate::where('status', 1)->get();
-        $invoiceHistory = \App\Models\GeneratedInvoice::where('student_id', $student->id)->with('generator')->latest()->get();
+        $invoiceTemplates = \App\Models\InvoiceTemplate::where('status', 1)->orderBy('title', 'asc')->get();
+        $invoiceHistory = \App\Models\GeneratedInvoice::where('student_id', $student->id)->with('generator')->oldest('id')->get();
 
         $application = \App\Models\StudentApplication::with(['course', 'additionalCosts', 'installments'])
             ->where('student_id', $student->id)
@@ -363,7 +363,7 @@ class StudentController extends Controller
                 ->with('error', 'Course cannot be assigned while Pre-Enrolment / Pre-Assessment is Pending. Please approve it first.');
         }
 
-        $courses = \App\Models\Course::where('status', 'active')->get();
+        $courses = \App\Models\Course::where('status', 'active')->orderBy('name', 'asc')->get();
         $costTypes = \App\Models\DropdownOption::active('additional_cost');
         
         $application = \App\Models\StudentApplication::with(['additionalCosts', 'installments'])

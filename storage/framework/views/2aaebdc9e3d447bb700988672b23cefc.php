@@ -1,8 +1,6 @@
-@extends('layouts.backend_master')
+<?php $__env->startSection('title', 'Student Profile - ' . ($student->first_name ?? '')); ?>
 
-@section('title', 'Student Profile - ' . ($student->first_name ?? ''))
-
-@push('css')
+<?php $__env->startPush('css'); ?>
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
 <style>
 .profile-card {
@@ -138,27 +136,28 @@
     transform: scale(1.08);
 }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('admin_contents')
+<?php $__env->startSection('admin_contents'); ?>
 <div class="row">
     <div class="col-12">
         <div class="profile-card">
             
             <!-- Header Section -->
             <div class="profile-header">
-                <a href="{{ route('admin.students.index') }}" class="btn btn-light btn-sm profile-back-btn shadow-sm fw-semibold">
+                <a href="<?php echo e(route('admin.students.index')); ?>" class="btn btn-light btn-sm profile-back-btn shadow-sm fw-semibold">
                     <i class="fas fa-arrow-left me-1"></i> Back to Students
                 </a>
                 <div class="profile-avatar-container">
-                    @if($student->profile_picture)
-                        <img src="{{ asset($student->profile_picture) }}" alt="Profile" class="profile-avatar">
-                    @else
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($student->profile_picture): ?>
+                        <img src="<?php echo e(asset($student->profile_picture)); ?>" alt="Profile" class="profile-avatar">
+                    <?php else: ?>
                         <div class="profile-avatar">
-                            {{ strtoupper(substr($student->first_name,0,1)) }}{{ strtoupper(substr($student->surname,0,1)) }}
+                            <?php echo e(strtoupper(substr($student->first_name,0,1))); ?><?php echo e(strtoupper(substr($student->surname,0,1))); ?>
+
                         </div>
-                    @endif
-                    @php
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                    <?php
                         $usedPromoCode = $student->promo_code;
                         $referrerName = 'Direct Join';
                         
@@ -181,46 +180,51 @@
                                 }
                             }
                         }
-                    @endphp
+                    ?>
                     <div class="profile-header-info">
-                        <h2>{{ ucwords(trim(($student->first_name ?? $preAssessment->first_name ?? '') . ' ' . ($student->middle_name ?? $preAssessment->middle_name ?? '') . ' ' . ($student->surname ?? $preAssessment->surname ?? ''))) }}</h2>
+                        <h2><?php echo e(ucwords(trim(($student->first_name ?? $preAssessment->first_name ?? '') . ' ' . ($student->middle_name ?? $preAssessment->middle_name ?? '') . ' ' . ($student->surname ?? $preAssessment->surname ?? '')))); ?></h2>
                         <p class="mb-1 text-white fw-medium" style="font-size: 0.95rem;">
-                            <i class="fas fa-id-badge me-1 text-warning" title="Student ID"></i> {{ $student->student_id }} 
+                            <i class="fas fa-id-badge me-1 text-warning" title="Student ID"></i> <?php echo e($student->student_id); ?> 
                             <span class="text-white-50 mx-2">|</span> 
-                            <i class="fas fa-envelope me-1 text-info" title="Email"></i> {{ $student->email ?? 'N/A' }} 
+                            <i class="fas fa-envelope me-1 text-info" title="Email"></i> <?php echo e($student->email ?? 'N/A'); ?> 
                             <span class="text-white-50 mx-2">|</span> 
-                            <i class="fas fa-phone-alt me-1 text-success" title="Phone"></i> {{ $student->phone ?? ($preAssessment->contact_number ?? 'N/A') }}
+                            <i class="fas fa-phone-alt me-1 text-success" title="Phone"></i> <?php echo e($student->phone ?? ($preAssessment->contact_number ?? 'N/A')); ?>
+
                         </p>
                         <p class="mb-1 text-white fw-medium" style="font-size: 0.92rem;">
-                            <i class="fas fa-university me-1 text-info"></i> <strong>Campus Name:</strong> {{ $student->campus->name ?? 'N/A' }}
+                            <i class="fas fa-university me-1 text-info"></i> <strong>Campus Name:</strong> <?php echo e($student->campus->name ?? 'N/A'); ?>
+
                             <span class="text-white-50 mx-2">|</span>
-                            <strong>Campus Code:</strong> {{ $student->campus->campus_code ?? 'N/A' }}
+                            <strong>Campus Code:</strong> <?php echo e($student->campus->campus_code ?? 'N/A'); ?>
+
                         </p>
                         <p class="mb-1 text-white fw-medium" style="font-size: 0.92rem;">
-                            <i class="fas fa-user-tag me-1 text-warning"></i> <strong>Referrer Name:</strong> {{ $referrerName }}
+                            <i class="fas fa-user-tag me-1 text-warning"></i> <strong>Referrer Name:</strong> <?php echo e($referrerName); ?>
+
                             <span class="text-white-50 mx-2">|</span>
-                            <i class="fas fa-ticket-alt me-1 text-success"></i> <strong>Promocode:</strong> {{ $usedPromoCode ?? 'None' }}
+                            <i class="fas fa-ticket-alt me-1 text-success"></i> <strong>Promocode:</strong> <?php echo e($usedPromoCode ?? 'None'); ?>
+
                         </p>
                         <div class="mt-2 text-white fw-medium small">
-                            Profile Completion: <strong class="text-white fw-bold me-3">{{ $completionPercent }}%</strong>
+                            Profile Completion: <strong class="text-white fw-bold me-3"><?php echo e($completionPercent); ?>%</strong>
                             Status: 
-                            @if($student->enrolment_status === 'approved')
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($student->enrolment_status === 'approved'): ?>
                                 <span class="badge bg-success">Approved</span>
-                            @elseif($student->enrolment_status === 'enrolled')
+                            <?php elseif($student->enrolment_status === 'enrolled'): ?>
                                 <span class="badge bg-primary">Enrolled</span>
-                            @elseif($student->enrolment_status === 'terminated')
+                            <?php elseif($student->enrolment_status === 'terminated'): ?>
                                 <span class="badge bg-dark px-2 py-1"><i class="fas fa-user-slash me-1"></i> Terminated</span>
-                                <form action="{{ route('admin.students.reinstall', $student->id) }}" method="POST" class="d-inline ms-2">
-                                    @csrf
+                                <form action="<?php echo e(route('admin.students.reinstall', $student->id)); ?>" method="POST" class="d-inline ms-2">
+                                    <?php echo csrf_field(); ?>
                                     <button type="submit" class="btn btn-xs btn-outline-success text-white border-success-subtle" title="Re-enroll Student">
                                         <i class="fas fa-undo me-1"></i> Re-enroll Student
                                     </button>
                                 </form>
-                            @elseif($student->enrolment_status === 'rejected')
+                            <?php elseif($student->enrolment_status === 'rejected'): ?>
                                 <span class="badge bg-danger">Rejected</span>
-                            @else
+                            <?php else: ?>
                                 <span class="badge bg-warning text-dark">Pending</span>
-                            @endif
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -246,14 +250,14 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="tab-letters-btn" data-bs-toggle="tab" data-bs-target="#tab-letters" type="button" role="tab" aria-controls="tab-letters" aria-selected="false">
                                 <i class="fas fa-envelope-open-text me-1 text-warning"></i> Letters
-                                <span class="badge bg-primary rounded-pill ms-1">{{ isset($letterHistory) ? $letterHistory->count() : 0 }}</span>
+                                <span class="badge bg-primary rounded-pill ms-1"><?php echo e(isset($letterHistory) ? $letterHistory->count() : 0); ?></span>
                             </button>
                         </li>
                         <!-- 4. Invoices Tab -->
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="tab-invoices-btn" data-bs-toggle="tab" data-bs-target="#tab-invoices" type="button" role="tab" aria-controls="tab-invoices" aria-selected="false">
                                 <i class="fas fa-file-invoice-dollar me-1 text-success"></i> Invoices
-                                <span class="badge bg-success rounded-pill ms-1">{{ isset($invoiceHistory) ? $invoiceHistory->count() : 0 }}</span>
+                                <span class="badge bg-success rounded-pill ms-1"><?php echo e(isset($invoiceHistory) ? $invoiceHistory->count() : 0); ?></span>
                             </button>
                         </li>
                         <!-- 5. Chatting Button -->
@@ -276,18 +280,18 @@
                         </li>
                         <!-- 8. Terminate / Re-enroll Student Button -->
                         <li class="nav-item my-1 ms-1">
-                            @if($student->enrolment_status === 'terminated')
-                                <form action="{{ route('admin.students.reinstall', $student->id) }}" method="POST" class="d-inline">
-                                    @csrf
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($student->enrolment_status === 'terminated'): ?>
+                                <form action="<?php echo e(route('admin.students.reinstall', $student->id)); ?>" method="POST" class="d-inline">
+                                    <?php echo csrf_field(); ?>
                                     <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-2.5 py-1 text-nowrap fw-semibold" style="font-size: 0.82rem;" title="Re-enroll Student">
                                         <i class="fas fa-undo me-1 text-success"></i> Re-enroll Student
                                     </button>
                                 </form>
-                            @else
+                            <?php else: ?>
                                 <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1 text-nowrap fw-semibold" style="font-size: 0.82rem;" data-bs-toggle="modal" data-bs-target="#terminateStudentModal" title="Terminate / Discontinue Student">
                                     <i class="fas fa-user-slash me-1 text-danger"></i> Terminate Student
                                 </button>
-                            @endif
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                         </li>
                     </ul>
                 </div>
@@ -302,13 +306,13 @@
                     <!-- Profile Tab Header with Download PDF Icon Only -->
                     <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 fw-bold text-dark"><i class="fas fa-info-circle text-primary me-2"></i> Student Details & Documents</h6>
-                        <a href="{{ route('admin.students.profile.pdf', $student->id) }}" class="btn btn-danger btn-sm download-icon-btn" data-bs-toggle="tooltip" title="Download Profile PDF">
+                        <a href="<?php echo e(route('admin.students.profile.pdf', $student->id)); ?>" class="btn btn-danger btn-sm download-icon-btn" data-bs-toggle="tooltip" title="Download Profile PDF">
                             <i class="fas fa-download"></i>
                         </a>
                     </div>
 
                     <!-- Referral Info (Only visible to the owner and enrolled students) -->
-                    @if(Auth::id() == $student->user_id && $student->enrolment_status === 'enrolled')
+                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(Auth::id() == $student->user_id && $student->enrolment_status === 'enrolled'): ?>
                     <div class="info-section bg-light" style="border-bottom: 2px solid #e1e8f1;">
                         <div class="info-section-title"><i class="fas fa-bullhorn text-primary"></i> Invite Friends</div>
                         <div class="row align-items-center">
@@ -316,7 +320,7 @@
                                 <p class="text-muted mb-2">Share this invite link for new registrations.</p>
                                 <div class="input-group mb-3 shadow-sm">
                                     <span class="input-group-text bg-white"><i class="fas fa-link text-primary"></i></span>
-                                    <input type="text" class="form-control bg-white" id="inviteLinkInput" value="{{ url('/register/' . ($student->user_id ?? '')) }}" readonly>
+                                    <input type="text" class="form-control bg-white" id="inviteLinkInput" value="<?php echo e(url('/register/' . ($student->user_id ?? ''))); ?>" readonly>
                                     <button class="btn btn-primary" type="button" onclick="copyInviteLink()"><i class="fas fa-copy"></i> Copy</button>
                                 </div>
                             </div>
@@ -324,59 +328,62 @@
                                 <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
                                     <div class="info-item">
                                         <label>Your Promo Code</label>
-                                        <span class="badge bg-success" style="font-size: 1rem; padding: 8px 12px;">{{ $student->user->referral_code ?? 'N/A' }}</span>
+                                        <span class="badge bg-success" style="font-size: 1rem; padding: 8px 12px;"><?php echo e($student->user->referral_code ?? 'N/A'); ?></span>
                                     </div>
                                     <div class="info-item">
                                         <label>Your Campus Code</label>
-                                        <span class="badge bg-info text-dark" style="font-size: 1rem; padding: 8px 12px;">{{ $student->campus ? $student->campus->campus_code : 'N/A' }}</span>
+                                        <span class="badge bg-info text-dark" style="font-size: 1rem; padding: 8px 12px;"><?php echo e($student->campus ? $student->campus->campus_code : 'N/A'); ?></span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    @endif
+                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                     <!-- Personal Info -->
                     <div class="info-section">
                         <div class="info-section-title"><i class="fas fa-user-circle text-primary"></i> Personal Information</div>
                         <div class="info-grid">
-                            <div class="info-item"><label>First Name</label><span>{{ $student->first_name ?? $preAssessment->first_name }}</span></div>
-                            <div class="info-item"><label>Middle Name</label><span>{{ $student->middle_name ?? $preAssessment->middle_name ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>Last Name (Surname)</label><span>{{ $student->surname ?? $preAssessment->surname }}</span></div>
-                            <div class="info-item"><label>Title</label><span>{{ $student->title ?? $preAssessment->title ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>Gender</label><span>{{ $student->gender ?? $preAssessment->gender ?? 'N/A' }}</span></div>
+                            <div class="info-item"><label>First Name</label><span><?php echo e($student->first_name ?? $preAssessment->first_name); ?></span></div>
+                            <div class="info-item"><label>Middle Name</label><span><?php echo e($student->middle_name ?? $preAssessment->middle_name ?? 'N/A'); ?></span></div>
+                            <div class="info-item"><label>Last Name (Surname)</label><span><?php echo e($student->surname ?? $preAssessment->surname); ?></span></div>
+                            <div class="info-item"><label>Title</label><span><?php echo e($student->title ?? $preAssessment->title ?? 'N/A'); ?></span></div>
+                            <div class="info-item"><label>Gender</label><span><?php echo e($student->gender ?? $preAssessment->gender ?? 'N/A'); ?></span></div>
                             <div class="info-item">
                                 <label>Date of Birth</label>
                                 <span>
-                                    @php
+                                    <?php
                                         $dobVal = $student->dob ?? $preAssessment->dob;
-                                    @endphp
-                                    {{ $dobVal ? ($dobVal instanceof \DateTimeInterface ? $dobVal->format('d M Y') : date('d M Y', strtotime($dobVal))) : 'N/A' }}
+                                    ?>
+                                    <?php echo e($dobVal ? ($dobVal instanceof \DateTimeInterface ? $dobVal->format('d M Y') : date('d M Y', strtotime($dobVal))) : 'N/A'); ?>
+
                                 </span>
                             </div>
-                            <div class="info-item"><label>Country of Nationality</label><span>{{ $student->nationality ?? $preAssessment->nationality ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? $preAssessment->country ?? 'N/A' }}</span></div>
+                            <div class="info-item"><label>Country of Nationality</label><span><?php echo e($student->nationality ?? $preAssessment->nationality ?? 'N/A'); ?></span></div>
+                            <div class="info-item"><label>Country of Birth</label><span><?php echo e($student->country_of_birth ?? $preAssessment->country ?? 'N/A'); ?></span></div>
                             <div class="info-item">
                                 <label>Country of Residence</label>
                                 <span>
-                                    @if($student->country)
-                                        {{ $student->country->name }}
-                                    @elseif($preAssessment->country)
-                                        {{ $preAssessment->country }}
-                                    @else
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($student->country): ?>
+                                        <?php echo e($student->country->name); ?>
+
+                                    <?php elseif($preAssessment->country): ?>
+                                        <?php echo e($preAssessment->country); ?>
+
+                                    <?php else: ?>
                                         N/A
-                                    @endif
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </span>
                             </div>
-                            <div class="info-item"><label>Phone</label><span>{{ $student->phone ?? $preAssessment->contact_number ?? 'N/A' }}</span></div>
+                            <div class="info-item"><label>Phone</label><span><?php echo e($student->phone ?? $preAssessment->contact_number ?? 'N/A'); ?></span></div>
                             <div class="info-item">
                                 <label>WhatsApp Status</label>
                                 <span>
-                                    @if(!empty($student->has_whatsapp) || !empty($preAssessment->has_whatsapp ?? false))
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!empty($student->has_whatsapp) || !empty($preAssessment->has_whatsapp ?? false)): ?>
                                         <i class="fab fa-whatsapp text-success fs-5" title="WhatsApp Available"></i>
-                                    @else
+                                    <?php else: ?>
                                         N/A
-                                    @endif
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </span>
                             </div>
                         </div>
@@ -389,47 +396,51 @@
                             <div class="col-md-6">
                                 <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem;">Permanent Address</h6>
                                 <div class="info-grid" style="grid-template-columns: 1fr;">
-                                    <div class="info-item"><label>Address</label><span>{{ $student->permanent_address ?? $preAssessment->contact_address ?? 'N/A' }}</span></div>
+                                    <div class="info-item"><label>Address</label><span><?php echo e($student->permanent_address ?? $preAssessment->contact_address ?? 'N/A'); ?></span></div>
                                     <div class="info-item">
                                         <label>City & Postcode</label>
                                         <span>
-                                            @php
+                                            <?php
                                                 $permAddr = trim(($student->permanent_city ?? '').' '.($student->permanent_postcode ?? ''));
                                                 $preAddr = implode(', ', array_filter([$preAssessment->city, $preAssessment->state, $preAssessment->postal_code]));
-                                            @endphp
-                                            @if($permAddr !== '')
-                                                {{ $permAddr }}
-                                            @elseif($preAddr !== '')
-                                                {{ $preAddr }}
-                                            @else
+                                            ?>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($permAddr !== ''): ?>
+                                                <?php echo e($permAddr); ?>
+
+                                            <?php elseif($preAddr !== ''): ?>
+                                                <?php echo e($preAddr); ?>
+
+                                            <?php else: ?>
                                                 N/A
-                                            @endif
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </span>
                                     </div>
-                                    <div class="info-item"><label>Country</label><span>{{ $student->permanent_country ?? $preAssessment->country ?? 'N/A' }}</span></div>
+                                    <div class="info-item"><label>Country</label><span><?php echo e($student->permanent_country ?? $preAssessment->country ?? 'N/A'); ?></span></div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <h6 class="text-muted text-uppercase mb-3" style="font-size: 0.8rem;">Current Address</h6>
                                 <div class="info-grid" style="grid-template-columns: 1fr;">
-                                    <div class="info-item"><label>Address</label><span>{{ $student->current_address ?? $preAssessment->contact_address ?? 'N/A' }}</span></div>
+                                    <div class="info-item"><label>Address</label><span><?php echo e($student->current_address ?? $preAssessment->contact_address ?? 'N/A'); ?></span></div>
                                     <div class="info-item">
                                         <label>City & Postcode</label>
                                         <span>
-                                            @php
+                                            <?php
                                                 $currAddr = trim(($student->current_city ?? '').' '.($student->current_postcode ?? ''));
                                                 $preAddr = implode(', ', array_filter([$preAssessment->city, $preAssessment->state, $preAssessment->postal_code]));
-                                            @endphp
-                                            @if($currAddr !== '')
-                                                {{ $currAddr }}
-                                            @elseif($preAddr !== '')
-                                                {{ $preAddr }}
-                                            @else
+                                            ?>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($currAddr !== ''): ?>
+                                                <?php echo e($currAddr); ?>
+
+                                            <?php elseif($preAddr !== ''): ?>
+                                                <?php echo e($preAddr); ?>
+
+                                            <?php else: ?>
                                                 N/A
-                                            @endif
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </span>
                                     </div>
-                                    <div class="info-item"><label>Country</label><span>{{ $student->current_country ?? $preAssessment->country ?? 'N/A' }}</span></div>
+                                    <div class="info-item"><label>Country</label><span><?php echo e($student->current_country ?? $preAssessment->country ?? 'N/A'); ?></span></div>
                                 </div>
                             </div>
                         </div>
@@ -439,99 +450,102 @@
                     <div class="info-section">
                         <div class="info-section-title"><i class="fas fa-passport text-info"></i> Passport & Travel History</div>
                         <div class="info-grid mb-4">
-                            <div class="info-item"><label>Name in Passport</label><span>{{ $student->name_in_passport ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>Passport Number</label><span>{{ $student->passport_number ?? $preAssessment->passport_number ?? 'N/A' }}</span></div>
-                            <div class="info-item"><label>Issue Date</label><span>{{ $student->passport_issue_date ? $student->passport_issue_date->format('d M Y') : 'N/A' }}</span></div>
-                            <div class="info-item"><label>Expiry Date</label><span>{{ $student->passport_expiry_date ? $student->passport_expiry_date->format('d M Y') : 'N/A' }}</span></div>
-                            <div class="info-item"><label>Issue Location</label><span>{{ $student->passport_issue_location ?? 'N/A' }}</span></div>
+                            <div class="info-item"><label>Name in Passport</label><span><?php echo e($student->name_in_passport ?? 'N/A'); ?></span></div>
+                            <div class="info-item"><label>Passport Number</label><span><?php echo e($student->passport_number ?? $preAssessment->passport_number ?? 'N/A'); ?></span></div>
+                            <div class="info-item"><label>Issue Date</label><span><?php echo e($student->passport_issue_date ? $student->passport_issue_date->format('d M Y') : 'N/A'); ?></span></div>
+                            <div class="info-item"><label>Expiry Date</label><span><?php echo e($student->passport_expiry_date ? $student->passport_expiry_date->format('d M Y') : 'N/A'); ?></span></div>
+                            <div class="info-item"><label>Issue Location</label><span><?php echo e($student->passport_issue_location ?? 'N/A'); ?></span></div>
                         </div>
                         
-                        @php
+                        <?php
                             $travelHistory = $student->travel_history ?? $preAssessment->travel_history ?? [];
                             $immigrationHistory = $student->immigration_history ?? $preAssessment->immigration_history ?? [];
                             $visaRefusals = $student->visa_refusals ?? $preAssessment->visa_refusals ?? [];
                             $takenTbTest = $student->taken_tb_test ?? 'N/A';
-                        @endphp
+                        ?>
                         <h6 class="text-muted text-uppercase mb-3 mt-4" style="font-size: 0.8rem;">Travel & Immigration History</h6>
                         <div class="row g-3">
                             <div class="col-md-12">
                                 <div class="p-3 border rounded bg-light font-13">
                                     <strong>Permission to remain in past 10 years:</strong> 
-                                    <span class="badge {{ ($travelHistory['has_history'] ?? '') === 'yes' ? 'bg-primary' : 'bg-secondary' }}">
-                                        {{ strtoupper($travelHistory['has_history'] ?? 'No') }}
+                                    <span class="badge <?php echo e(($travelHistory['has_history'] ?? '') === 'yes' ? 'bg-primary' : 'bg-secondary'); ?>">
+                                        <?php echo e(strtoupper($travelHistory['has_history'] ?? 'No')); ?>
+
                                     </span>
-                                    @if(($travelHistory['has_history'] ?? '') === 'yes')
-                                        @php
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(($travelHistory['has_history'] ?? '') === 'yes'): ?>
+                                        <?php
                                             $tEntries = $travelHistory['entries'] ?? [];
                                             if (empty($tEntries) && (!empty($travelHistory['country']) || !empty($travelHistory['arrival_date']))) {
                                                 $tEntries = [$travelHistory];
                                             }
-                                        @endphp
-                                        @foreach($tEntries as $idx => $tEntry)
+                                        ?>
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $tEntries; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $tEntry): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                             <div class="mt-2 ps-3 border-start border-3 border-primary mb-2">
-                                                @if(count($tEntries) > 1)<div class="fw-bold text-primary mb-1 font-12">Travel Entry #{{ $idx + 1 }}</div>@endif
+                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(count($tEntries) > 1): ?><div class="fw-bold text-primary mb-1 font-12">Travel Entry #<?php echo e($idx + 1); ?></div><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                 <div class="row g-2">
-                                                    <div class="col-md-6"><strong>Country:</strong> {{ $tEntry['country'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-6"><strong>Visa Type:</strong> {{ $tEntry['visa_type'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-6"><strong>Purpose:</strong> {{ $tEntry['purpose_of_visit'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-6"><strong>Arrival Date:</strong> {{ $tEntry['arrival_date'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-6"><strong>Departure Date:</strong> {{ $tEntry['departure_date'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-6"><strong>Visa Validity:</strong> {{ $tEntry['visa_start_date'] ?? 'N/A' }} to {{ $tEntry['visa_expiry_date'] ?? 'N/A' }}</div>
+                                                    <div class="col-md-6"><strong>Country:</strong> <?php echo e($tEntry['country'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-6"><strong>Visa Type:</strong> <?php echo e($tEntry['visa_type'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-6"><strong>Purpose:</strong> <?php echo e($tEntry['purpose_of_visit'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-6"><strong>Arrival Date:</strong> <?php echo e($tEntry['arrival_date'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-6"><strong>Departure Date:</strong> <?php echo e($tEntry['departure_date'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-6"><strong>Visa Validity:</strong> <?php echo e($tEntry['visa_start_date'] ?? 'N/A'); ?> to <?php echo e($tEntry['visa_expiry_date'] ?? 'N/A'); ?></div>
                                                 </div>
                                             </div>
-                                        @endforeach
-                                    @endif
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
                             </div>
 
                             <div class="col-md-12">
                                 <div class="p-3 border rounded bg-light font-13">
                                     <strong>Needs visa for:</strong> 
-                                    @php
+                                    <?php
                                         $immCountries = $immigrationHistory['countries'] ?? [];
-                                    @endphp
-                                    @if(empty($immCountries) || in_array('None', $immCountries))
+                                    ?>
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(empty($immCountries) || in_array('None', $immCountries)): ?>
                                         <span class="badge bg-secondary">None</span>
-                                    @else
-                                        @foreach($immCountries as $country)
-                                            <span class="badge bg-success me-1">{{ $country }}</span>
-                                        @endforeach
-                                    @endif
+                                    <?php else: ?>
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $immCountries; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $country): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                            <span class="badge bg-success me-1"><?php echo e($country); ?></span>
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
                             </div>
 
                             <div class="col-md-12">
                                 <div class="p-3 border rounded bg-light font-13">
                                     <strong>Refused visa/asylum/deported:</strong> 
-                                    <span class="badge {{ ($visaRefusals['has_refusal'] ?? '') === 'yes' ? 'bg-danger' : 'bg-secondary' }}">
-                                        {{ strtoupper($visaRefusals['has_refusal'] ?? 'No') }}
+                                    <span class="badge <?php echo e(($visaRefusals['has_refusal'] ?? '') === 'yes' ? 'bg-danger' : 'bg-secondary'); ?>">
+                                        <?php echo e(strtoupper($visaRefusals['has_refusal'] ?? 'No')); ?>
+
                                     </span>
-                                    @if(($visaRefusals['has_refusal'] ?? '') === 'yes')
-                                        @php
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(($visaRefusals['has_refusal'] ?? '') === 'yes'): ?>
+                                        <?php
                                             $rEntries = $visaRefusals['entries'] ?? [];
                                             if (empty($rEntries) && (!empty($visaRefusals['country']) || !empty($visaRefusals['refusal_type']))) {
                                                 $rEntries = [$visaRefusals];
                                             }
-                                        @endphp
-                                        @foreach($rEntries as $idx => $rEntry)
+                                        ?>
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $rEntries; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $rEntry): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                             <div class="mt-2 ps-3 border-start border-3 border-danger mb-2">
-                                                @if(count($rEntries) > 1)<div class="fw-bold text-danger mb-1 font-12">Refusal Entry #{{ $idx + 1 }}</div>@endif
+                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(count($rEntries) > 1): ?><div class="fw-bold text-danger mb-1 font-12">Refusal Entry #<?php echo e($idx + 1); ?></div><?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                 <div class="row g-2">
-                                                    <div class="col-md-6"><strong>Country:</strong> {{ $rEntry['country'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-6"><strong>Visa Type:</strong> {{ $rEntry['visa_type'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-6"><strong>Refusal Type:</strong> {{ $rEntry['refusal_type'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-6"><strong>Date of Refusal:</strong> {{ $rEntry['refusal_date'] ?? 'N/A' }}</div>
-                                                    <div class="col-md-12"><strong>Details/Reason:</strong> {{ $rEntry['details'] ?? 'N/A' }}</div>
+                                                    <div class="col-md-6"><strong>Country:</strong> <?php echo e($rEntry['country'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-6"><strong>Visa Type:</strong> <?php echo e($rEntry['visa_type'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-6"><strong>Refusal Type:</strong> <?php echo e($rEntry['refusal_type'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-6"><strong>Date of Refusal:</strong> <?php echo e($rEntry['refusal_date'] ?? 'N/A'); ?></div>
+                                                    <div class="col-md-12"><strong>Details/Reason:</strong> <?php echo e($rEntry['details'] ?? 'N/A'); ?></div>
                                                 </div>
                                             </div>
-                                        @endforeach
-                                    @endif
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
                             </div>
 
                             <div class="col-md-12">
                                 <div class="p-3 border rounded bg-light font-13">
-                                    <strong>TB Test Details:</strong> {{ $takenTbTest }}
+                                    <strong>TB Test Details:</strong> <?php echo e($takenTbTest); ?>
+
                                 </div>
                             </div>
                         </div>
@@ -540,7 +554,7 @@
                     <!-- Academics -->
                     <div class="info-section bg-light">
                         <div class="info-section-title"><i class="fas fa-graduation-cap text-success"></i> Academic History</div>
-                        @if($academics->count() > 0)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($academics->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-sm table-custom mb-0 border">
                                 <thead>
@@ -553,36 +567,38 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($academics as $aca)
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $academics; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $aca): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                     <tr>
-                                        <td>{{ $aca->education_level }}</td>
+                                        <td><?php echo e($aca->education_level); ?></td>
                                         <td>
-                                            {{ $aca->institution_name }}<br>
+                                            <?php echo e($aca->institution_name); ?><br>
                                             <small class="text-muted">
-                                                {{ array_filter([$aca->institution_address, $aca->city, $aca->zip_code, $aca->country]) ? implode(', ', array_filter([$aca->institution_address, $aca->city, $aca->zip_code, $aca->country])) : 'N/A' }}
+                                                <?php echo e(array_filter([$aca->institution_address, $aca->city, $aca->zip_code, $aca->country]) ? implode(', ', array_filter([$aca->institution_address, $aca->city, $aca->zip_code, $aca->country])) : 'N/A'); ?>
+
                                             </small>
                                         </td>
-                                        <td>{{ $aca->course_name }}</td>
-                                        <td>{{ $aca->start_date ? $aca->start_date->format('M Y') : 'N/A' }} to {{ $aca->end_date ? $aca->end_date->format('M Y') : 'N/A' }}</td>
+                                        <td><?php echo e($aca->course_name); ?></td>
+                                        <td><?php echo e($aca->start_date ? $aca->start_date->format('M Y') : 'N/A'); ?> to <?php echo e($aca->end_date ? $aca->end_date->format('M Y') : 'N/A'); ?></td>
                                         <td>
                                             <span class="badge bg-success">
-                                                {{ $aca->result_type == 'Others' ? $aca->other_result_type : $aca->result_type }}: {{ $aca->result_percentage }}{{ $aca->result_out_of ? ' / ' . $aca->result_out_of : '' }}
+                                                <?php echo e($aca->result_type == 'Others' ? $aca->other_result_type : $aca->result_type); ?>: <?php echo e($aca->result_percentage); ?><?php echo e($aca->result_out_of ? ' / ' . $aca->result_out_of : ''); ?>
+
                                             </span>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
-                        @else
+                        <?php else: ?>
                         <p class="text-muted mb-0">No academic history provided.</p>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
 
                     <!-- English Test -->
                     <div class="info-section">
                         <div class="info-section-title"><i class="fas fa-language text-warning"></i> English Language Proficiency</div>
-                        @if($englishTests->count() > 0)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($englishTests->count() > 0): ?>
                         <div class="table-responsive">
                             <table class="table table-sm table-custom mb-0 border">
                                 <thead>
@@ -594,90 +610,90 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($englishTests as $test)
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $englishTests; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $test): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                     <tr>
-                                        <td>{{ $test->test_type }}</td>
-                                        <td>{{ $test->test_date }}</td>
-                                        <td><span class="badge bg-primary fs--1">{{ $test->overall_score }}</span></td>
-                                        <td>L: {{ $test->listening_score }}, R: {{ $test->reading_score }}, W: {{ $test->writing_score }}, S: {{ $test->speaking_score }}</td>
+                                        <td><?php echo e($test->test_type); ?></td>
+                                        <td><?php echo e($test->test_date); ?></td>
+                                        <td><span class="badge bg-primary fs--1"><?php echo e($test->overall_score); ?></span></td>
+                                        <td>L: <?php echo e($test->listening_score); ?>, R: <?php echo e($test->reading_score); ?>, W: <?php echo e($test->writing_score); ?>, S: <?php echo e($test->speaking_score); ?></td>
                                     </tr>
-                                    @endforeach
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
-                        @else
+                        <?php else: ?>
                         <p class="text-muted mb-0">No English tests recorded.</p>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
 
                     <!-- Referees -->
                     <div class="info-section bg-light">
                         <div class="info-section-title"><i class="fas fa-users text-secondary"></i> References</div>
-                        @if($referees->count() > 0)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($referees->count() > 0): ?>
                         <div class="row g-3">
-                            @foreach($referees as $ref)
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $referees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $ref): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                             <div class="col-md-6">
                                 <div class="card shadow-none border h-100">
                                     <div class="card-body p-3">
-                                        <h6 class="mb-1">{{ $ref->name }} <small class="text-muted fw-normal">({{ $ref->type }})</small></h6>
-                                        <p class="mb-1 small"><i class="fas fa-briefcase text-muted me-1"></i> {{ $ref->designation }}, {{ $ref->company_name }}</p>
-                                        <p class="mb-1 small"><i class="fas fa-envelope text-muted me-1"></i> {{ $ref->email }}</p>
-                                        <p class="mb-0 small"><i class="fas fa-phone text-muted me-1"></i> {{ $ref->phone }}</p>
+                                        <h6 class="mb-1"><?php echo e($ref->name); ?> <small class="text-muted fw-normal">(<?php echo e($ref->type); ?>)</small></h6>
+                                        <p class="mb-1 small"><i class="fas fa-briefcase text-muted me-1"></i> <?php echo e($ref->designation); ?>, <?php echo e($ref->company_name); ?></p>
+                                        <p class="mb-1 small"><i class="fas fa-envelope text-muted me-1"></i> <?php echo e($ref->email); ?></p>
+                                        <p class="mb-0 small"><i class="fas fa-phone text-muted me-1"></i> <?php echo e($ref->phone); ?></p>
                                     </div>
                                 </div>
                             </div>
-                            @endforeach
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                         </div>
-                        @else
+                        <?php else: ?>
                         <p class="text-muted mb-0">No referees provided.</p>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
 
                     <!-- Student Uploaded Documents -->
                     <div class="info-section">
                         <div class="info-section-title"><i class="fas fa-file-upload text-success"></i> Student Uploaded Documents</div>
-                        @if(isset($documents) && $documents->count() > 0)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($documents) && $documents->count() > 0): ?>
                         <div class="row g-2">
-                            @foreach($documents as $doc)
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $documents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $doc): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                             <div class="col-md-6">
                                 <div class="d-flex align-items-center justify-content-between p-3 bg-white rounded border shadow-sm h-100">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="fas fa-file-pdf text-danger fs-4"></i>
                                         <div>
-                                            <div class="fw-bold text-dark small">{{ $doc->document_type }}</div>
-                                            @if($doc->title)
-                                                <div class="text-muted small" style="font-size: 11px;">{{ $doc->title }}</div>
-                                            @endif
-                                            <div class="text-muted" style="font-size: 10px;">Uploaded: {{ $doc->created_at->format('d M, Y') }}</div>
+                                            <div class="fw-bold text-dark small"><?php echo e($doc->document_type); ?></div>
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($doc->title): ?>
+                                                <div class="text-muted small" style="font-size: 11px;"><?php echo e($doc->title); ?></div>
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                            <div class="text-muted" style="font-size: 10px;">Uploaded: <?php echo e($doc->created_at->format('d M, Y')); ?></div>
                                         </div>
                                     </div>
                                     <div class="d-inline-flex align-items-center gap-1 text-nowrap">
-                                        <a href="{{ Storage::url($doc->file_path) }}" target="_blank" class="btn btn-xs btn-outline-info" data-bs-toggle="tooltip" title="View Document">
+                                        <a href="<?php echo e(Storage::url($doc->file_path)); ?>" target="_blank" class="btn btn-xs btn-outline-info" data-bs-toggle="tooltip" title="View Document">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a href="{{ Storage::url($doc->file_path) }}" download class="btn btn-xs btn-outline-primary" data-bs-toggle="tooltip" title="Download Document">
+                                        <a href="<?php echo e(Storage::url($doc->file_path)); ?>" download class="btn btn-xs btn-outline-primary" data-bs-toggle="tooltip" title="Download Document">
                                             <i class="fas fa-download"></i>
                                         </a>
                                     </div>
                                 </div>
                             </div>
-                            @endforeach
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                         </div>
-                        @else
+                        <?php else: ?>
                         <p class="text-muted mb-0">No documents uploaded by the student yet.</p>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
 
                 </div>
 
                 <!-- ==================== TAB 2: COURSE ==================== -->
                 <div class="tab-pane fade" id="tab-course" role="tabpanel" aria-labelledby="tab-course-btn">
-                    @php
+                    <?php
                         $canAssignCourse = ($student->preAssessment && $student->preAssessment->assessment_status === 'approved' && $student->enrolment_status !== 'pending');
-                    @endphp
+                    ?>
 
                     <div class="p-4">
-                        @if(isset($application) && $application->course)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($application) && $application->course): ?>
                         <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4" style="border-left: 5px solid #2c3e7a !important;">
                             <div class="card-body p-4">
                                 <!-- Top Header Section -->
@@ -688,22 +704,23 @@
                                         </div>
                                         <div>
                                             <span class="text-muted small text-uppercase fw-bold" style="letter-spacing: 1px; font-size: 0.75rem;">Enrolled Program</span>
-                                            <h4 class="mb-0 fw-bold text-dark mt-1" style="font-size: 1.35rem; line-height: 1.2;">{{ $application->course->name }}</h4>
+                                            <h4 class="mb-0 fw-bold text-dark mt-1" style="font-size: 1.35rem; line-height: 1.2;"><?php echo e($application->course->name); ?></h4>
                                         </div>
                                     </div>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="badge px-3 py-2 rounded-pill font-13 fw-bold" style="background-color: rgba(44, 62, 122, 0.1); color: #2c3e7a; border: 1px solid rgba(44, 62, 122, 0.2); font-size: 0.9rem;">
-                                            <i class="fas fa-barcode me-1"></i> {{ $application->course->course_code }}
+                                            <i class="fas fa-barcode me-1"></i> <?php echo e($application->course->course_code); ?>
+
                                         </span>
-                                        @if($canAssignCourse)
-                                            <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-sm btn-primary py-2 px-3 rounded-pill shadow-sm">
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($canAssignCourse): ?>
+                                            <a href="<?php echo e(route('admin.students.enrolment', $student->id)); ?>" class="btn btn-sm btn-primary py-2 px-3 rounded-pill shadow-sm">
                                                 <i class="fas fa-edit me-1"></i> Edit Enrolment & Fees
                                             </a>
-                                        @else
+                                        <?php else: ?>
                                             <button type="button" class="btn btn-sm btn-secondary py-2 px-3 rounded-pill shadow-sm" disabled title="Approve Pre-Enrolment first">
                                                 <i class="fas fa-lock me-1"></i> Edit Enrolment (Pending Approval)
                                             </button>
-                                        @endif
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                     </div>
                                 </div>
 
@@ -716,7 +733,7 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Partner Institute</small>
-                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $application->course->partner_institute }}</span>
+                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;"><?php echo e($application->course->partner_institute); ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -728,7 +745,7 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Study Method</small>
-                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $application->course->study_method }}</span>
+                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;"><?php echo e($application->course->study_method); ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -740,7 +757,7 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Duration</small>
-                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ is_numeric($application->course->duration) ? $application->course->duration . ' Years' : $application->course->duration }}</span>
+                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;"><?php echo e(is_numeric($application->course->duration) ? $application->course->duration . ' Years' : $application->course->duration); ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -752,21 +769,21 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block" style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;">Tuition Fee</small>
-                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;">{{ format_currency($application->total_fee, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-dark" style="font-size: 0.95rem;"><?php echo e(format_currency($application->total_fee, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Fees Summary Line (Row 2 - Single Horizontal Line) -->
-                                @php
+                                <?php
                                     $totalWaivedInstallments = $application->installments->where('status', 'waived')->sum(function($inst) {
                                         return max(0, $inst->amount - $inst->paid_amount);
                                     });
                                     $totalWaivedCosts = $application->additionalCosts->where('status', 'waived')->sum('amount');
                                     $totalWaived = $totalWaivedInstallments + $totalWaivedCosts;
                                     $balanceDue = max(0, $application->total_fee - $application->paid_amount - $totalWaived);
-                                @endphp
+                                ?>
 
                                 <div class="pt-3 border-top">
                                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
@@ -777,7 +794,7 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Grand Total</small>
-                                                <span class="fw-bold text-primary" style="font-size: 0.9rem;">{{ format_currency($application->total_fee, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-primary" style="font-size: 0.9rem;"><?php echo e(format_currency($application->total_fee, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
 
@@ -791,11 +808,11 @@
                                                     <input type="checkbox" class="form-check-input fee-summary-checkbox" value="base_fee" onchange="updateSelectedCount()" title="Include Base Course Fee in invoice">
                                                     <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Base Fee</small>
                                                 </div>
-                                                <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ format_currency($application->course->fee, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-dark" style="font-size: 0.9rem;"><?php echo e(format_currency($application->course->fee, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
 
-                                        @if(($application->scholarship_amount ?? 0) > 0)
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(($application->scholarship_amount ?? 0) > 0): ?>
                                         <!-- Scholarship -->
                                         <div class="d-flex align-items-center">
                                             <div class="rounded-3 d-flex align-items-center justify-content-center text-success me-2" style="width: 36px; height: 36px; background-color: rgba(40, 167, 69, 0.1);">
@@ -806,7 +823,7 @@
                                                     <input type="checkbox" class="form-check-input fee-summary-checkbox" value="scholarship" onchange="updateSelectedCount()" title="Include Scholarship in invoice">
                                                     <small class="text-success text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Scholarship</small>
                                                 </div>
-                                                <span class="fw-bold text-success" style="font-size: 0.9rem;">{{ format_currency(-$application->scholarship_amount, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-success" style="font-size: 0.9rem;"><?php echo e(format_currency(-$application->scholarship_amount, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
 
@@ -820,10 +837,10 @@
                                                     <input type="checkbox" class="form-check-input fee-summary-checkbox" value="net_course_fee" onchange="updateSelectedCount()" title="Include Net Course Fee in invoice">
                                                     <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Course Fee</small>
                                                 </div>
-                                                <span class="fw-bold text-primary" style="font-size: 0.9rem;">{{ format_currency($application->net_course_fee ?? ($application->course->fee - $application->scholarship_amount), $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-primary" style="font-size: 0.9rem;"><?php echo e(format_currency($application->net_course_fee ?? ($application->course->fee - $application->scholarship_amount), $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
-                                        @endif
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                                         <!-- Additional Costs Total -->
                                         <div class="d-flex align-items-center">
@@ -832,7 +849,7 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Add. Costs</small>
-                                                <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ format_currency($application->additionalCosts->sum('amount'), $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-dark" style="font-size: 0.9rem;"><?php echo e(format_currency($application->additionalCosts->sum('amount'), $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
 
@@ -843,15 +860,15 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Paid</small>
-                                                <span class="fw-bold text-success" style="font-size: 0.9rem;">{{ format_currency($application->paid_amount, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-success" style="font-size: 0.9rem;"><?php echo e(format_currency($application->paid_amount, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
 
-                                        @php
+                                        <?php
                                             $totalRefundedAmt = $application->refunds->sum('refund_amount');
                                             $totalDeductedAmt = $application->refunds->sum('deduction_amount');
-                                        @endphp
-                                        @if($totalRefundedAmt > 0)
+                                        ?>
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($totalRefundedAmt > 0): ?>
                                         <!-- Total Refunded -->
                                         <div class="d-flex align-items-center">
                                             <div class="rounded-3 d-flex align-items-center justify-content-center text-warning me-2" style="width: 36px; height: 36px; background-color: rgba(255, 193, 7, 0.15);">
@@ -859,12 +876,12 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Refunded</small>
-                                                <span class="fw-bold text-warning" style="font-size: 0.9rem;">{{ format_currency($totalRefundedAmt, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-warning" style="font-size: 0.9rem;"><?php echo e(format_currency($totalRefundedAmt, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
-                                        @endif
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-                                        @if($totalDeductedAmt > 0)
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($totalDeductedAmt > 0): ?>
                                         <!-- Total Fee Cut Retained -->
                                         <div class="d-flex align-items-center">
                                             <div class="rounded-3 d-flex align-items-center justify-content-center text-danger me-2" style="width: 36px; height: 36px; background-color: rgba(220, 53, 69, 0.15);">
@@ -872,12 +889,12 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Fee Cut</small>
-                                                <span class="fw-bold text-danger" style="font-size: 0.9rem;">{{ format_currency($totalDeductedAmt, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-danger" style="font-size: 0.9rem;"><?php echo e(format_currency($totalDeductedAmt, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
-                                        @endif
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
-                                        @if($totalWaived > 0 || $student->enrolment_status === 'terminated')
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($totalWaived > 0 || $student->enrolment_status === 'terminated'): ?>
                                         <!-- Waived / Adjusted -->
                                         <div class="d-flex align-items-center">
                                             <div class="rounded-3 d-flex align-items-center justify-content-center text-secondary me-2" style="width: 36px; height: 36px; background-color: rgba(108, 117, 125, 0.15);">
@@ -885,19 +902,19 @@
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Waived</small>
-                                                <span class="fw-bold text-secondary" style="font-size: 0.9rem;">{{ format_currency($totalWaived, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold text-secondary" style="font-size: 0.9rem;"><?php echo e(format_currency($totalWaived, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
-                                        @endif
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                                         <!-- Balance Due -->
                                         <div class="d-flex align-items-center">
-                                            <div class="rounded-3 d-flex align-items-center justify-content-center {{ $balanceDue > 0 ? 'text-danger' : 'text-success' }} me-2" style="width: 36px; height: 36px; background-color: {{ $balanceDue > 0 ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)' }};">
+                                            <div class="rounded-3 d-flex align-items-center justify-content-center <?php echo e($balanceDue > 0 ? 'text-danger' : 'text-success'); ?> me-2" style="width: 36px; height: 36px; background-color: <?php echo e($balanceDue > 0 ? 'rgba(220, 53, 69, 0.1)' : 'rgba(40, 167, 69, 0.1)'); ?>;">
                                                 <i class="fas fa-exclamation-circle"></i>
                                             </div>
                                             <div>
                                                 <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Balance Due</small>
-                                                <span class="fw-bold {{ $balanceDue > 0 ? 'text-danger' : 'text-success' }}" style="font-size: 0.9rem;">{{ format_currency($balanceDue, $application->course->currency ?? 'GBP') }}</span>
+                                                <span class="fw-bold <?php echo e($balanceDue > 0 ? 'text-danger' : 'text-success'); ?>" style="font-size: 0.9rem;"><?php echo e(format_currency($balanceDue, $application->course->currency ?? 'GBP')); ?></span>
                                             </div>
                                         </div>
                                     </div>
@@ -929,118 +946,119 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($application->installments as $inst)
+                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $application->installments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $inst): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                                         <tr>
-                                                            <td><input type="checkbox" class="form-check-input installment-checkbox" value="{{ $inst->id }}" onchange="updateSelectedCount()"></td>
+                                                            <td><input type="checkbox" class="form-check-input installment-checkbox" value="<?php echo e($inst->id); ?>" onchange="updateSelectedCount()"></td>
                                                             <td class="fw-semibold text-muted">
-                                                                Installment {{ $inst->installment_number }}
-                                                                @if($inst->is_invoiced)
-                                                                    <span class="badge bg-info ms-1" title="Invoiced on {{ $inst->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-check"></i></span>
-                                                                @endif
-                                                                @if($inst->note)
-                                                                    <div class="small text-secondary fw-normal mt-1"><i class="fas fa-info-circle me-1 text-muted"></i>{{ $inst->note }}</div>
-                                                                @endif
+                                                                Installment <?php echo e($inst->installment_number); ?>
+
+                                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($inst->is_invoiced): ?>
+                                                                    <span class="badge bg-info ms-1" title="Invoiced on <?php echo e($inst->invoiced_at?->format('d M Y H:i')); ?>"><i class="fas fa-check"></i></span>
+                                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($inst->note): ?>
+                                                                    <div class="small text-secondary fw-normal mt-1"><i class="fas fa-info-circle me-1 text-muted"></i><?php echo e($inst->note); ?></div>
+                                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                             </td>
-                                                            <td>{{ $inst->due_date ? $inst->due_date->format('d M, Y') : '-' }}</td>
+                                                            <td><?php echo e($inst->due_date ? $inst->due_date->format('d M, Y') : '-'); ?></td>
                                                             <td>
-                                                                @if($inst->paid_at)
-                                                                    <span class="text-success fw-semibold"><i class="fas fa-calendar-check me-1"></i>{{ $inst->paid_at->format('d M, Y') }}</span>
-                                                                @else
+                                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($inst->paid_at): ?>
+                                                                    <span class="text-success fw-semibold"><i class="fas fa-calendar-check me-1"></i><?php echo e($inst->paid_at->format('d M, Y')); ?></span>
+                                                                <?php else: ?>
                                                                     <span class="text-muted">-</span>
-                                                                @endif
+                                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                             </td>
-                                                            <td class="text-end fw-bold">{{ format_currency($inst->amount, $application->course->currency ?? 'GBP') }}</td>
-                                                            <td class="text-end text-success">{{ format_currency($inst->paid_amount, $application->course->currency ?? 'GBP') }}</td>
+                                                            <td class="text-end fw-bold"><?php echo e(format_currency($inst->amount, $application->course->currency ?? 'GBP')); ?></td>
+                                                            <td class="text-end text-success"><?php echo e(format_currency($inst->paid_amount, $application->course->currency ?? 'GBP')); ?></td>
                                                             <td class="text-center">
-                                                                @if($inst->status === 'paid')
+                                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($inst->status === 'paid'): ?>
                                                                     <span class="badge bg-success">Paid</span>
-                                                                @elseif($inst->status === 'partially_paid')
+                                                                <?php elseif($inst->status === 'partially_paid'): ?>
                                                                     <span class="badge bg-info text-dark">Partially Paid</span>
-                                                                @elseif($inst->status === 'refunded')
+                                                                <?php elseif($inst->status === 'refunded'): ?>
                                                                     <span class="badge bg-danger"><i class="fas fa-undo me-1"></i> Refunded</span>
-                                                                @elseif($inst->status === 'partially_refunded')
+                                                                <?php elseif($inst->status === 'partially_refunded'): ?>
                                                                     <span class="badge bg-warning text-dark"><i class="fas fa-undo me-1"></i> Partially Refunded</span>
-                                                                @elseif($inst->status === 'pending_approval')
+                                                                <?php elseif($inst->status === 'pending_approval'): ?>
                                                                     <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pending Approval</span>
-                                                                @elseif($inst->status === 'waived')
+                                                                <?php elseif($inst->status === 'waived'): ?>
                                                                     <span class="badge bg-secondary"><i class="fas fa-slash me-1"></i> Waived / Adjusted</span>
-                                                                @else
-                                                                    @if($inst->due_date && $inst->due_date->isPast())
+                                                                <?php else: ?>
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($inst->due_date && $inst->due_date->isPast()): ?>
                                                                         <span class="badge bg-danger">Overdue</span>
-                                                                    @else
+                                                                    <?php else: ?>
                                                                         <span class="badge bg-secondary">Pending</span>
-                                                                    @endif
-                                                                @endif
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                             </td>
                                                             <td class="text-center text-nowrap">
                                                                 <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                                                                    @if($inst->status === 'pending_approval')
-                                                                        <form action="{{ route('admin.installments.approve_payment', $inst->id) }}" method="POST" class="d-inline m-0 p-0">
-                                                                            @csrf
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($inst->status === 'pending_approval'): ?>
+                                                                        <form action="<?php echo e(route('admin.installments.approve_payment', $inst->id)); ?>" method="POST" class="d-inline m-0 p-0">
+                                                                            <?php echo csrf_field(); ?>
                                                                             <button type="submit" class="btn btn-xs btn-success" data-bs-toggle="tooltip" title="Approve Payment">
                                                                                 <i class="fas fa-check"></i>
                                                                             </button>
                                                                         </form>
-                                                                        <form action="{{ route('admin.installments.reject_payment', $inst->id) }}" method="POST" class="d-inline m-0 p-0">
-                                                                            @csrf
+                                                                        <form action="<?php echo e(route('admin.installments.reject_payment', $inst->id)); ?>" method="POST" class="d-inline m-0 p-0">
+                                                                            <?php echo csrf_field(); ?>
                                                                             <button type="submit" class="btn btn-xs btn-danger delete-btn-confirm" data-text="You want to reject this payment request!" data-bs-toggle="tooltip" title="Reject Payment">
                                                                                 <i class="fas fa-times"></i>
                                                                             </button>
                                                                         </form>
-                                                                    @elseif(!in_array($inst->status, ['paid', 'waived', 'refunded']))
+                                                                    <?php elseif(!in_array($inst->status, ['paid', 'waived', 'refunded'])): ?>
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-success record-payment-btn" 
-                                                                                data-id="{{ $inst->id }}" 
-                                                                                data-inst="{{ $inst->installment_number }}" 
-                                                                                data-due="{{ $inst->due_date ? $inst->due_date->format('d M, Y') : '-' }}" 
-                                                                                data-amount="{{ $inst->amount }}" 
-                                                                                data-paid="{{ $inst->paid_amount }}" 
-                                                                                data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                data-id="<?php echo e($inst->id); ?>" 
+                                                                                data-inst="<?php echo e($inst->installment_number); ?>" 
+                                                                                data-due="<?php echo e($inst->due_date ? $inst->due_date->format('d M, Y') : '-'); ?>" 
+                                                                                data-amount="<?php echo e($inst->amount); ?>" 
+                                                                                data-paid="<?php echo e($inst->paid_amount); ?>" 
+                                                                                data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
                                                                                 data-bs-toggle="tooltip" 
                                                                                 title="Record Payment">
                                                                             <i class="fas fa-coins"></i>
                                                                         </button>
-                                                                    @endif
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                     <button type="button" 
                                                                             class="btn btn-xs btn-outline-info payment-details-btn" 
                                                                             data-item-type="installment"
-                                                                            data-item-title="Installment {{ $inst->installment_number }}"
-                                                                            data-payer-name="{{ trim($student->first_name . ' ' . $student->surname) }}"
-                                                                            data-payer-id="{{ $student->student_id }}"
-                                                                            data-receiver-name="{{ auth()->user()->name ?? 'System Admin' }}"
-                                                                            data-amount="{{ format_currency($inst->amount, $application->course->currency ?? 'GBP') }}"
-                                                                            data-paid="{{ format_currency($inst->paid_amount, $application->course->currency ?? 'GBP') }}"
-                                                                            data-bank-fee="{{ $inst->bank_fee ?? 0 }}"
-                                                                            data-currency="{{ $application->course->currency ?? 'GBP' }}"
-                                                                            data-raw-amount="{{ $inst->amount }}"
-                                                                            data-raw-paid="{{ $inst->paid_amount }}"
-                                                                            data-due-date="{{ $inst->due_date ? $inst->due_date->format('d M, Y') : 'N/A' }}"
-                                                                            data-paid-date="{{ $inst->paid_at ? $inst->paid_at->format('d M, Y h:i A') : 'N/A' }}"
-                                                                            data-payment-method="{{ $inst->payment_method ?? 'N/A' }}"
-                                                                            data-transaction-id="{{ $inst->transaction_id ?? 'N/A' }}"
-                                                                            data-attachment-url="{{ $inst->attachment ? Storage::url($inst->attachment) : '' }}"
-                                                                            data-status="{{ $inst->status === 'pending_approval' ? 'Pending Approval' : ucfirst(str_replace('_', ' ', $inst->status)) }}"
+                                                                            data-item-title="Installment <?php echo e($inst->installment_number); ?>"
+                                                                            data-payer-name="<?php echo e(trim($student->first_name . ' ' . $student->surname)); ?>"
+                                                                            data-payer-id="<?php echo e($student->student_id); ?>"
+                                                                            data-receiver-name="<?php echo e(auth()->user()->name ?? 'System Admin'); ?>"
+                                                                            data-amount="<?php echo e(format_currency($inst->amount, $application->course->currency ?? 'GBP')); ?>"
+                                                                            data-paid="<?php echo e(format_currency($inst->paid_amount, $application->course->currency ?? 'GBP')); ?>"
+                                                                            data-bank-fee="<?php echo e($inst->bank_fee ?? 0); ?>"
+                                                                            data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
+                                                                            data-raw-amount="<?php echo e($inst->amount); ?>"
+                                                                            data-raw-paid="<?php echo e($inst->paid_amount); ?>"
+                                                                            data-due-date="<?php echo e($inst->due_date ? $inst->due_date->format('d M, Y') : 'N/A'); ?>"
+                                                                            data-paid-date="<?php echo e($inst->paid_at ? $inst->paid_at->format('d M, Y h:i A') : 'N/A'); ?>"
+                                                                            data-payment-method="<?php echo e($inst->payment_method ?? 'N/A'); ?>"
+                                                                            data-transaction-id="<?php echo e($inst->transaction_id ?? 'N/A'); ?>"
+                                                                            data-attachment-url="<?php echo e($inst->attachment ? Storage::url($inst->attachment) : ''); ?>"
+                                                                            data-status="<?php echo e($inst->status === 'pending_approval' ? 'Pending Approval' : ucfirst(str_replace('_', ' ', $inst->status))); ?>"
                                                                             data-bs-toggle="tooltip" 
                                                                             title="View Payment Details">
                                                                         <i class="fas fa-info-circle"></i>
                                                                     </button>
-                                                                    @php
+                                                                    <?php
                                                                         $instPaidVal = floatval($inst->paid_amount ?? 0);
                                                                         $instDueVal = max(0, floatval($inst->amount - $instPaidVal));
-                                                                    @endphp
-                                                                    @if($instPaidVal > 0)
+                                                                    ?>
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($instPaidVal > 0): ?>
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-warning process-refund-btn" 
                                                                                 data-type="installment"
-                                                                                data-id="{{ $inst->id }}" 
-                                                                                data-title="Installment {{ $inst->installment_number }}" 
-                                                                                data-paid="{{ $instPaidVal }}" 
-                                                                                data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                data-id="<?php echo e($inst->id); ?>" 
+                                                                                data-title="Installment <?php echo e($inst->installment_number); ?>" 
+                                                                                data-paid="<?php echo e($instPaidVal); ?>" 
+                                                                                data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
                                                                                 data-bs-toggle="tooltip" 
                                                                                 title="Process Refund">
                                                                             <i class="fas fa-undo"></i>
                                                                         </button>
-                                                                    @else
+                                                                    <?php else: ?>
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-secondary" 
                                                                                 disabled 
@@ -1048,23 +1066,23 @@
                                                                                 title="No paid amount to refund">
                                                                             <i class="fas fa-undo"></i>
                                                                         </button>
-                                                                    @endif
-                                                                    @if(!in_array($inst->status, ['paid', 'waived', 'refunded']) && $instDueVal > 0)
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!in_array($inst->status, ['paid', 'waived', 'refunded']) && $instDueVal > 0): ?>
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-purple apply-discount-btn" 
                                                                                 style="color: #6f42c1; border-color: #6f42c1;"
                                                                                 data-type="installment"
-                                                                                data-id="{{ $inst->id }}" 
-                                                                                data-title="Installment {{ $inst->installment_number }}" 
-                                                                                data-amount="{{ $inst->amount }}" 
-                                                                                data-paid="{{ $instPaidVal }}" 
-                                                                                data-due="{{ $instDueVal }}" 
-                                                                                data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                data-id="<?php echo e($inst->id); ?>" 
+                                                                                data-title="Installment <?php echo e($inst->installment_number); ?>" 
+                                                                                data-amount="<?php echo e($inst->amount); ?>" 
+                                                                                data-paid="<?php echo e($instPaidVal); ?>" 
+                                                                                data-due="<?php echo e($instDueVal); ?>" 
+                                                                                data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
                                                                                 data-bs-toggle="tooltip" 
                                                                                 title="Apply Discount">
                                                                             <i class="fas fa-percent"></i>
                                                                         </button>
-                                                                    @else
+                                                                    <?php else: ?>
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-secondary" 
                                                                                 disabled 
@@ -1072,11 +1090,11 @@
                                                                                 title="Discount not applicable">
                                                                             <i class="fas fa-percent"></i>
                                                                         </button>
-                                                                    @endif
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                 </div>
                                                             </td>
                                                         </tr>
-                                                    @endforeach
+                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                                 </tbody>
                                             </table>
                                         </div>
@@ -1090,14 +1108,14 @@
                                             <h6 class="text-muted text-uppercase mb-0" style="font-size: 0.8rem; letter-spacing: 0.5px;">
                                                 <i class="fas fa-tags text-primary me-2"></i> Additional Costs (One-time Full Payments)
                                             </h6>
-                                            @if($canAssignCourse)
-                                                <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-xs btn-outline-primary">
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($canAssignCourse): ?>
+                                                <a href="<?php echo e(route('admin.students.enrolment', $student->id)); ?>" class="btn btn-xs btn-outline-primary">
                                                     <i class="fas fa-plus me-1"></i> Add / Edit Additional Costs
                                                 </a>
-                                            @endif
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </div>
 
-                                        @if($application->additionalCosts->count() > 0)
+                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($application->additionalCosts->count() > 0): ?>
                                             <div class="table-responsive">
                                                 <table class="table table-bordered table-sm align-middle mb-0" style="font-size: 0.85rem;">
                                                     <thead class="table-light">
@@ -1111,111 +1129,112 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @foreach($application->additionalCosts as $cost)
+                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $application->additionalCosts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cost): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                                             <tr>
-                                                                <td><input type="checkbox" class="form-check-input cost-checkbox" value="{{ $cost->id }}" onchange="updateSelectedCount()"></td>
+                                                                <td><input type="checkbox" class="form-check-input cost-checkbox" value="<?php echo e($cost->id); ?>" onchange="updateSelectedCount()"></td>
                                                                 <td class="fw-semibold text-dark">
-                                                                    <i class="fas fa-tag text-secondary me-2"></i> {{ $cost->cost_name }}
-                                                                    @if($cost->is_invoiced)
-                                                                        <span class="badge bg-info ms-1" title="Invoiced on {{ $cost->invoiced_at?->format('d M Y H:i') }}"><i class="fas fa-check"></i></span>
-                                                                    @endif
-                                                                    @if($cost->note)
-                                                                        <div class="small text-secondary fw-normal ms-4 mt-1"><i class="fas fa-info-circle me-1 text-muted"></i>{{ $cost->note }}</div>
-                                                                    @endif
+                                                                    <i class="fas fa-tag text-secondary me-2"></i> <?php echo e($cost->cost_name); ?>
+
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($cost->is_invoiced): ?>
+                                                                        <span class="badge bg-info ms-1" title="Invoiced on <?php echo e($cost->invoiced_at?->format('d M Y H:i')); ?>"><i class="fas fa-check"></i></span>
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($cost->note): ?>
+                                                                        <div class="small text-secondary fw-normal ms-4 mt-1"><i class="fas fa-info-circle me-1 text-muted"></i><?php echo e($cost->note); ?></div>
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                 </td>
                                                                 <td>
-                                                                    @if($cost->paid_at)
-                                                                        <span class="text-success fw-semibold"><i class="fas fa-calendar-check me-1"></i>{{ $cost->paid_at->format('d M, Y') }}</span>
-                                                                    @else
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($cost->paid_at): ?>
+                                                                        <span class="text-success fw-semibold"><i class="fas fa-calendar-check me-1"></i><?php echo e($cost->paid_at->format('d M, Y')); ?></span>
+                                                                    <?php else: ?>
                                                                         <span class="text-muted">-</span>
-                                                                    @endif
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                 </td>
-                                                                <td class="text-end fw-bold text-primary">{{ format_currency($cost->amount, $application->course->currency ?? 'GBP') }}</td>
+                                                                <td class="text-end fw-bold text-primary"><?php echo e(format_currency($cost->amount, $application->course->currency ?? 'GBP')); ?></td>
                                                                 <td class="text-center">
-                                                                    @if($cost->status === 'paid')
+                                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($cost->status === 'paid'): ?>
                                                                         <span class="badge bg-success">Paid</span>
-                                                                        @if($cost->paid_at)
-                                                                            <small class="d-block text-muted" style="font-size: 10px;">{{ $cost->paid_at->format('d M, Y') }}</small>
-                                                                        @endif
-                                                                    @elseif($cost->status === 'pending_approval')
+                                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($cost->paid_at): ?>
+                                                                            <small class="d-block text-muted" style="font-size: 10px;"><?php echo e($cost->paid_at->format('d M, Y')); ?></small>
+                                                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                                    <?php elseif($cost->status === 'pending_approval'): ?>
                                                                         <span class="badge bg-warning text-dark"><i class="fas fa-clock me-1"></i> Pending Approval</span>
-                                                                    @elseif($cost->status === 'waived')
+                                                                    <?php elseif($cost->status === 'waived'): ?>
                                                                         <span class="badge bg-secondary"><i class="fas fa-slash me-1"></i> Waived / Adjusted</span>
-                                                                    @elseif($cost->status === 'refunded')
+                                                                    <?php elseif($cost->status === 'refunded'): ?>
                                                                         <span class="badge bg-danger"><i class="fas fa-undo me-1"></i> Refunded</span>
-                                                                    @elseif($cost->status === 'partially_refunded')
+                                                                    <?php elseif($cost->status === 'partially_refunded'): ?>
                                                                         <span class="badge bg-warning text-dark"><i class="fas fa-undo me-1"></i> Partially Refunded</span>
-                                                                    @else
+                                                                    <?php else: ?>
                                                                         <span class="badge bg-secondary">Pending</span>
-                                                                    @endif
+                                                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                 </td>
                                                                 <td class="text-center text-nowrap">
                                                                     <div class="d-inline-flex align-items-center justify-content-center gap-1">
-                                                                        @if($cost->status === 'pending_approval')
-                                                                            <form action="{{ route('admin.additional_costs.approve_payment', $cost->id) }}" method="POST" class="d-inline m-0 p-0">
-                                                                                @csrf
+                                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($cost->status === 'pending_approval'): ?>
+                                                                            <form action="<?php echo e(route('admin.additional_costs.approve_payment', $cost->id)); ?>" method="POST" class="d-inline m-0 p-0">
+                                                                                <?php echo csrf_field(); ?>
                                                                                 <button type="submit" class="btn btn-xs btn-success" data-bs-toggle="tooltip" title="Approve Payment">
                                                                                     <i class="fas fa-check"></i>
                                                                                 </button>
                                                                             </form>
-                                                                            <form action="{{ route('admin.additional_costs.reject_payment', $cost->id) }}" method="POST" class="d-inline m-0 p-0">
-                                                                                @csrf
+                                                                            <form action="<?php echo e(route('admin.additional_costs.reject_payment', $cost->id)); ?>" method="POST" class="d-inline m-0 p-0">
+                                                                                <?php echo csrf_field(); ?>
                                                                                 <button type="submit" class="btn btn-xs btn-danger delete-btn-confirm" data-text="You want to reject this payment request!" data-bs-toggle="tooltip" title="Reject Payment">
                                                                                     <i class="fas fa-times"></i>
                                                                                 </button>
                                                                             </form>
-                                                                        @elseif(!in_array($cost->status, ['paid', 'waived', 'refunded']))
+                                                                        <?php elseif(!in_array($cost->status, ['paid', 'waived', 'refunded'])): ?>
                                                                             <button type="button" 
                                                                                     class="btn btn-xs btn-outline-success record-cost-payment-btn" 
-                                                                                    data-id="{{ $cost->id }}" 
-                                                                                    data-name="{{ $cost->cost_name }}" 
-                                                                                    data-amount="{{ $cost->amount }}" 
-                                                                                    data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                    data-id="<?php echo e($cost->id); ?>" 
+                                                                                    data-name="<?php echo e($cost->cost_name); ?>" 
+                                                                                    data-amount="<?php echo e($cost->amount); ?>" 
+                                                                                    data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
                                                                                     data-bs-toggle="tooltip" 
                                                                                     title="Record Full Payment">
                                                                                 <i class="fas fa-coins"></i>
                                                                             </button>
-                                                                        @endif
+                                                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                         <button type="button" 
                                                                                 class="btn btn-xs btn-outline-info payment-details-btn" 
                                                                                 data-item-type="additional_cost"
-                                                                                data-item-title="{{ $cost->cost_name }}"
-                                                                                data-payer-name="{{ trim($student->first_name . ' ' . $student->surname) }}"
-                                                                                data-payer-id="{{ $student->student_id }}"
-                                                                                data-receiver-name="{{ auth()->user()->name ?? 'System Admin' }}"
-                                                                                data-amount="{{ format_currency($cost->amount, $application->course->currency ?? 'GBP') }}"
-                                                                                data-paid="{{ format_currency($cost->status === 'paid' ? $cost->amount : 0, $application->course->currency ?? 'GBP') }}"
-                                                                                data-bank-fee="{{ $cost->bank_fee ?? 0 }}"
-                                                                                data-currency="{{ $application->course->currency ?? 'GBP' }}"
-                                                                                data-raw-amount="{{ $cost->amount }}"
-                                                                                data-raw-paid="{{ $cost->status === 'paid' ? $cost->amount : 0 }}"
-                                                                                data-due-date="{{ $cost->paid_at ? $cost->paid_at->format('d M, Y') : 'N/A' }}"
-                                                                                data-paid-date="{{ $cost->paid_at ? $cost->paid_at->format('d M, Y h:i A') : 'N/A' }}"
-                                                                                data-payment-method="{{ $cost->payment_method ?? 'N/A' }}"
-                                                                                data-transaction-id="{{ $cost->transaction_id ?? 'N/A' }}"
-                                                                                data-attachment-url="{{ $cost->attachment ? Storage::url($cost->attachment) : '' }}"
-                                                                                data-status="{{ $cost->status === 'pending_approval' ? 'Pending Approval' : ucfirst($cost->status) }}"
+                                                                                data-item-title="<?php echo e($cost->cost_name); ?>"
+                                                                                data-payer-name="<?php echo e(trim($student->first_name . ' ' . $student->surname)); ?>"
+                                                                                data-payer-id="<?php echo e($student->student_id); ?>"
+                                                                                data-receiver-name="<?php echo e(auth()->user()->name ?? 'System Admin'); ?>"
+                                                                                data-amount="<?php echo e(format_currency($cost->amount, $application->course->currency ?? 'GBP')); ?>"
+                                                                                data-paid="<?php echo e(format_currency($cost->status === 'paid' ? $cost->amount : 0, $application->course->currency ?? 'GBP')); ?>"
+                                                                                data-bank-fee="<?php echo e($cost->bank_fee ?? 0); ?>"
+                                                                                data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
+                                                                                data-raw-amount="<?php echo e($cost->amount); ?>"
+                                                                                data-raw-paid="<?php echo e($cost->status === 'paid' ? $cost->amount : 0); ?>"
+                                                                                data-due-date="<?php echo e($cost->paid_at ? $cost->paid_at->format('d M, Y') : 'N/A'); ?>"
+                                                                                data-paid-date="<?php echo e($cost->paid_at ? $cost->paid_at->format('d M, Y h:i A') : 'N/A'); ?>"
+                                                                                data-payment-method="<?php echo e($cost->payment_method ?? 'N/A'); ?>"
+                                                                                data-transaction-id="<?php echo e($cost->transaction_id ?? 'N/A'); ?>"
+                                                                                data-attachment-url="<?php echo e($cost->attachment ? Storage::url($cost->attachment) : ''); ?>"
+                                                                                data-status="<?php echo e($cost->status === 'pending_approval' ? 'Pending Approval' : ucfirst($cost->status)); ?>"
                                                                                 data-bs-toggle="tooltip" 
                                                                                 title="View Payment Details">
                                                                             <i class="fas fa-info-circle"></i>
                                                                         </button>
-                                                                        @php
+                                                                        <?php
                                                                             $costPaidVal = floatval($cost->paid_amount > 0 ? $cost->paid_amount : ($cost->status === 'paid' ? $cost->amount : 0));
                                                                             $costDueVal = max(0, floatval($cost->amount - $costPaidVal));
-                                                                        @endphp
-                                                                        @if($costPaidVal > 0)
+                                                                        ?>
+                                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($costPaidVal > 0): ?>
                                                                             <button type="button" 
                                                                                     class="btn btn-xs btn-outline-warning process-refund-btn" 
                                                                                     data-type="additional_cost"
-                                                                                    data-id="{{ $cost->id }}" 
-                                                                                    data-title="{{ $cost->cost_name }}" 
-                                                                                    data-paid="{{ $costPaidVal }}" 
-                                                                                    data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                    data-id="<?php echo e($cost->id); ?>" 
+                                                                                    data-title="<?php echo e($cost->cost_name); ?>" 
+                                                                                    data-paid="<?php echo e($costPaidVal); ?>" 
+                                                                                    data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
                                                                                     data-bs-toggle="tooltip" 
                                                                                     title="Process Refund">
                                                                                 <i class="fas fa-undo"></i>
                                                                             </button>
-                                                                        @else
+                                                                        <?php else: ?>
                                                                             <button type="button" 
                                                                                     class="btn btn-xs btn-outline-secondary" 
                                                                                     disabled 
@@ -1223,23 +1242,23 @@
                                                                                     title="No paid amount to refund">
                                                                                 <i class="fas fa-undo"></i>
                                                                             </button>
-                                                                        @endif
-                                                                        @if(!in_array($cost->status, ['paid', 'waived', 'refunded']) && $costDueVal > 0)
+                                                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!in_array($cost->status, ['paid', 'waived', 'refunded']) && $costDueVal > 0): ?>
                                                                             <button type="button" 
                                                                                     class="btn btn-xs btn-outline-purple apply-discount-btn" 
                                                                                     style="color: #6f42c1; border-color: #6f42c1;"
                                                                                     data-type="additional_cost"
-                                                                                    data-id="{{ $cost->id }}" 
-                                                                                    data-title="{{ $cost->cost_name }}" 
-                                                                                    data-amount="{{ $cost->amount }}" 
-                                                                                    data-paid="{{ $costPaidVal }}" 
-                                                                                    data-due="{{ $costDueVal }}" 
-                                                                                    data-currency="{{ $application->course->currency ?? 'GBP' }}"
+                                                                                    data-id="<?php echo e($cost->id); ?>" 
+                                                                                    data-title="<?php echo e($cost->cost_name); ?>" 
+                                                                                    data-amount="<?php echo e($cost->amount); ?>" 
+                                                                                    data-paid="<?php echo e($costPaidVal); ?>" 
+                                                                                    data-due="<?php echo e($costDueVal); ?>" 
+                                                                                    data-currency="<?php echo e($application->course->currency ?? 'GBP'); ?>"
                                                                                     data-bs-toggle="tooltip" 
                                                                                     title="Apply Discount">
                                                                                 <i class="fas fa-percent"></i>
                                                                             </button>
-                                                                        @else
+                                                                        <?php else: ?>
                                                                             <button type="button" 
                                                                                     class="btn btn-xs btn-outline-secondary" 
                                                                                     disabled 
@@ -1247,27 +1266,27 @@
                                                                                     title="Discount not applicable">
                                                                                 <i class="fas fa-percent"></i>
                                                                             </button>
-                                                                        @endif
+                                                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                                     </div>
                                                                 </td>
                                                             </tr>
-                                                        @endforeach
+                                                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                                     </tbody>
                                                     <tfoot class="table-light">
                                                         <tr>
                                                             <th class="text-end" colspan="2">Total Additional Costs:</th>
-                                                            <th class="text-end text-primary fw-bold">{{ format_currency($application->additionalCosts->sum('amount'), $application->course->currency ?? 'GBP') }}</th>
+                                                            <th class="text-end text-primary fw-bold"><?php echo e(format_currency($application->additionalCosts->sum('amount'), $application->course->currency ?? 'GBP')); ?></th>
                                                             <th colspan="2"></th>
                                                         </tr>
                                                     </tfoot>
                                                 </table>
                                             </div>
-                                        @else
+                                        <?php else: ?>
                                             <div class="alert alert-light border py-2 px-3 small text-muted mb-0">
-                                                <i class="fas fa-info-circle me-1"></i> No additional costs assigned for this enrolment. Click <strong><a href="{{ route('admin.students.enrolment', $student->id) }}">Manage Enrolment & Fees</a></strong> to add items.
+                                                <i class="fas fa-info-circle me-1"></i> No additional costs assigned for this enrolment. Click <strong><a href="<?php echo e(route('admin.students.enrolment', $student->id)); ?>">Manage Enrolment & Fees</a></strong> to add items.
                                             </div>
-                                        @endif
-                                @if($application->refunds->count() > 0)
+                                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($application->refunds->count() > 0): ?>
                                 <!-- Refund History Section -->
                                 <div class="row g-4 pt-3 border-top mt-3">
                                     <div class="col-12">
@@ -1288,66 +1307,67 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($application->refunds->sortByDesc('created_at') as $refund)
+                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $application->refunds->sortByDesc('created_at'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $refund): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                                         <tr>
-                                                            <td><i class="fas fa-calendar-alt text-muted me-1"></i>{{ $refund->refunded_at?->format('d M, Y h:i A') ?? $refund->created_at->format('d M, Y h:i A') }}</td>
+                                                            <td><i class="fas fa-calendar-alt text-muted me-1"></i><?php echo e($refund->refunded_at?->format('d M, Y h:i A') ?? $refund->created_at->format('d M, Y h:i A')); ?></td>
                                                             <td class="fw-semibold">
-                                                                @if($refund->refund_type === 'installment')
+                                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($refund->refund_type === 'installment'): ?>
                                                                     <span class="badge bg-primary me-1">Installment</span>
-                                                                @else
+                                                                <?php else: ?>
                                                                     <span class="badge bg-info text-dark me-1">Additional Cost</span>
-                                                                @endif
+                                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                             </td>
-                                                            <td>{{ format_currency($refund->original_paid_amount, $application->course->currency ?? 'GBP') }}</td>
+                                                            <td><?php echo e(format_currency($refund->original_paid_amount, $application->course->currency ?? 'GBP')); ?></td>
                                                             <td class="text-danger fw-semibold">
-                                                                {{ format_currency($refund->deduction_amount, $application->course->currency ?? 'GBP') }}
-                                                                @if($refund->deduction_percentage > 0)
-                                                                    <small class="text-muted">({{ $refund->deduction_percentage }}%)</small>
-                                                                @endif
+                                                                <?php echo e(format_currency($refund->deduction_amount, $application->course->currency ?? 'GBP')); ?>
+
+                                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($refund->deduction_percentage > 0): ?>
+                                                                    <small class="text-muted">(<?php echo e($refund->deduction_percentage); ?>%)</small>
+                                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                                             </td>
-                                                            <td class="text-success fw-bold">{{ format_currency($refund->refund_amount, $application->course->currency ?? 'GBP') }}</td>
+                                                            <td class="text-success fw-bold"><?php echo e(format_currency($refund->refund_amount, $application->course->currency ?? 'GBP')); ?></td>
                                                             <td>
-                                                                <span class="text-dark" title="{{ $refund->reason_note }}"><i class="fas fa-info-circle me-1 text-secondary"></i>{{ Str::limit($refund->reason_note, 60) }}</span>
+                                                                <span class="text-dark" title="<?php echo e($refund->reason_note); ?>"><i class="fas fa-info-circle me-1 text-secondary"></i><?php echo e(Str::limit($refund->reason_note, 60)); ?></span>
                                                             </td>
                                                             <td>
-                                                                <small class="text-muted"><i class="fas fa-user-shield me-1"></i>{{ $refund->processedBy->name ?? 'Admin' }}</small>
+                                                                <small class="text-muted"><i class="fas fa-user-shield me-1"></i><?php echo e($refund->processedBy->name ?? 'Admin'); ?></small>
                                                             </td>
                                                         </tr>
-                                                    @endforeach
+                                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                                 </tbody>
                                             </table>
                                         </div>
                                     </div>
                                 </div>
-                                @endif
+                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
                             </div>
                         </div>
-                        @else
-                            @if($canAssignCourse)
+                        <?php else: ?>
+                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($canAssignCourse): ?>
                                 <div class="alert alert-info py-4 px-4 shadow-sm border-0 rounded-3 d-flex align-items-center justify-content-between">
                                     <div>
                                         <h5 class="fw-bold text-primary mb-1"><i class="fas fa-graduation-cap me-2"></i> No Course Assigned</h5>
                                         <p class="mb-0 text-muted">No course or fee schedule has been assigned to this student yet.</p>
                                     </div>
-                                    <a href="{{ route('admin.students.enrolment', $student->id) }}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
+                                    <a href="<?php echo e(route('admin.students.enrolment', $student->id)); ?>" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold">
                                         <i class="fas fa-plus-circle me-1"></i> Assign Course & Fee
                                     </a>
                                 </div>
-                            @else
+                            <?php else: ?>
                                 <div class="alert alert-warning py-4 px-4 shadow-sm border-0 rounded-3 d-flex align-items-center justify-content-between">
                                     <div>
                                         <h5 class="fw-bold text-warning mb-1"><i class="fas fa-exclamation-triangle me-2"></i> Pre-Enrolment Pending</h5>
                                         <p class="mb-0 text-muted">Pre-Enrolment / Pre-Assessment is currently <strong>Pending</strong>. Course & fees can only be assigned after approving the Pre-Enrolment.</p>
                                     </div>
-                                    @if($student->enrolment_status === 'pending')
-                                        <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm btn-approve-enrol fw-bold" data-id="{{ $student->id }}" data-name="{{ $student->first_name }} {{ $student->surname }}">
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($student->enrolment_status === 'pending'): ?>
+                                        <button type="button" class="btn btn-success rounded-pill px-4 shadow-sm btn-approve-enrol fw-bold" data-id="<?php echo e($student->id); ?>" data-name="<?php echo e($student->first_name); ?> <?php echo e($student->surname); ?>">
                                             <i class="fas fa-check-circle me-1"></i> Approve Pre-Enrolment
                                         </button>
-                                    @endif
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                 </div>
-                            @endif
-                        @endif
+                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                 </div>
 
@@ -1363,7 +1383,7 @@
                             </button>
                         </div>
 
-                        @if(isset($letterHistory) && $letterHistory->count() > 0)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($letterHistory) && $letterHistory->count() > 0): ?>
                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
                                 <span class="small text-muted fw-semibold">Show</span>
@@ -1397,41 +1417,41 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($letterHistory as $idx => $item)
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $letterHistory; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                     <tr>
-                                        <td>{{ $idx + 1 }}</td>
-                                        <td><strong>{{ $item->letter_title }}</strong></td>
-                                        <td><span class="badge bg-secondary text-uppercase">{{ $item->file_type }}</span></td>
-                                        <td>{{ $item->generator->name ?? 'System Admin' }}</td>
-                                        <td>{{ $item->created_at->format('d M, Y h:i A') }}</td>
+                                        <td><?php echo e($idx + 1); ?></td>
+                                        <td><strong><?php echo e($item->letter_title); ?></strong></td>
+                                        <td><span class="badge bg-secondary text-uppercase"><?php echo e($item->file_type); ?></span></td>
+                                        <td><?php echo e($item->generator->name ?? 'System Admin'); ?></td>
+                                        <td><?php echo e($item->created_at->format('d M, Y h:i A')); ?></td>
                                         <td class="text-center">
-                                            @if($item->sent_to_student)
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($item->sent_to_student): ?>
                                                 <span class="badge bg-success rounded-pill"><i class="fas fa-check me-1"></i> Sent</span>
-                                                <div class="text-muted" style="font-size:10px;">{{ $item->sent_at?->format('d M, Y') }}</div>
-                                            @else
+                                                <div class="text-muted" style="font-size:10px;"><?php echo e($item->sent_at?->format('d M, Y')); ?></div>
+                                            <?php else: ?>
                                                 <span class="badge bg-light text-secondary border">Not Sent</span>
-                                            @endif
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </td>
                                         <td class="text-end text-nowrap">
                                             <div class="d-inline-flex align-items-center justify-content-end gap-1">
-                                                <a href="{{ route('admin.students.letters.preview', $item->id) }}" target="_blank" class="btn btn-xs btn-outline-info" data-bs-toggle="tooltip" title="Preview Letter">
+                                                <a href="<?php echo e(route('admin.students.letters.preview', $item->id)); ?>" target="_blank" class="btn btn-xs btn-outline-info" data-bs-toggle="tooltip" title="Preview Letter">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ route('admin.students.letters.download', $item->id) }}" class="btn btn-xs btn-outline-success" data-bs-toggle="tooltip" title="Download Letter">
+                                                <a href="<?php echo e(route('admin.students.letters.download', $item->id)); ?>" class="btn btn-xs btn-outline-success" data-bs-toggle="tooltip" title="Download Letter">
                                                     <i class="fas fa-download"></i>
                                                 </a>
-                                                @if(!$item->sent_to_student)
-                                                <form action="{{ route('admin.students.letters.send', $item->id) }}" method="POST" class="d-inline m-0 p-0">
-                                                    @csrf
-                                                    @method('PATCH')
+                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$item->sent_to_student): ?>
+                                                <form action="<?php echo e(route('admin.students.letters.send', $item->id)); ?>" method="POST" class="d-inline m-0 p-0">
+                                                    <?php echo csrf_field(); ?>
+                                                    <?php echo method_field('PATCH'); ?>
                                                     <button type="submit" class="btn btn-xs btn-success" data-bs-toggle="tooltip" title="Send to Student">
                                                         <i class="fas fa-paper-plane"></i>
                                                     </button>
                                                 </form>
-                                                @endif
-                                                <form action="{{ route('admin.students.letters.delete', $item->id) }}" method="POST" class="d-inline m-0 p-0">
-                                                    @csrf
-                                                    @method('DELETE')
+                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                <form action="<?php echo e(route('admin.students.letters.delete', $item->id)); ?>" method="POST" class="d-inline m-0 p-0">
+                                                    <?php echo csrf_field(); ?>
+                                                    <?php echo method_field('DELETE'); ?>
                                                     <button type="submit" class="btn btn-xs btn-outline-danger delete-btn-confirm" data-text="You want to delete this generated letter history!" data-bs-toggle="tooltip" title="Delete Letter">
                                                         <i class="fas fa-trash-alt"></i>
                                                     </button>
@@ -1439,7 +1459,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -1450,7 +1470,7 @@
                                 <ul class="pagination pagination-sm mb-0" id="lettersPagination"></ul>
                             </nav>
                         </div>
-                        @else
+                        <?php else: ?>
                         <div class="card border-dashed p-5 text-center bg-light">
                             <i class="fas fa-envelope-open text-muted fa-3x mb-3"></i>
                             <h5 class="fw-bold text-dark">No Letters Generated Yet</h5>
@@ -1461,7 +1481,7 @@
                                 </button>
                             </div>
                         </div>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                 </div>
 
@@ -1477,7 +1497,7 @@
                             </button>
                         </div>
 
-                        @if(isset($invoiceHistory) && $invoiceHistory->count() > 0)
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($invoiceHistory) && $invoiceHistory->count() > 0): ?>
                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2">
                                 <span class="small text-muted fw-semibold">Show</span>
@@ -1511,41 +1531,41 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($invoiceHistory as $idx => $item)
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $invoiceHistory; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $idx => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
                                     <tr>
-                                        <td>{{ $idx + 1 }}</td>
-                                        <td><strong>{{ $item->invoice_title }}</strong></td>
-                                        <td><span class="badge bg-secondary text-uppercase">{{ $item->file_type }}</span></td>
-                                        <td>{{ $item->generator->name ?? 'System Admin' }}</td>
-                                        <td>{{ $item->created_at->format('d M, Y h:i A') }}</td>
+                                        <td><?php echo e($idx + 1); ?></td>
+                                        <td><strong><?php echo e($item->invoice_title); ?></strong></td>
+                                        <td><span class="badge bg-secondary text-uppercase"><?php echo e($item->file_type); ?></span></td>
+                                        <td><?php echo e($item->generator->name ?? 'System Admin'); ?></td>
+                                        <td><?php echo e($item->created_at->format('d M, Y h:i A')); ?></td>
                                         <td class="text-center">
-                                            @if($item->sent_to_student)
+                                            <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if($item->sent_to_student): ?>
                                                 <span class="badge bg-success rounded-pill"><i class="fas fa-check me-1"></i> Sent</span>
-                                                <div class="text-muted" style="font-size:10px;">{{ $item->sent_at?->format('d M, Y') }}</div>
-                                            @else
+                                                <div class="text-muted" style="font-size:10px;"><?php echo e($item->sent_at?->format('d M, Y')); ?></div>
+                                            <?php else: ?>
                                                 <span class="badge bg-light text-secondary border">Not Sent</span>
-                                            @endif
+                                            <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                                         </td>
                                         <td class="text-end text-nowrap">
                                             <div class="d-inline-flex align-items-center justify-content-end gap-1">
-                                                <a href="{{ route('admin.students.invoices.preview', $item->id) }}" target="_blank" class="btn btn-xs btn-outline-info" data-bs-toggle="tooltip" title="Preview Invoice">
+                                                <a href="<?php echo e(route('admin.students.invoices.preview', $item->id)); ?>" target="_blank" class="btn btn-xs btn-outline-info" data-bs-toggle="tooltip" title="Preview Invoice">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ route('admin.students.invoices.download', $item->id) }}" class="btn btn-xs btn-outline-success" data-bs-toggle="tooltip" title="Download Invoice">
+                                                <a href="<?php echo e(route('admin.students.invoices.download', $item->id)); ?>" class="btn btn-xs btn-outline-success" data-bs-toggle="tooltip" title="Download Invoice">
                                                     <i class="fas fa-download"></i>
                                                 </a>
-                                                @if(!$item->sent_to_student)
-                                                <form action="{{ route('admin.students.invoices.send', $item->id) }}" method="POST" class="d-inline m-0 p-0">
-                                                    @csrf
-                                                    @method('PATCH')
+                                                <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!$item->sent_to_student): ?>
+                                                <form action="<?php echo e(route('admin.students.invoices.send', $item->id)); ?>" method="POST" class="d-inline m-0 p-0">
+                                                    <?php echo csrf_field(); ?>
+                                                    <?php echo method_field('PATCH'); ?>
                                                     <button type="submit" class="btn btn-xs btn-success" data-bs-toggle="tooltip" title="Send to Student">
                                                         <i class="fas fa-paper-plane"></i>
                                                     </button>
                                                 </form>
-                                                @endif
-                                                <form action="{{ route('admin.students.invoices.delete', $item->id) }}" method="POST" class="d-inline m-0 p-0">
-                                                    @csrf
-                                                    @method('DELETE')
+                                                <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                                <form action="<?php echo e(route('admin.students.invoices.delete', $item->id)); ?>" method="POST" class="d-inline m-0 p-0">
+                                                    <?php echo csrf_field(); ?>
+                                                    <?php echo method_field('DELETE'); ?>
                                                     <button type="submit" class="btn btn-xs btn-outline-danger delete-btn-confirm" data-text="You want to delete this generated invoice history!" data-bs-toggle="tooltip" title="Delete Invoice">
                                                         <i class="fas fa-trash-alt"></i>
                                                     </button>
@@ -1553,7 +1573,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -1564,7 +1584,7 @@
                                 <ul class="pagination pagination-sm mb-0" id="invoicesPagination"></ul>
                             </nav>
                         </div>
-                        @else
+                        <?php else: ?>
                         <div class="card border-dashed p-5 text-center bg-light">
                             <i class="fas fa-file-invoice text-muted fa-3x mb-3"></i>
                             <h5 class="fw-bold text-dark">No Invoices Generated Yet</h5>
@@ -1575,7 +1595,7 @@
                                 </button>
                             </div>
                         </div>
-                        @endif
+                        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                     </div>
                 </div>
 
@@ -1588,14 +1608,15 @@
 <!-- ==================== Generate Letter Modal ==================== -->
 <div class="modal fade" id="generateLetterModal" tabindex="-1" aria-labelledby="generateLetterModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <form action="{{ route('admin.students.letters.generate', $student->id) }}" method="POST" enctype="multipart/form-data">
-        @csrf
+    <form action="<?php echo e(route('admin.students.letters.generate', $student->id)); ?>" method="POST" enctype="multipart/form-data">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="letter_action" id="letter_action_input" value="download">
         <input type="hidden" name="is_customized" id="modal_is_customized" value="0">
         <div class="modal-content border-0 shadow-lg">
           <div class="modal-header bg-primary text-white py-3">
             <h5 class="modal-title fw-bold text-white mb-0" id="generateLetterModalLabel">
-                <i class="fas fa-envelope-open-text me-2"></i> Generate Letter for {{ $student->first_name }} {{ $student->surname }}
+                <i class="fas fa-envelope-open-text me-2"></i> Generate Letter for <?php echo e($student->first_name); ?> <?php echo e($student->surname); ?>
+
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
@@ -1626,11 +1647,11 @@
                      <label class="form-label fw-bold">Select Template <span class="text-danger">*</span></label>
                      <select name="letter_template_id" id="modal_template_id" class="form-select form-select-lg" onchange="fetchTemplatePreview(this.value)">
                          <option value="">-- Choose a Letter Template --</option>
-                         @if(isset($letterTemplates))
-                             @foreach($letterTemplates as $tpl)
-                                 <option value="{{ $tpl->id }}">{{ $tpl->title }} ({{ strtoupper($tpl->type) }})</option>
-                             @endforeach
-                         @endif
+                         <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($letterTemplates)): ?>
+                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $letterTemplates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tpl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                                 <option value="<?php echo e($tpl->id); ?>"><?php echo e($tpl->title); ?> (<?php echo e(strtoupper($tpl->type)); ?>)</option>
+                             <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
+                         <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                      </select>
                  </div>
 
@@ -1694,8 +1715,8 @@
 <!-- ==================== Generate Invoice Modal ==================== -->
 <div class="modal fade" id="generateInvoiceModal" tabindex="-1" aria-labelledby="generateInvoiceModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <form action="{{ route('admin.students.invoices.generate', $student->id) }}" method="POST" enctype="multipart/form-data" id="generateInvoiceForm">
-        @csrf
+    <form action="<?php echo e(route('admin.students.invoices.generate', $student->id)); ?>" method="POST" enctype="multipart/form-data" id="generateInvoiceForm">
+        <?php echo csrf_field(); ?>
         <input type="hidden" name="invoice_action" id="invoice_action_input" value="download">
         <input type="hidden" name="generation_type" id="generation_type_input" value="template">
         <input type="hidden" name="is_customized" id="modal_inv_is_customized" value="0">
@@ -1704,7 +1725,8 @@
         <div class="modal-content border-0 shadow-lg">
           <div class="modal-header bg-success text-white py-3">
             <h5 class="modal-title fw-bold text-white mb-0" id="generateInvoiceModalLabel">
-                <i class="fas fa-file-invoice-dollar me-2"></i> Make Invoice for {{ $student->first_name }} {{ $student->surname }}
+                <i class="fas fa-file-invoice-dollar me-2"></i> Make Invoice for <?php echo e($student->first_name); ?> <?php echo e($student->surname); ?>
+
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
@@ -1726,11 +1748,11 @@
                  <label class="form-label fw-bold fs-6 text-dark mb-1"><i class="fas fa-file-alt text-primary me-1"></i> Step 1: Choose Invoice Template <span class="text-danger">*</span></label>
                  <select name="invoice_template_id" id="modal_invoice_template_id" class="form-select form-select-lg border-primary shadow-sm" onchange="fetchInvoiceTemplatePreview(this.value)" required>
                       <option value="">-- Click to Select Invoice Template --</option>
-                      @if(isset($invoiceTemplates))
-                          @foreach($invoiceTemplates as $tpl)
-                              <option value="{{ $tpl->id }}">{{ $tpl->title }} ({{ strtoupper($tpl->type) }})</option>
-                          @endforeach
-                      @endif
+                      <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($invoiceTemplates)): ?>
+                          <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $invoiceTemplates; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $tpl): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                              <option value="<?php echo e($tpl->id); ?>"><?php echo e($tpl->title); ?> (<?php echo e(strtoupper($tpl->type)); ?>)</option>
+                          <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
+                      <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
                  </select>
                  <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle me-1"></i> Selecting a template will automatically build the invoice with student details and selected items.</small>
              </div>
@@ -1789,7 +1811,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="recordPaymentForm" method="POST" action="" enctype="multipart/form-data">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <span class="text-muted d-block text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Installment Details</span>
@@ -1860,7 +1882,7 @@
 <div class="modal fade" id="recordCostPaymentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form action="" method="POST" id="recordCostPaymentForm" enctype="multipart/form-data">
-            @csrf
+            <?php echo csrf_field(); ?>
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header bg-success text-white">
                     <h5 class="modal-title text-white"><i class="fas fa-hand-holding-usd me-2"></i> Submit Additional Cost Payment</h5>
@@ -2029,8 +2051,8 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('admin.students.terminate', $student->id) }}" method="POST">
-                @csrf
+            <form action="<?php echo e(route('admin.students.terminate', $student->id)); ?>" method="POST">
+                <?php echo csrf_field(); ?>
                 <div class="modal-body p-4">
                     <div class="alert alert-warning border-0 d-flex align-items-center gap-2 font-13 mb-3">
                         <i class="fas fa-exclamation-triangle fa-lg text-warning flex-shrink-0"></i>
@@ -2052,13 +2074,13 @@
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('css')
+<?php $__env->startPush('css'); ?>
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 <script>
 $(document).ready(function() {
@@ -2255,7 +2277,7 @@ function fetchTemplatePreview(templateId) {
         return;
     }
 
-    const url = "{{ route('admin.students.letters.preview_modal', $student->id) }}?template_id=" + templateId;
+    const url = "<?php echo e(route('admin.students.letters.preview_modal', $student->id)); ?>?template_id=" + templateId;
     fetch(url)
         .then(response => response.json())
         .then(data => {
@@ -2411,7 +2433,7 @@ function fetchInvoiceTemplatePreview(templateId) {
         params.append('fee_summary_items[]', cb.value);
     });
 
-    const url = "{{ route('admin.students.invoices.preview_modal', $student->id) }}?" + params.toString();
+    const url = "<?php echo e(route('admin.students.invoices.preview_modal', $student->id)); ?>?" + params.toString();
     fetch(url)
         .then(response => response.json())
         .then(data => {
@@ -2741,7 +2763,7 @@ $(document).ready(function() {
         $('#cost_net_amount_input').val(amount.toFixed(2));
         $('#cost_bank_fee_wrapper').hide();
 
-        const actionUrl = "{{ url('/admin/additional-costs') }}/" + costId + "/record-payment";
+        const actionUrl = "<?php echo e(url('/admin/additional-costs')); ?>/" + costId + "/record-payment";
         $('#recordCostPaymentForm').attr('action', actionUrl);
 
         $('#recordCostPaymentModal').modal('show');
@@ -3116,7 +3138,7 @@ $(document).ready(function() {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="processRefundForm" method="POST" action="">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <div class="modal-body p-4">
                     <div class="alert alert-light border-start border-warning border-4 p-3 mb-3">
                         <div class="fw-bold text-dark" id="refund_item_title">Item Name</div>
@@ -3214,7 +3236,7 @@ $(document).ready(function() {
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="applyDiscountForm" method="POST" action="">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <div class="modal-body p-4">
                     <div class="alert alert-light border-start border-4 p-3 mb-3" style="border-left: 4px solid #6f42c1 !important;">
                         <div class="fw-bold text-dark" id="discount_item_title">Item Name</div>
@@ -3285,4 +3307,6 @@ $(document).ready(function() {
         </div>
     </div>
 </div>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.backend_master', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\iLap\resources\views/backend/admin/students/show.blade.php ENDPATH**/ ?>

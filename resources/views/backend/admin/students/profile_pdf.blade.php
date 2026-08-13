@@ -130,7 +130,7 @@
     </div>
 
     <div class="title">
-        {{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}
+        {{ ucwords(trim($student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}
     </div>
 
     <!-- Personal Information -->
@@ -150,10 +150,14 @@
                 <td class="value" colspan="3">{{ $student->surname }}</td>
             </tr>
             <tr>
-                <td class="label">Date of Birth:</td>
-                <td class="value">{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</td>
+                <td class="label">Title:</td>
+                <td class="value" colspan="3">{{ $student->title ?? 'N/A' }}</td>
+            </tr>
+            <tr>
                 <td class="label">Gender:</td>
                 <td class="value">{{ $student->gender ?? 'N/A' }}</td>
+                <td class="label">Date of Birth:</td>
+                <td class="value">{{ $student->dob ? $student->dob->format('d M Y') : 'N/A' }}</td>
             </tr>
             <tr>
                 <td class="label">Country of Nationality:</td>
@@ -169,14 +173,11 @@
             </tr>
             <tr>
                 <td class="label">WhatsApp Available:</td>
-                <td class="value">{{ $student->has_whatsapp ? 'Yes' : 'No' }}</td>
+                <td class="value">{{ $student->has_whatsapp ? 'Yes' : 'N/A' }}</td>
                 <td class="label">Native Language:</td>
                 <td class="value">{{ $student->native_language ?? 'N/A' }}</td>
             </tr>
-            <tr>
-                <td class="label">Preferred Institute:</td>
-                <td class="value" colspan="3">{{ $student->institute ? $student->institute->name : 'N/A' }}</td>
-            </tr>
+
         </table>
     </div>
 

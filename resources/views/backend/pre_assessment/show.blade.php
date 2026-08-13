@@ -121,7 +121,7 @@
                         </div>
                     @endif
                     <div class="profile-header-info">
-                        <h2>{{ ucwords(trim($student->title . ' ' . $student->first_name . ' ' . $student->middle_name . ' ' . $student->surname)) }}</h2>
+                        <h2>{{ ucwords(trim(($assessment->first_name ?? $student->first_name ?? '') . ' ' . ($assessment->middle_name ?? $student->middle_name ?? '') . ' ' . ($assessment->surname ?? $student->surname ?? ''))) }}</h2>
                         <p><i class="fas fa-id-badge me-1"></i> {{ $student->student_id }} &nbsp;|&nbsp; <i class="fas fa-envelope me-1"></i> {{ $student->email }}</p>
                         <div class="mt-2 text-white-50 small">Profile Completion: <strong class="text-white">{{ $completionPercent }}%</strong></div>
                     </div>
@@ -165,14 +165,8 @@
                     <div class="info-item"><label>First Name</label><span>{{ $assessment->first_name ?? $student->first_name }}</span></div>
                     <div class="info-item"><label>Middle Name</label><span>{{ $assessment->middle_name ?? $student->middle_name ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Last Name (Surname)</label><span>{{ $assessment->surname ?? $student->surname }}</span></div>
-                    <div class="info-item">
-                        <label>Preferred Institute</label>
-                        <span>
-                            <span class="badge bg-primary">
-                                {{ $assessment->institute_name ?? ($student->institute ? $student->institute->name : 'N/A') }}
-                            </span>
-                        </span>
-                    </div>
+                    <div class="info-item"><label>Title</label><span>{{ $student->title ?? $assessment->title ?? 'N/A' }}</span></div>
+                    <div class="info-item"><label>Gender</label><span>{{ $assessment->gender ?? $student->gender ?? 'N/A' }}</span></div>
                     <div class="info-item">
                         <label>Date of Birth</label>
                         <span>
@@ -182,7 +176,6 @@
                             {{ $dobVal ? ($dobVal instanceof \DateTimeInterface ? $dobVal->format('d M Y') : date('d M Y', strtotime($dobVal))) : 'N/A' }}
                         </span>
                     </div>
-                    <div class="info-item"><label>Gender</label><span>{{ $assessment->gender ?? $student->gender ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Nationality</label><span>{{ $assessment->nationality ?? $student->nationality ?? 'N/A' }}</span></div>
                     <div class="info-item"><label>Country of Birth</label><span>{{ $student->country_of_birth ?? $assessment->country ?? 'N/A' }}</span></div>
                     <div class="info-item">
@@ -201,10 +194,10 @@
                     <div class="info-item">
                         <label>WhatsApp Status</label>
                         <span>
-                            @if($student->has_whatsapp)
-                                <span class="badge bg-success"><i class="fab fa-whatsapp me-1"></i> Available on {{ $student->phone }}</span>
+                            @if(!empty($student->has_whatsapp) || !empty($assessment->has_whatsapp ?? false))
+                                <i class="fab fa-whatsapp text-success fs-5" title="WhatsApp Available"></i>
                             @else
-                                <span class="badge bg-secondary">Not Marked</span>
+                                N/A
                             @endif
                         </span>
                     </div>

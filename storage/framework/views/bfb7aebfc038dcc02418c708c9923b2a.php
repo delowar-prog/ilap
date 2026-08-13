@@ -1,29 +1,29 @@
-@php
+<?php
     $topMargin = isset($pad_margin_top) && $pad_margin_top > 0 ? (int)$pad_margin_top : 130;
     $bottomMargin = isset($pad_margin_bottom) && $pad_margin_bottom > 0 ? (int)$pad_margin_bottom : 120;
     $leftMargin = isset($pad_margin_left) && $pad_margin_left > 0 ? (int)$pad_margin_left : 55;
     $rightMargin = isset($pad_margin_right) && $pad_margin_right > 0 ? (int)$pad_margin_right : 55;
-@endphp
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>{{ $title ?? 'Document Letter' }}</title>
+    <title><?php echo e($title ?? 'Official Invoice'); ?></title>
     <style>
         @page {
-            margin: {{ $topMargin }}px 0px {{ $bottomMargin }}px 0px;
+            margin: <?php echo e($topMargin); ?>px 0px <?php echo e($bottomMargin); ?>px 0px;
         }
-        @if(!empty($letter_head_image))
+        <?php if(!empty($letter_head_image)): ?>
         .letterhead-bg {
             position: fixed;
-            top: -{{ $topMargin }}px;
+            top: -<?php echo e($topMargin); ?>px;
             left: 0px;
             width: 210mm;
             height: 297mm;
             z-index: -1000;
         }
-        @endif
+        <?php endif; ?>
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 13px;
@@ -60,8 +60,8 @@
             page-break-before: always;
         }
         .content {
-            padding-left: {{ $leftMargin }}px;
-            padding-right: {{ $rightMargin }}px;
+            padding-left: <?php echo e($leftMargin); ?>px;
+            padding-right: <?php echo e($rightMargin); ?>px;
             margin-top: 0px;
             background: transparent;
         }
@@ -87,12 +87,12 @@
 </head>
 <body>
 
-    @if(!empty($letter_head_image))
-        <img src="{{ $letter_head_image }}" class="letterhead-bg">
-    @endif
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(!empty($letter_head_image)): ?>
+        <img src="<?php echo e($letter_head_image); ?>" class="letterhead-bg">
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
     <!-- ═══════════════ PREMIUM FULL-WIDTH HEADER ═══════════════ -->
-    @if(empty($letter_head_image))
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(empty($letter_head_image)): ?>
     <div class="header">
         <table style="width: 100%; border-collapse: collapse; margin: 0; padding: 20px 55px 0 55px;">
             <tr>
@@ -145,46 +145,44 @@
         <!-- Blue Accent Line spanning 100% Page Width -->
         <div style="width: 100%; height: 3px; background-color: #003366; margin-top: 10px;"></div>
     </div>
-    @endif
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
     <!-- ═══════════════ CONTENT AREA ═══════════════ -->
     <div class="content">
         <div class="letter-body" style="margin-top: 0px;">
-            {!! $content !!}
+            <?php echo $content; ?>
+
         </div>
 
         <!-- ═══════════════ SIGNATURE BLOCK (END OF CONTENT — LAST PAGE) ═══════════════ -->
-        @if(isset($activeSignatures) && count($activeSignatures) > 0)
+        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(isset($activeSignatures) && count($activeSignatures) > 0): ?>
             <div class="signature-fixed">
                 <!-- Thin separator line above signatures -->
                 <div style="width: 100%; height: 1px; background-color: #cccccc; margin-bottom: 12px;"></div>
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
-                        @foreach($activeSignatures as $sig)
-                            <td style="width: {{ 100 / count($activeSignatures) }}%; text-align: center; vertical-align: top; padding: 0 10px;">
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::openLoop(); ?><?php endif; ?><?php $__currentLoopData = $activeSignatures; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sig): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::startLoopIteration(); ?><?php endif; ?>
+                            <td style="width: <?php echo e(100 / count($activeSignatures)); ?>%; text-align: center; vertical-align: top; padding: 0 10px;">
                                 <div style="display: inline-block; text-align: center;">
-                                    @if(file_exists($sig['path']))
-                                        <img src="{{ $sig['path'] }}" style="max-height: 50px; width: auto; display: block; margin: 0 auto 4px auto;" alt="Signature">
-                                    @else
+                                    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(file_exists($sig['path'])): ?>
+                                        <img src="<?php echo e($sig['path']); ?>" style="max-height: 50px; width: auto; display: block; margin: 0 auto 4px auto;" alt="Signature">
+                                    <?php else: ?>
                                         <div style="height: 50px;"></div>
-                                    @endif
-                                    
-                                    @if(!isset($sig['type']) || $sig['type'] !== 'seal')
-                                        <div style="border-top: 1.5px solid #003366; width: 170px; margin: 0 auto 3px auto;"></div>
-                                        <div style="font-weight: bold; font-size: 10.5px; color: #003366; line-height: 1.2;">{{ $sig['name'] }}</div>
-                                        <div style="font-size: 9px; color: #666; line-height: 1.2;">{{ $sig['designation'] }}</div>
-                                    @endif
+                                    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
+                                    <div style="border-top: 1.5px solid #003366; width: 170px; margin: 0 auto 3px auto;"></div>
+                                    <div style="font-weight: bold; font-size: 10.5px; color: #003366; line-height: 1.2;"><?php echo e($sig['name']); ?></div>
+                                    <div style="font-size: 9px; color: #666; line-height: 1.2;"><?php echo e($sig['designation']); ?></div>
                                 </div>
                             </td>
-                        @endforeach
+                        <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::endLoop(); ?><?php endif; ?><?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php \Livewire\Features\SupportCompiledWireKeys\SupportCompiledWireKeys::closeLoop(); ?><?php endif; ?>
                     </tr>
                 </table>
             </div>
-        @endif
+        <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
     </div>
 
     <!-- ═══════════════ PREMIUM FULL-WIDTH FOOTER ═══════════════ -->
-    @if(empty($letter_head_image))
+    <?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if BLOCK]><![endif]--><?php endif; ?><?php if(empty($letter_head_image)): ?>
     <div class="footer">
         <!-- Gray separator line -->
         <div style="width: 100%; height: 1px; background-color: #e0e0e0; margin-bottom: 8px;"></div>
@@ -226,7 +224,8 @@
             </table>
         </div>
     </div>
-    @endif
+    <?php endif; ?><?php if(\Livewire\Mechanisms\ExtendBlade\ExtendBlade::isRenderingLivewireComponent()): ?><!--[if ENDBLOCK]><![endif]--><?php endif; ?>
 
 </body>
 </html>
+<?php /**PATH C:\laragon\www\iLap\resources\views/backend/pdf/invoice_layout.blade.php ENDPATH**/ ?>

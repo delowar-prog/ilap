@@ -80,8 +80,8 @@
                                             </div>
                                             @endif
                                             @if($category === 'letter_head')
-                                            <div class="d-flex gap-2 align-items-center mt-1">
-                                                <select name="type" class="form-select form-select-sm" style="max-width:180px;" title="Assigned Template Type">
+                                            <div class="d-flex gap-2 align-items-center mt-1 flex-wrap">
+                                                <select name="type" class="form-select form-select-sm" style="max-width:140px;" title="Assigned Template Type">
                                                     <option value="">-- All Types --</option>
                                                     @if(isset($templateTypes))
                                                         @foreach($templateTypes as $tType)
@@ -94,7 +94,14 @@
                                                         <img src="{{ asset('storage/' . $opt->image_path) }}" alt="Pad" class="img-thumbnail" style="height:35px; width:auto;" title="View Pad Image">
                                                     </a>
                                                 @endif
-                                                <input type="file" name="image" class="form-control form-control-sm" accept="image/*" title="Change Pad Image">
+                                                <input type="file" name="image" class="form-control form-control-sm" style="max-width:160px;" accept="image/*" title="Change Pad Image">
+                                            </div>
+                                            <div class="d-flex gap-2 align-items-center mt-1 flex-wrap bg-light p-1 rounded border">
+                                                <small class="fw-bold text-muted" style="font-size:11px;">Margins (px):</small>
+                                                <input type="number" name="margin_top" value="{{ $opt->margin_top ?? 130 }}" class="form-control form-control-sm" style="width:70px;" title="Top Margin (Header Height)" placeholder="Top">
+                                                <input type="number" name="margin_bottom" value="{{ $opt->margin_bottom ?? 120 }}" class="form-control form-control-sm" style="width:70px;" title="Bottom Margin (Footer Height)" placeholder="Bot">
+                                                <input type="number" name="margin_left" value="{{ $opt->margin_left ?? 0 }}" class="form-control form-control-sm" style="width:70px;" title="Left Margin" placeholder="Left">
+                                                <input type="number" name="margin_right" value="{{ $opt->margin_right ?? 0 }}" class="form-control form-control-sm" style="width:70px;" title="Right Margin" placeholder="Right">
                                             </div>
                                             @endif
                                         </div>
@@ -188,6 +195,28 @@
                         @error('image')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                    </div>
+                    <div class="mb-3 p-3 bg-light rounded border">
+                        <label class="form-label text-dark small fw-bold mb-2"><i class="fas fa-sliders-h me-1 text-primary"></i> PAD MARGIN CONFIGURATION (px)</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label font-12 text-muted mb-1">Top Margin (Header)</label>
+                                <input type="number" name="margin_top" class="form-control form-control-sm" placeholder="Auto / 130" value="{{ old('margin_top') }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label font-12 text-muted mb-1">Bottom Margin (Footer)</label>
+                                <input type="number" name="margin_bottom" class="form-control form-control-sm" placeholder="Auto / 120" value="{{ old('margin_bottom') }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label font-12 text-muted mb-1">Left Margin (Side)</label>
+                                <input type="number" name="margin_left" class="form-control form-control-sm" placeholder="0" value="{{ old('margin_left', 0) }}">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label font-12 text-muted mb-1">Right Margin (Side)</label>
+                                <input type="number" name="margin_right" class="form-control form-control-sm" placeholder="0" value="{{ old('margin_right', 0) }}">
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1 font-11">Top & Bottom will be auto-detected if left empty. Left & Right margins default to 0 (optional).</small>
                     </div>
                     @endif
                     <button type="submit" class="btn btn-primary w-100 fw-semibold">

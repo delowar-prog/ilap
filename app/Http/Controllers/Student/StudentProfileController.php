@@ -155,14 +155,14 @@ class StudentProfileController extends Controller
         $studentLetters = \App\Models\GeneratedLetter::where('student_id', $student->id)
             ->where('sent_to_student', true)
             ->with('generator')
-            ->latest('sent_at')
+            ->oldest('id')
             ->get();
 
         // Retrieve generated invoices sent to this student
         $studentInvoices = \App\Models\GeneratedInvoice::where('student_id', $student->id)
             ->where('sent_to_student', true)
             ->with('generator')
-            ->latest('sent_at')
+            ->oldest('id')
             ->get();
 
         // Calculate Completion Percentage

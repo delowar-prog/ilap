@@ -40,11 +40,15 @@ class DropdownOptionController extends Controller
         abort_unless(array_key_exists($category, DropdownOption::$categories), 404);
 
         $request->validate([
-            'label'   => 'required|string|max:255',
-            'type'    => 'nullable|string|max:255',
-            'country' => 'nullable|string|max:255',
-            'website' => 'nullable|url|max:255',
-            'image'   => 'nullable|image|mimes:jpeg,jpg,png,svg,webp|max:10240',
+            'label'         => 'required|string|max:255',
+            'type'          => 'nullable|string|max:255',
+            'country'       => 'nullable|string|max:255',
+            'website'       => 'nullable|url|max:255',
+            'image'         => 'nullable|image|mimes:jpeg,jpg,png,svg,webp|max:10240',
+            'margin_top'    => 'nullable|numeric|min:0|max:500',
+            'margin_bottom' => 'nullable|numeric|min:0|max:500',
+            'margin_left'   => 'nullable|numeric|min:0|max:500',
+            'margin_right'  => 'nullable|numeric|min:0|max:500',
         ]);
 
         // Check duplicate within category
@@ -59,19 +63,35 @@ class DropdownOptionController extends Controller
         $maxOrder = DropdownOption::where('category', $category)->max('sort_order') ?? -1;
 
         $imagePath = null;
+        $marginTop = $request->filled('margin_top') ? (int) $request->margin_top : null;
+        $marginBottom = $request->filled('margin_bottom') ? (int) $request->margin_bottom : null;
+        $marginLeft = $request->filled('margin_left') ? (int) $request->margin_left : 0;
+        $marginRight = $request->filled('margin_right') ? (int) $request->margin_right : 0;
+
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('letter_heads', 'public');
+            
+            // Auto detect top/bottom margins if not provided by admin
+            if ($category === 'letter_head' && ($marginTop === null || $marginBottom === null)) {
+                $detected = DropdownOption::autoDetectPadMargins(storage_path('app/public/' . $imagePath));
+                if ($marginTop === null) $marginTop = $detected['margin_top'];
+                if ($marginBottom === null) $marginBottom = $detected['margin_bottom'];
+            }
         }
 
         DropdownOption::create([
-            'category'   => $category,
-            'label'      => $request->label,
-            'type'       => $request->type,
-            'country'    => $request->country,
-            'website'    => $request->website,
-            'image_path' => $imagePath,
-            'sort_order' => $maxOrder + 1,
-            'is_active'  => true,
+            'category'      => $category,
+            'label'         => $request->label,
+            'type'          => $request->type,
+            'country'       => $request->country,
+            'website'       => $request->website,
+            'image_path'    => $imagePath,
+            'margin_top'    => $marginTop ?? 130,
+            'margin_bottom' => $marginBottom ?? 120,
+            'margin_left'   => $marginLeft,
+            'margin_right'  => $marginRight,
+            'sort_order'    => $maxOrder + 1,
+            'is_active'     => true,
         ]);
 
         return back()->with('success', "Option \"{$request->label}\" added successfully.");
@@ -81,20 +101,28 @@ class DropdownOptionController extends Controller
     public function update(Request $request, DropdownOption $dropdownOption)
     {
         $request->validate([
-            'label'     => 'required|string|max:255',
-            'type'      => 'nullable|string|max:255',
-            'country'   => 'nullable|string|max:255',
-            'website'   => 'nullable|url|max:255',
-            'image'     => 'nullable|image|mimes:jpeg,jpg,png,svg,webp|max:10240',
-            'is_active' => 'nullable|boolean',
+            'label'         => 'required|string|max:255',
+            'type'          => 'nullable|string|max:255',
+            'country'       => 'nullable|string|max:255',
+            'website'       => 'nullable|url|max:255',
+            'image'         => 'nullable|image|mimes:jpeg,jpg,png,svg,webp|max:10240',
+            'margin_top'    => 'nullable|numeric|min:0|max:500',
+            'margin_bottom' => 'nullable|numeric|min:0|max:500',
+            'margin_left'   => 'nullable|numeric|min:0|max:500',
+            'margin_right'  => 'nullable|numeric|min:0|max:500',
+            'is_active'     => 'nullable|boolean',
         ]);
 
         $data = [
-            'label'     => $request->label,
-            'type'      => $request->type,
-            'country'   => $request->country,
-            'website'   => $request->website,
-            'is_active' => $request->boolean('is_active', true),
+            'label'         => $request->label,
+            'type'          => $request->type,
+            'country'       => $request->country,
+            'website'       => $request->website,
+            'margin_top'    => $request->filled('margin_top') ? (int) $request->margin_top : ($dropdownOption->margin_top ?? 130),
+            'margin_bottom' => $request->filled('margin_bottom') ? (int) $request->margin_bottom : ($dropdownOption->margin_bottom ?? 120),
+            'margin_left'   => $request->filled('margin_left') ? (int) $request->margin_left : ($dropdownOption->margin_left ?? 0),
+            'margin_right'  => $request->filled('margin_right') ? (int) $request->margin_right : ($dropdownOption->margin_right ?? 0),
+            'is_active'     => $request->boolean('is_active', true),
         ];
 
         if ($request->hasFile('image')) {
@@ -102,6 +130,12 @@ class DropdownOptionController extends Controller
                 \Storage::disk('public')->delete($dropdownOption->image_path);
             }
             $data['image_path'] = $request->file('image')->store('letter_heads', 'public');
+
+            if ($dropdownOption->category === 'letter_head' && (!$request->filled('margin_top') || !$request->filled('margin_bottom'))) {
+                $detected = DropdownOption::autoDetectPadMargins(storage_path('app/public/' . $data['image_path']));
+                if (!$request->filled('margin_top')) $data['margin_top'] = $detected['margin_top'];
+                if (!$request->filled('margin_bottom')) $data['margin_bottom'] = $detected['margin_bottom'];
+            }
         }
 
         $dropdownOption->update($data);

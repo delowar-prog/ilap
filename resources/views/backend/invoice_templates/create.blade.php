@@ -57,7 +57,7 @@
                             <option value="">-- No Letter Head Pad --</option>
                             @if(isset($letterHeads))
                                 @foreach($letterHeads as $lh)
-                                    <option value="{{ $lh->id }}" data-type="{{ $lh->type ?? 'all' }}" data-image="{{ asset('storage/' . $lh->image_path) }}" {{ old('letter_head_id') == $lh->id ? 'selected' : '' }}>
+                                    <option value="{{ $lh->id }}" data-type="{{ $lh->type ?? 'all' }}" data-image="{{ asset('storage/' . $lh->image_path) }}" data-margin-top="{{ $lh->margin_top ?? 130 }}" data-margin-bottom="{{ $lh->margin_bottom ?? 120 }}" data-margin-left="{{ $lh->margin_left ?? 0 }}" data-margin-right="{{ $lh->margin_right ?? 0 }}" {{ old('letter_head_id') == $lh->id ? 'selected' : '' }}>
                                         {{ $lh->label }} {{ $lh->type ? '('.$lh->type.')' : '' }}
                                     </option>
                                 @endforeach
@@ -160,27 +160,257 @@
 
 @push('css')
 <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" rel="stylesheet">
+<style>
+    .note-editable p {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+</style>
 @endpush
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
 
 <script>
-function updateEditorLetterHead(imageUrl) {
-    if (imageUrl) {
-        $('.note-editable').css({
+let splitTimer = null;
+let currentPadImageUrl = '';
+let currentPadData = null;
+let currentDynamicHeight = 1050;
+
+function applyPageSheetStyles($sheet, pageNum, imageUrl, pageHeight, padData, force) {
+    const marginTop = (padData && padData.marginTop !== undefined) ? padData.marginTop : 130;
+    const marginBottom = (padData && padData.marginBottom !== undefined) ? padData.marginBottom : 120;
+    const marginLeft = (padData && padData.marginLeft !== undefined) ? padData.marginLeft : 0;
+    const marginRight = (padData && padData.marginRight !== undefined) ? padData.marginRight : 0;
+
+    if (force || $sheet.attr('data-page') != pageNum || !$sheet.data('styled')) {
+        $sheet.attr('data-page', pageNum).data('styled', true).css({
             'background-image': 'url("' + imageUrl + '")',
             'background-size': '100% 100%',
             'background-repeat': 'no-repeat',
             'background-position': 'center top',
-            'min-height': '1050px'
+            'background-color': '#ffffff',
+            'width': '750px',
+            'min-height': pageHeight + 'px',
+            'margin': '0 auto 35px auto',
+            'box-shadow': '0 4px 15px rgba(0, 0, 0, 0.15)',
+            'border-radius': '4px',
+            'box-sizing': 'border-box',
+            'padding-top': marginTop + 'px',
+            'padding-bottom': marginBottom + 'px',
+            'padding-left': (marginLeft > 0 ? marginLeft : 55) + 'px',
+            'padding-right': (marginRight > 0 ? marginRight : 55) + 'px',
+            'position': 'relative'
         });
-    } else {
-        $('.note-editable').css({
-            'background-image': 'none',
+
+        let $badge = $sheet.children('.page-sheet-badge');
+        if (!$badge.length) {
+            $badge = $('<div class="page-sheet-badge" contenteditable="false" style="position: absolute; top: 10px; right: 15px; background: rgba(0, 51, 102, 0.85); color: #ffffff; font-size: 11px; font-weight: bold; padding: 2px 10px; border-radius: 12px; z-index: 100; pointer-events: none; user-select: none;">Page ' + pageNum + '</div>');
+            $sheet.append($badge);
+        } else {
+            $badge.text('Page ' + pageNum);
+        }
+    }
+}
+
+function saveSelection() {
+    if (window.getSelection) {
+        const sel = window.getSelection();
+        if (sel.getRangeAt && sel.rangeCount) {
+            return sel.getRangeAt(0);
+        }
+    }
+    return null;
+}
+
+function moveCursorToEndOfNode($node) {
+    if (!$node.length) return;
+    const el = $node[0];
+    if (window.getSelection && document.createRange) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false); // collapse to END
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        el.scrollIntoView && el.scrollIntoView({ block: 'nearest' });
+    }
+}
+
+let isBalancing = false;
+
+function autoSplitPages() {
+    if (isBalancing || !currentPadImageUrl || !currentDynamicHeight) return;
+    isBalancing = true;
+
+    try {
+        const $editable = $('.note-editable');
+        if (!$editable.length) return;
+
+        let $sheets = $editable.children('.page-sheet');
+        if (!$sheets.length) return;
+
+        const marginBottom = (currentPadData && currentPadData.marginBottom !== undefined) ? currentPadData.marginBottom : 120;
+        const marginTop = (currentPadData && currentPadData.marginTop !== undefined) ? currentPadData.marginTop : 130;
+        const effectiveBottomMargin = (marginBottom > 30) ? (marginBottom - 25) : marginBottom;
+        const maxAllowedContentHeight = currentDynamicHeight - marginTop - effectiveBottomMargin;
+
+        let domChanged = false;
+        let $overflowTargetSheet = null;
+        let $lastOverflowNode = null;
+
+        // STEP 1: Pull content up from next sheet with safety margin
+        for (let i = 0; i < $sheets.length - 1; i++) {
+            let $currSheet = $($sheets[i]);
+            let $nextSheet = $($sheets[i + 1]);
+
+            let currContentHeight = 0;
+            $currSheet.children().not('.page-sheet-badge').each(function() {
+                currContentHeight += ($(this).outerHeight(true) || 24);
+            });
+
+            let pullLimit = 30;
+            while ($nextSheet.children().not('.page-sheet-badge').length > 0 && pullLimit > 0) {
+                pullLimit--;
+                let $firstNextChild = $nextSheet.children().not('.page-sheet-badge').first();
+                let childH = $firstNextChild.outerHeight(true) || 24;
+
+                if (currContentHeight + childH + 5 <= maxAllowedContentHeight) {
+                    $currSheet.append($firstNextChild);
+                    currContentHeight += childH;
+                    domChanged = true;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // STEP 2: Push spillage down to next sheets
+        $sheets = $editable.children('.page-sheet');
+        $sheets.each(function(index) {
+            let $sheet = $(this);
+            let pageNum = index + 1;
+
+            let accumulatedHeight = 0;
+            let overflowNodes = [];
+
+            $sheet.children().not('.page-sheet-badge').each(function() {
+                let $child = $(this);
+                let h = $child.outerHeight(true) || 24;
+                accumulatedHeight += h;
+
+                if (accumulatedHeight > maxAllowedContentHeight && $sheet.children().not('.page-sheet-badge').length > 1) {
+                    overflowNodes.push($child);
+                }
+            });
+
+            if (overflowNodes.length > 0) {
+                domChanged = true;
+                let $nextSheet = $editable.children('.page-sheet[data-page="' + (pageNum + 1) + '"]');
+                if (!$nextSheet.length) {
+                    $nextSheet = $('<div class="page-sheet" data-page="' + (pageNum + 1) + '"></div>');
+                    $sheet.after($nextSheet);
+                }
+                for (let i = overflowNodes.length - 1; i >= 0; i--) {
+                    $nextSheet.prepend(overflowNodes[i]);
+                }
+                if (!$overflowTargetSheet) {
+                    $overflowTargetSheet = $nextSheet;
+                    $lastOverflowNode = overflowNodes[overflowNodes.length - 1];
+                }
+            }
+        });
+
+        // STEP 3: Remove completely empty trailing sheets (except Page 1)
+        // Only remove if NO children at all — do NOT remove pages with <p><br> (cursor position)
+        $editable.children('.page-sheet').each(function(idx) {
+            let $sheet = $(this);
+            let $contentChildren = $sheet.children().not('.page-sheet-badge');
+            if (idx > 0 && $contentChildren.length === 0) {
+                $sheet.remove();
+                domChanged = true;
+            }
+        });
+
+        // STEP 4: Re-style all sheets when DOM changed & move cursor to next page
+        if (domChanged) {
+            $editable.children('.page-sheet').each(function(idx) {
+                applyPageSheetStyles($(this), idx + 1, currentPadImageUrl, currentDynamicHeight, currentPadData, true);
+            });
+
+            if ($lastOverflowNode && $lastOverflowNode.length > 0) {
+                try {
+                    moveCursorToEndOfNode($lastOverflowNode);
+                } catch(e) {}
+            }
+        }
+    } finally {
+        isBalancing = false;
+    }
+}
+
+function triggerAutoSplitPages() {
+    clearTimeout(splitTimer);
+    splitTimer = setTimeout(autoSplitPages, 300);
+}
+
+function updateEditorLetterHead(imageUrl, padData) {
+    currentPadImageUrl = imageUrl;
+    currentPadData = padData;
+
+    const $editable = $('.note-editable');
+    if (!imageUrl) {
+        $editable.css({
+            'background': '#ffffff',
+            'padding': '15px',
             'min-height': '350px'
         });
+        $editable.children('.page-sheet').each(function() {
+            $(this).replaceWith($(this).contents());
+        });
+        return;
     }
+
+    const img = new Image();
+    img.onload = function() {
+        const containerWidth = 750;
+        currentDynamicHeight = (this.naturalWidth && this.naturalHeight) 
+            ? Math.round(containerWidth * (this.naturalHeight / this.naturalWidth)) 
+            : 1050;
+
+        $editable.css({
+            'background-color': '#e9ecef',
+            'padding': '25px 15px',
+            'min-height': (currentDynamicHeight + 50) + 'px'
+        });
+
+        let $sheets = $editable.children('.page-sheet');
+        if ($sheets.length === 0) {
+            const contents = $editable.html();
+            $editable.html('<div class="page-sheet" data-page="1">' + (contents || '<p><br></p>') + '</div>');
+            $sheets = $editable.children('.page-sheet');
+        }
+
+        $sheets.each(function(idx) {
+            applyPageSheetStyles($(this), idx + 1, imageUrl, currentDynamicHeight, padData);
+        });
+
+        triggerAutoSplitPages();
+    };
+    img.src = imageUrl;
+}
+
+function getPadDataFromSelect() {
+    const $opt = $('#letter_head_select').find('option:selected');
+    if (!$opt.length || !$opt.val()) return null;
+    return {
+        imageUrl: $opt.data('image') || '',
+        marginTop: parseInt($opt.data('margin-top')) || 130,
+        marginBottom: parseInt($opt.data('margin-bottom')) || 120,
+        marginLeft: parseInt($opt.data('margin-left')) || 0,
+        marginRight: parseInt($opt.data('margin-right')) || 0
+    };
 }
 
 function filterLetterHeadsByType(selectedType) {
@@ -223,15 +453,41 @@ $(document).ready(function() {
         ],
         callbacks: {
             onInit: function() {
-                const initialImg = $('#letter_head_select').find('option:selected').data('image');
-                updateEditorLetterHead(initialImg);
+                const padData = getPadDataFromSelect();
+                updateEditorLetterHead(padData ? padData.imageUrl : '', padData);
+            },
+            onChange: function() {
+                triggerAutoSplitPages();
+            },
+            onKeyup: function() {
+                triggerAutoSplitPages();
+            },
+            onPaste: function() {
+                triggerAutoSplitPages();
             }
         }
     });
 
     $(document).on('change', '#letter_head_select', function() {
-        const imageUrl = $(this).find('option:selected').data('image') || '';
-        updateEditorLetterHead(imageUrl);
+        const padData = getPadDataFromSelect();
+        updateEditorLetterHead(padData ? padData.imageUrl : '', padData);
+    });
+
+    $('form').on('submit', function() {
+        const $editable = $('.note-editable');
+        const $sheets = $editable.children('.page-sheet');
+        if ($sheets.length > 0) {
+            let fullHtml = '';
+            $sheets.each(function(i) {
+                if (i > 0) {
+                    fullHtml += '<div style="page-break-before: always;"></div>';
+                }
+                let $clone = $(this).clone();
+                $clone.find('.page-sheet-badge').remove();
+                fullHtml += $clone.html();
+            });
+            $('#editor').val(fullHtml);
+        }
     });
 });
 

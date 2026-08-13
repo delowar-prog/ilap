@@ -89,6 +89,15 @@ class DropdownOptionSeeder extends Seeder
                 'Experience Certificate',
                 'Custom Letter',
             ],
+            'invoice_type' => [
+                'Tuition Fee Invoice',
+                'Admission Fee Invoice',
+                'Registration Fee Invoice',
+                'Course Fee Invoice',
+                'Service Charge Invoice',
+                'Commission Invoice',
+                'General Invoice',
+            ],
         ];
 
         foreach ($defaults as $category => $labels) {

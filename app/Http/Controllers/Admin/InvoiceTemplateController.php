@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InvoiceTemplate;
+use App\Models\LetterTemplate;
 use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -15,10 +16,11 @@ class InvoiceTemplateController extends Controller
      */
     private function getInvoiceTypes(): array
     {
-        $dynamicTypes = DropdownOption::active('invoice_type');
-        $existingTypes = InvoiceTemplate::select('type')->whereNotNull('type')->distinct()->pluck('type')->toArray();
+        $dynamicTypes = DropdownOption::active('letter_type');
+        $existingLetterTypes = LetterTemplate::select('type')->whereNotNull('type')->distinct()->pluck('type')->toArray();
+        $existingInvoiceTypes = InvoiceTemplate::select('type')->whereNotNull('type')->distinct()->pluck('type')->toArray();
         
-        $merged = array_unique(array_merge($dynamicTypes, $existingTypes));
+        $merged = array_unique(array_merge($dynamicTypes, $existingLetterTypes, $existingInvoiceTypes));
         sort($merged);
         return array_values($merged);
     }
@@ -79,10 +81,10 @@ class InvoiceTemplateController extends Controller
             ? trim($request->custom_type)
             : trim($request->type);
 
-        // Auto-register new custom type in DropdownOption system
+        // Auto-register new custom type in DropdownOption system (shared letter_type category)
         if (!empty($finalType)) {
             DropdownOption::firstOrCreate(
-                ['category' => 'invoice_type', 'label' => $finalType],
+                ['category' => 'letter_type', 'label' => $finalType],
                 ['sort_order' => 99, 'is_active' => true]
             );
         }
@@ -92,7 +94,7 @@ class InvoiceTemplateController extends Controller
             'type'           => $finalType,
             'letter_head_id' => $request->letter_head_id,
             'content_body'   => $request->content_body,
-            'status'         => 1,
+            'status'         => $request->has('status') ? ($request->status ? 1 : 0) : 1,
         ];
 
         InvoiceTemplate::create($data);
@@ -132,7 +134,7 @@ class InvoiceTemplateController extends Controller
 
         if (!empty($finalType)) {
             DropdownOption::firstOrCreate(
-                ['category' => 'invoice_type', 'label' => $finalType],
+                ['category' => 'letter_type', 'label' => $finalType],
                 ['sort_order' => 99, 'is_active' => true]
             );
         }
@@ -142,8 +144,11 @@ class InvoiceTemplateController extends Controller
             'type'           => $finalType,
             'letter_head_id' => $request->letter_head_id,
             'content_body'   => $request->content_body,
-            'status'         => $request->has('status') ? 1 : 0,
         ];
+
+        if ($request->has('status')) {
+            $data['status'] = $request->status ? 1 : 0;
+        }
 
         $invoiceTemplate->update($data);
 
@@ -246,6 +251,32 @@ class InvoiceTemplateController extends Controller
 
         $content = str_replace(array_keys($dummyData), array_values($dummyData), $content);
 
-        return view('backend.invoice_templates.preview', compact('invoiceTemplate', 'content', 'activeSignatures'));
+        // Split multi-page content by page-break-before divs
+        $pageBreakPattern = '/<div[^>]*style=["\'][^"\']*page-break-before\s*:\s*always[^"\']*["\'][^>]*>\s*<\/div>/i';
+        $pages = preg_split($pageBreakPattern, $content);
+        $pages = array_map('trim', $pages);
+        $pages = array_filter($pages, fn($p) => $p !== '');
+        $pages = array_values($pages);
+        if (empty($pages)) {
+            $pages = [$content];
+        }
+
+        // Pad image info
+        $padImageUrl = null;
+        $padData = null;
+        if ($invoiceTemplate->letter_head_id) {
+            $lh = \App\Models\DropdownOption::find($invoiceTemplate->letter_head_id);
+            if ($lh && $lh->image_path) {
+                $padImageUrl = asset('storage/' . $lh->image_path);
+                $padData = [
+                    'marginTop'    => $lh->margin_top ?? 130,
+                    'marginBottom' => $lh->margin_bottom ?? 120,
+                    'marginLeft'   => $lh->margin_left ?? 0,
+                    'marginRight'  => $lh->margin_right ?? 0,
+                ];
+            }
+        }
+
+        return view('backend.invoice_templates.preview', compact('invoiceTemplate', 'content', 'activeSignatures', 'pages', 'padImageUrl', 'padData'));
     }
 }

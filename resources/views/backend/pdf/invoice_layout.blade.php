@@ -1,3 +1,9 @@
+@php
+    $topMargin = isset($pad_margin_top) && $pad_margin_top > 0 ? (int)$pad_margin_top : 130;
+    $bottomMargin = isset($pad_margin_bottom) && $pad_margin_bottom > 0 ? (int)$pad_margin_bottom : 120;
+    $leftMargin = isset($pad_margin_left) && $pad_margin_left > 0 ? (int)$pad_margin_left : 55;
+    $rightMargin = isset($pad_margin_right) && $pad_margin_right > 0 ? (int)$pad_margin_right : 55;
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,15 +12,15 @@
     <title>{{ $title ?? 'Official Invoice' }}</title>
     <style>
         @page {
-            margin: 130px 0px 250px 0px; /* Extra bottom margin creates space for signature block above footer */
+            margin: {{ $topMargin }}px 0px {{ $bottomMargin }}px 0px;
         }
-        @if(!empty($letter_head_image) && file_exists($letter_head_image))
+        @if(!empty($letter_head_image))
         .letterhead-bg {
             position: fixed;
-            top: -130px;
+            top: -{{ $topMargin }}px;
             left: 0px;
-            width: 100%;
-            height: 100%;
+            width: 210mm;
+            height: 297mm;
             z-index: -1000;
         }
         @endif
@@ -25,6 +31,7 @@
             color: #333333;
             margin: 0;
             padding: 0;
+            background: transparent;
         }
         .header {
             position: fixed;
@@ -48,10 +55,15 @@
             page-break-inside: avoid;
             padding: 0 0 10px 0;
         }
+        .page-break-gap-auto {
+            display: none !important;
+            page-break-before: always;
+        }
         .content {
-            padding-left: 55px;
-            padding-right: 55px;
-            margin-top: 10px;
+            padding-left: {{ $leftMargin }}px;
+            padding-right: {{ $rightMargin }}px;
+            margin-top: 0px;
+            background: transparent;
         }
         .meta-info {
             margin-bottom: 20px;
@@ -75,7 +87,7 @@
 </head>
 <body>
 
-    @if(!empty($letter_head_image) && file_exists($letter_head_image))
+    @if(!empty($letter_head_image))
         <img src="{{ $letter_head_image }}" class="letterhead-bg">
     @endif
 
@@ -137,21 +149,7 @@
 
     <!-- ═══════════════ CONTENT AREA ═══════════════ -->
     <div class="content">
-        <div class="meta-info">
-            <table style="width: 100%; margin-top: 10px; border-collapse: collapse;">
-                <tr>
-                    <td style="text-align: left; font-size: 11px; color: #555; line-height: 1.4;">
-                        <strong>Date:</strong> {{ date('d M, Y') }}<br>
-                        <strong>Ref No:</strong> ILAP/INV/{{ date('Y') }}/{{ str_pad($student->id ?? rand(100,999), 5, '0', STR_PAD_LEFT) }}
-                    </td>
-                    <td style="text-align: right; font-size: 11px; color: #555; vertical-align: bottom;">
-                        <strong>Student ID:</strong> {{ $student->student_code ?? ('STU-' . str_pad($student->id ?? 1, 5, '0', STR_PAD_LEFT)) }}
-                    </td>
-                </tr>
-            </table>
-        </div>
-
-        <div class="letter-body" style="margin-top: 15px;">
+        <div class="letter-body" style="margin-top: 0px;">
             {!! $content !!}
         </div>
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\LetterTemplate;
 use App\Models\GeneratedLetter;
+use App\Models\DropdownOption;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -161,15 +162,26 @@ class StudentLetterController extends Controller
         $templateId = $request->query('template_id');
         $template = LetterTemplate::find($templateId);
 
-        if (!$template) {
-            return response()->json(['success' => false, 'html' => '<div class="alert alert-warning">Please select a valid template.</div>']);
-        }
+        $parsedContent = $this->parsePlaceholders($template->content_body, $student);
 
         $letterHeadImage = null;
+        $padData = [
+            'marginTop'    => 130,
+            'marginBottom' => 120,
+            'marginLeft'   => 0,
+            'marginRight'  => 0,
+        ];
+
         if ($template->letter_head_id) {
             $lh = DropdownOption::find($template->letter_head_id);
-            if ($lh && $lh->image_path) {
-                $letterHeadImage = asset('storage/' . $lh->image_path);
+            if ($lh) {
+                if ($lh->image_path) {
+                    $letterHeadImage = asset('storage/' . $lh->image_path);
+                }
+                $padData['marginTop']    = $lh->margin_top ?? 130;
+                $padData['marginBottom'] = $lh->margin_bottom ?? 120;
+                $padData['marginLeft']   = $lh->margin_left ?? 0;
+                $padData['marginRight']  = $lh->margin_right ?? 0;
             }
         }
 
@@ -179,7 +191,8 @@ class StudentLetterController extends Controller
             'content'           => $parsedContent,
             'template_type'     => $template->type,
             'letter_head_id'    => $template->letter_head_id,
-            'letter_head_image' => $letterHeadImage
+            'letter_head_image' => $letterHeadImage,
+            'pad_data'          => $padData,
         ]);
     }
 
@@ -201,7 +214,9 @@ class StudentLetterController extends Controller
         if ($request->generation_type === 'template') {
             $template = LetterTemplate::findOrFail($request->letter_template_id);
 
-            $contentBody = $request->filled('custom_content')
+            $isCustomized = $request->input('is_customized') == '1';
+
+            $contentBody = ($isCustomized && $request->filled('custom_content'))
                 ? $request->custom_content
                 : $template->content_body;
 
@@ -210,10 +225,21 @@ class StudentLetterController extends Controller
 
             $letterHeadId = $request->letter_head_id ?? ($template->letter_head_id ?? null);
             $letterHeadImage = null;
+            $padMarginTop = 130;
+            $padMarginBottom = 120;
+            $padMarginLeft = 0;
+            $padMarginRight = 0;
+
             if ($letterHeadId) {
                 $lh = \App\Models\DropdownOption::find($letterHeadId);
-                if ($lh && $lh->image_path && Storage::disk('public')->exists($lh->image_path)) {
-                    $letterHeadImage = Storage::disk('public')->path($lh->image_path);
+                if ($lh) {
+                    if ($lh->image_path) {
+                        $letterHeadImage = \App\Models\DropdownOption::getOptimizedPadPath($lh->image_path);
+                    }
+                    $padMarginTop = $lh->margin_top ?? 130;
+                    $padMarginBottom = $lh->margin_bottom ?? 120;
+                    $padMarginLeft = $lh->margin_left ?? 0;
+                    $padMarginRight = $lh->margin_right ?? 0;
                 }
             }
 
@@ -224,9 +250,13 @@ class StudentLetterController extends Controller
                 'header_image'      => $template->header_image,
                 'footer_image'      => $template->footer_image,
                 'letter_head_image' => $letterHeadImage,
+                'pad_margin_top'    => $padMarginTop,
+                'pad_margin_bottom' => $padMarginBottom,
+                'pad_margin_left'   => $padMarginLeft,
+                'pad_margin_right'  => $padMarginRight,
                 'student'           => $student,
                 'activeSignatures'  => $this->activeSignatures
-            ]);
+            ])->setOption('isRemoteEnabled', true)->setOption('chroot', [public_path(), storage_path()]);
 
             $fileName = 'generated_letters/' . $student->id . '_' . time() . '.pdf';
             Storage::disk('public')->put($fileName, $pdf->output());
