@@ -2109,24 +2109,266 @@ function toggleGenMode(mode) {
         document.getElementById('block_template').classList.remove('d-none');
         document.getElementById('block_file').classList.add('d-none');
     } else {
-        document.getElementById('block_template').classList.add('d-none');
+document.getElementById('block_template').classList.add('d-none');
         document.getElementById('block_file').classList.remove('d-none');
     }
+}
+
+let currentPreviewPadImageUrl = '';
+let currentPreviewPadData = null;
+let currentPreviewDynamicHeight = 1050;
+let isPreviewBalancing = false;
+let splitPreviewTimer = null;
+
+function applyPreviewPageSheetStyles($sheet, pageNum, imageUrl, pageHeight, padData, force) {
+    const marginTop = (padData && padData.marginTop !== undefined) ? padData.marginTop : 130;
+    const marginBottom = (padData && padData.marginBottom !== undefined) ? padData.marginBottom : 120;
+    const marginLeft = (padData && padData.marginLeft !== undefined) ? padData.marginLeft : 0;
+    const marginRight = (padData && padData.marginRight !== undefined) ? padData.marginRight : 0;
+
+    if (force || $sheet.attr('data-page') != pageNum || !$sheet.data('styled')) {
+        $sheet.attr('data-page', pageNum).data('styled', true).css({
+            'background-image': imageUrl ? 'url("' + imageUrl + '")' : 'none',
+            'background-size': '100% 100%',
+            'background-repeat': 'no-repeat',
+            'background-position': 'center top',
+            'background-color': '#ffffff',
+            'width': '100%',
+            'max-width': '750px',
+            'min-height': (imageUrl ? pageHeight : 1050) + 'px',
+            'margin': '0 auto 35px auto',
+            'box-shadow': '0 4px 15px rgba(0, 0, 0, 0.15)',
+            'border': imageUrl ? 'none' : '1px solid #dee2e6',
+            'border-radius': '4px',
+            'box-sizing': 'border-box',
+            'padding-top': marginTop + 'px',
+            'padding-bottom': marginBottom + 'px',
+            'padding-left': (marginLeft > 0 ? marginLeft : 55) + 'px',
+            'padding-right': (marginRight > 0 ? marginRight : 55) + 'px',
+            'position': 'relative'
+        });
+
+        let $badge = $sheet.children('.page-sheet-badge');
+        if (!$badge.length) {
+            $badge = $('<div class="page-sheet-badge" contenteditable="false" style="position: absolute; top: 10px; right: 15px; background: rgba(0, 51, 102, 0.85); color: #ffffff; font-size: 11px; font-weight: bold; padding: 2px 10px; border-radius: 12px; z-index: 100; pointer-events: none; user-select: none;">Page ' + pageNum + '</div>');
+            $sheet.append($badge);
+        } else {
+            $badge.text('Page ' + pageNum);
+        }
+    }
+}
+
+function movePreviewCursorToEndOfNode($node) {
+    if (!$node.length) return;
+    const el = $node[0];
+    if (window.getSelection && document.createRange) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        el.scrollIntoView && el.scrollIntoView({ block: 'nearest' });
+    }
+}
+
+// Store HTML chunks globally for autoSplit to use
+window.ilapPreviewHeaderHtml = '';
+window.ilapPreviewFooterHtml = '';
+
+function autoSplitPreviewPages() {
+    if (isPreviewBalancing) return;
+    isPreviewBalancing = true;
+
+    try {
+        const $editable = $('.note-editor:visible .note-editable');
+        if (!$editable.length) return;
+
+        let $sheets = $editable.children('.page-sheet');
+        if (!$sheets.length) return;
+
+        // SAVE SELECTION
+        let savedSelection = null;
+        if (window.getSelection) {
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                if ($editable[0].contains(range.startContainer)) {
+                    savedSelection = {
+                        startContainer: range.startContainer,
+                        startOffset: range.startOffset,
+                        endContainer: range.endContainer,
+                        endOffset: range.endOffset
+                    };
+                }
+            }
+        }
+
+        const marginBottom = (currentPreviewPadData && currentPreviewPadData.marginBottom !== undefined) ? currentPreviewPadData.marginBottom : 120;
+        const marginTop = (currentPreviewPadData && currentPreviewPadData.marginTop !== undefined) ? currentPreviewPadData.marginTop : 130;
+        
+        let domChanged = false;
+        let $overflowTargetSheet = null;
+        let $lastOverflowNode = null; 
+
+        // STEP 1: Pull up from next pages if there is space
+        for (let i = 0; i < $sheets.length - 1; i++) {
+            let $currSheet = $($sheets[i]);
+            let $nextSheet = $($sheets[i + 1]);
+
+            let currContentHeight = 0;
+            $currSheet.children().not('.page-sheet-badge, .invoice-ilap-header, .invoice-ilap-footer').each(function() {
+                currContentHeight += ($(this).outerHeight(true) || 24);
+            });
+
+            const effectiveBottomMargin = (marginBottom > 30) ? (marginBottom - 25) : marginBottom;
+            const maxAllowedContentHeight = currentPreviewDynamicHeight - marginTop - effectiveBottomMargin;
+
+            let pullLimit = 30;
+            while ($nextSheet.children().not('.page-sheet-badge, .invoice-ilap-header, .invoice-ilap-footer').length > 0 && pullLimit > 0) {
+                pullLimit--;
+                let $firstNextChild = $nextSheet.children().not('.page-sheet-badge, .invoice-ilap-header, .invoice-ilap-footer').first();
+                let childH = $firstNextChild.outerHeight(true) || 24;
+
+                if (currContentHeight + childH + 5 <= maxAllowedContentHeight) {
+                    // Prepend right before the footer if it exists
+                    let $footer = $currSheet.children('.invoice-ilap-footer');
+                    if ($footer.length) {
+                        $firstNextChild.insertBefore($footer);
+                    } else {
+                        $currSheet.append($firstNextChild);
+                    }
+                    currContentHeight += childH;
+                    domChanged = true;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // STEP 2: Push overflow down to next pages
+        $sheets = $editable.children('.page-sheet');
+        $sheets.each(function(index) {
+            let $sheet = $(this);
+            let pageNum = index + 1;
+
+            const effectiveBottomMargin = (marginBottom > 30) ? (marginBottom - 25) : marginBottom;
+            const maxAllowedContentHeight = currentPreviewDynamicHeight - marginTop - effectiveBottomMargin; 
+
+            let accumulatedHeight = 0;
+            let overflowNodes = [];
+
+            $sheet.children().not('.page-sheet-badge, .invoice-ilap-header, .invoice-ilap-footer').each(function() {
+                let $child = $(this);
+                let h = $child.outerHeight(true) || 24;
+                accumulatedHeight += h;
+
+                if (accumulatedHeight > maxAllowedContentHeight && $sheet.children().not('.page-sheet-badge, .invoice-ilap-header, .invoice-ilap-footer').length > 1) {
+                    overflowNodes.push($child);
+                }
+            });
+
+            if (overflowNodes.length > 0) {
+                domChanged = true;
+                let $nextSheet = $editable.children('.page-sheet[data-page="' + (pageNum + 1) + '"]');
+                if (!$nextSheet.length) {
+                    $nextSheet = $('<div class="page-sheet" data-page="' + (pageNum + 1) + '"></div>');
+                    if (!currentPreviewPadImageUrl) {
+                        $nextSheet.append(window.ilapPreviewHeaderHtml);
+                        $nextSheet.append(window.ilapPreviewFooterHtml);
+                    }
+                    $sheet.after($nextSheet);
+                }
+                
+                // Find where to prepend (after header, badge, etc)
+                let $insertPoint = $nextSheet.children('.invoice-ilap-header');
+                if (!$insertPoint.length) $insertPoint = $nextSheet.children('.page-sheet-badge');
+                
+                for (let i = overflowNodes.length - 1; i >= 0; i--) {
+                    if ($insertPoint.length) {
+                        $insertPoint.after(overflowNodes[i]);
+                    } else {
+                        $nextSheet.prepend(overflowNodes[i]);
+                    }
+                }
+                if (!$overflowTargetSheet) {
+                    $overflowTargetSheet = $nextSheet;
+                    $lastOverflowNode = overflowNodes[overflowNodes.length - 1];
+                }
+            }
+        });
+
+        // STEP 3: Remove empty trailing sheets
+        $editable.children('.page-sheet').each(function(idx) {
+            let $sheet = $(this);
+            let $contentChildren = $sheet.children().not('.page-sheet-badge, .invoice-ilap-header, .invoice-ilap-footer');
+            if (idx > 0 && $contentChildren.length === 0) {
+                $sheet.remove();
+                domChanged = true;
+            }
+        });
+
+        if (domChanged) {
+            let total = $editable.children('.page-sheet').length;
+            $editable.children('.page-sheet').each(function(idx) {
+                applyPreviewPageSheetStyles($(this), idx + 1, currentPreviewPadImageUrl, currentPreviewDynamicHeight, currentPreviewPadData, true);
+                $(this).find('.page-sheet-badge').text('Page ' + (idx + 1) + ' of ' + total);
+            });
+
+            // RESTORE SELECTION
+            if (savedSelection && window.getSelection) {
+                try {
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    const range = document.createRange();
+                    range.setStart(savedSelection.startContainer, savedSelection.startOffset);
+                    range.setEnd(savedSelection.endContainer, savedSelection.endOffset);
+                    sel.addRange(range);
+                    
+                    if (savedSelection.startContainer.parentElement) {
+                        savedSelection.startContainer.parentElement.scrollIntoView({ block: 'nearest' });
+                    }
+                } catch (e) {
+                    if ($lastOverflowNode && $lastOverflowNode.length > 0) {
+                        try { movePreviewCursorToEndOfNode($lastOverflowNode); } catch(ex) {}
+                    }
+                }
+            } else if ($lastOverflowNode && $lastOverflowNode.length > 0) {
+                try { movePreviewCursorToEndOfNode($lastOverflowNode); } catch(e) {}
+            }
+            
+            const $form = $editable.closest('form');
+            if ($form.length) {
+                const $isCustomizedInput = $form.find('input[name="is_customized"]');
+                if ($isCustomizedInput.length) {
+                    $isCustomizedInput.val('1');
+                }
+            }
+        }
+    } finally {
+        isPreviewBalancing = false;
+    }
+}
+
+function triggerAutoSplitPreviewPages() {
+    clearTimeout(splitPreviewTimer);
+    splitPreviewTimer = setTimeout(autoSplitPreviewPages, 300);
 }
 
 function renderModalLivePreview($renderArea, data, inputFieldId) {
     const imageUrl = data.letter_head_image || '';
     const padData = data.pad_data || { marginTop: 130, marginBottom: 120, marginLeft: 0, marginRight: 0 };
-    const marginTop = padData.marginTop || 130;
-    const marginBottom = padData.marginBottom || 120;
-    const marginLeft = (padData.marginLeft > 0 ? padData.marginLeft : 55);
-    const marginRight = (padData.marginRight > 0 ? padData.marginRight : 55);
+    
+    currentPreviewPadImageUrl = imageUrl;
+    currentPreviewPadData = padData;
 
     let rawContent = data.content || '';
 
-    // Strip any nested page-sheet wrappers if present in raw content
     const $temp = $('<div>').html(rawContent);
     $temp.find('.page-sheet-badge').remove();
+    $temp.find('.invoice-ilap-header').remove(); // Strip out header to recreate it cleanly
+    $temp.find('.invoice-ilap-footer').remove(); // Strip out footer too
+
     if ($temp.children('.page-sheet').length > 0) {
         let unwrappedHtml = '';
         $temp.children('.page-sheet').each(function() {
@@ -2144,108 +2386,179 @@ function renderModalLivePreview($renderArea, data, inputFieldId) {
     }
 
     let html = '';
+    
+    window.ilapPreviewHeaderHtml = `
+        <div class="invoice-ilap-header" contenteditable="false" style="position: absolute; top: 0; left: 0; width: 100%; height: 130px; user-select: none; pointer-events: none; z-index: 5;">
+            <div style="padding: 20px 55px 0 55px;">
+                <table style="width: 100%; border-collapse: collapse; margin: 0;">
+                    <tr>
+                        <td style="vertical-align: middle; padding: 0;">
+                            <table style="border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding-right: 12px; vertical-align: middle;">
+                                        <div style="width: 60px; height: 60px; border-radius: 50%; border: 1.5px solid #003366; text-align: center; background-color: #fff; padding: 2px; box-sizing: border-box;">
+                                            <div style="border: 1px dashed #b8860b; border-radius: 50%; width: 100%; height: 100%; box-sizing: border-box; padding-top: 3px; position: relative;">
+                                                <div style="font-size: 4px; color: #003366; font-weight: bold; text-transform: uppercase; line-height: 1; letter-spacing: 0.1px;">LEARNING</div>
+                                                <div style="font-size: 13px; font-weight: bold; color: #b8860b; margin: 1px 0; font-family: 'Georgia', serif; line-height: 1.1;">iLAP</div>
+                                                <div style="font-size: 4px; color: #003366; font-weight: bold; text-transform: uppercase; line-height: 1; letter-spacing: 0.1px;">PROVIDER</div>
+                                                <div style="font-size: 4px; color: #b8860b; position: absolute; bottom: 4px; left: 18px;">★★★★★</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="vertical-align: middle; line-height: 1;">
+                                        <span style="font-size: 34px; font-weight: 800; color: #003366; font-family: Arial, sans-serif; letter-spacing: -1.5px;">iLAP</span>
+                                        <span style="font-size: 8px; font-weight: bold; color: #555; text-transform: uppercase; vertical-align: super; margin-left: 3px; letter-spacing: 0.3px;">International<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Learning Access<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Provider</span>
+                                        <div style="width: 155px; height: 1px; background-color: #b8860b; margin: 4px 0 2px 0;"></div>
+                                        <div style="font-size: 8.5px; font-weight: bold; color: #003366; text-transform: uppercase; letter-spacing: 0.8px; font-family: Helvetica, Arial, sans-serif;">Global Education Group</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td style="text-align: right; vertical-align: middle; padding: 0; width: 230px;">
+                            <table style="float: right; border-collapse: collapse;">
+                                <tr>
+                                    <td style="text-align: right; font-size: 10px; line-height: 1.35; color: #333; padding-right: 10px; font-family: Arial, sans-serif;">
+                                        <strong style="color: #003366; font-size: 11px;">167-169 Great Portland Street</strong><br>
+                                        London W1W 5PF<br>
+                                        <span style="color: #003366; font-weight: bold; letter-spacing: 0.2px;">United Kingdom</span>
+                                    </td>
+                                    <td style="vertical-align: middle; width: 20px; text-align: center; padding-top: 2px;">
+                                        <div style="width: 14px; height: 18px; background-color: #e31b23; border-radius: 7px 7px 0 0; position: relative; display: inline-block;">
+                                            <div style="width: 6px; height: 6px; background-color: #fff; border-radius: 50%; position: absolute; top: 4px; left: 4px;"></div>
+                                            <div style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid #e31b23; position: absolute; bottom: -8px; left: 0;"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+                <div style="width: 100%; height: 3px; background-color: #003366; margin-top: 10px;"></div>
+            </div>
+        </div>
+    `;
+
+    window.ilapPreviewFooterHtml = `
+        <div class="invoice-ilap-footer" contenteditable="false" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 120px; user-select: none; pointer-events: none; z-index: 5;">
+            <div style="padding: 0 55px;">
+                <!-- Gray separator line -->
+                <div style="width: 100%; height: 1px; background-color: #e0e0e0; margin-bottom: 8px;"></div>
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px;">
+                    <tr>
+                        <td style="font-size: 7.5px; color: #444; line-height: 1.1; vertical-align: middle; font-family: Arial, sans-serif;">
+                            <span style="font-weight: bold; color: #c22026; text-transform: uppercase;">Cambridge English</span> School of London &nbsp;|&nbsp;
+                            <span style="font-weight: bold; color: #1e306e; text-transform: uppercase;">Graduate College</span> of London &nbsp;|&nbsp;
+                            <span style="font-weight: bold; color: #0f1c3f;">UKQAS</span> Qualifications &nbsp;|&nbsp;
+                            <span style="font-weight: bold; color: #d9534f; text-transform: uppercase;">VAS</span> Visa Application Services
+                        </td>
+                        <td style="text-align: right; font-size: 8px; font-weight: bold; color: #003366; vertical-align: middle; width: 120px; font-family: Arial, sans-serif;">
+                            UKRLP UK Register of Learning Providers
+                        </td>
+                    </tr>
+                </table>
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 6.5px; color: #0066cc; text-transform: uppercase; font-weight: bold; margin-bottom: 2px; text-align: center; font-family: Arial, sans-serif;">Our Nominated Access Points Worldwide:</div>
+                    <div style="font-size: 6px; color: #777; line-height: 1.3; text-align: center; font-family: Arial, sans-serif;">
+                        Australia, Bahrain, Bangladesh, Brazil, Belgium, Brunei, Cameroon, Canada, China, Congo, Croatia, Cyprus, Czech Republic, Egypt, Estonia, Ethiopia, Finland, France, Georgia, Germany, Ghana, Hong Kong, India, Indonesia, Iraq, Ireland, Italy, Japan, Kenya, Malaysia, Maldives, Nepal, Netherlands, New Zealand, Nigeria, Pakistan, Portugal, Qatar, Romania, Saudi Arabia, Singapore, South Africa, Spain, Sri Lanka, Sweden, Switzerland, Thailand, Turkey, UAE, UK, USA, Vietnam.
+                    </div>
+                </div>
+            </div>
+            <div style="background-color: #003366; color: #ffffff; padding: 8px 55px; font-size: 8px; line-height: 1.4; font-family: Arial, sans-serif; position: absolute; bottom: 0; width: 100%; box-sizing: border-box;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="color: #ffffff; font-size: 8.5px; font-family: Arial, sans-serif;">
+                            <strong>iLAP Group Limited</strong> (Registered in England & Wales, Company No. 12405171)
+                        </td>
+                        <td style="text-align: right; color: #ffffff; font-size: 8px; font-family: Arial, sans-serif;">
+                            <strong>Phone:</strong> +44 208 133 8086 &nbsp;|&nbsp; <strong>Email:</strong> info@ilap.org.uk &nbsp;|&nbsp; <strong>Web:</strong> www.ilap.org.uk
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    `;
 
     pages.forEach((pageContent, idx) => {
-        const pageNum = idx + 1;
-        const totalPages = pages.length;
-
-        if (imageUrl) {
-            html += `
-                <div class="pad-page-preview mb-4 position-relative" style="
-                    background-image: url('${imageUrl}');
-                    background-size: 100% 100%;
-                    background-repeat: no-repeat;
-                    background-position: center top;
-                    background-color: #ffffff;
-                    width: 100%;
-                    max-width: 750px;
-                    min-height: 1050px;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-                    border-radius: 4px;
-                    box-sizing: border-box;
-                    padding-top: ${marginTop}px;
-                    padding-bottom: ${marginBottom}px;
-                    padding-left: ${marginLeft}px;
-                    padding-right: ${marginRight}px;
-                ">
-                    <div class="page-sheet-badge" style="position: absolute; top: 10px; right: 15px; background: rgba(0, 51, 102, 0.85); color: #ffffff; font-size: 11px; font-weight: bold; padding: 2px 10px; border-radius: 12px; z-index: 10; user-select: none;">
-                        Page ${pageNum} of ${totalPages}
-                    </div>
-                    <div class="content-preview preview-content-body" contenteditable="true" style="outline: none; min-height: 200px;">
-                        ${pageContent}
-                    </div>
-                </div>
-            `;
-        } else {
-            html += `
-                <div class="bg-white shadow p-5 border mb-4 position-relative" style="max-width: 750px; width: 100%; min-height: 900px; font-family: Arial, sans-serif;">
-                    <div class="page-sheet-badge" style="position: absolute; top: 10px; right: 15px; background: rgba(0, 51, 102, 0.85); color: #ffffff; font-size: 11px; font-weight: bold; padding: 2px 10px; border-radius: 12px; z-index: 10; user-select: none;">
-                        Page ${pageNum} of ${totalPages}
-                    </div>
-                    ${pageNum === 1 ? `
-                    <div style="border-bottom: 2px solid #003366; padding-bottom: 12px; margin-bottom: 20px;">
-                        <table style="width: 100%; border-collapse: collapse; margin: 0;">
-                            <tr>
-                                <td style="vertical-align: middle; padding: 0;">
-                                    <table style="border-collapse: collapse;">
-                                        <tr>
-                                            <td style="padding-right: 12px; vertical-align: middle;">
-                                                <div style="width: 55px; height: 55px; border-radius: 50%; border: 1.5px solid #003366; text-align: center; background-color: #fff; padding: 2px; box-sizing: border-box; display: inline-block;">
-                                                    <div style="border: 1px dashed #b8860b; border-radius: 50%; width: 100%; height: 100%; box-sizing: border-box; padding-top: 3px;">
-                                                        <div style="font-size: 4px; color: #003366; font-weight: bold; text-transform: uppercase; line-height: 1;">LEARNING</div>
-                                                        <div style="font-size: 11px; font-weight: bold; color: #b8860b; margin: 1px 0; font-family: 'Georgia', serif; line-height: 1.1;">iLAP</div>
-                                                        <div style="font-size: 4px; color: #003366; font-weight: bold; text-transform: uppercase; line-height: 1;">PROVIDER</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style="vertical-align: middle; line-height: 1.1;">
-                                                <span style="font-size: 30px; font-weight: 800; color: #003366; font-family: Arial, sans-serif; letter-spacing: -1px;">iLAP</span>
-                                                <span style="font-size: 8px; font-weight: bold; color: #555; text-transform: uppercase; vertical-align: super; margin-left: 3px;">International<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Learning Access<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Provider</span>
-                                                <div style="width: 155px; height: 1px; background-color: #b8860b; margin: 3px 0 2px 0;"></div>
-                                                <div style="font-size: 8px; font-weight: bold; color: #003366; text-transform: uppercase; letter-spacing: 0.5px;">Global Education Group</div>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </td>
-                                <td style="text-align: right; vertical-align: middle; padding: 0; font-size: 10px; line-height: 1.3; color: #333; font-family: Arial, sans-serif;">
-                                    <strong style="color: #003366; font-size: 11px;">167-169 Great Portland Street</strong><br>
-                                    London W1W 5PF<br>
-                                    <span style="color: #003366; font-weight: bold;">United Kingdom</span>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    ` : ''}
-                    <div class="content-preview preview-content-body" contenteditable="true" style="outline: none; min-height: 200px;">
-                        ${pageContent}
-                    </div>
-                </div>
-            `;
+        let contentToInject = pageContent || '<p><br></p>';
+        if (!imageUrl) {
+            contentToInject = window.ilapPreviewHeaderHtml + contentToInject + window.ilapPreviewFooterHtml;
         }
+        html += '<div class="page-sheet" data-page="' + (idx + 1) + '">' + contentToInject + '</div>';
     });
 
-    $renderArea.html(html);
+    if (!$renderArea.hasClass('summernote-initialized')) {
+        $renderArea.empty();
+        $renderArea.addClass('summernote-initialized');
+        $renderArea.summernote({
+            toolbar: false,
+            placeholder: '',
+            callbacks: {
+                onChange: function() { triggerAutoSplitPreviewPages(); },
+                onKeyup: function() { triggerAutoSplitPreviewPages(); },
+                onPaste: function() { 
+                    setTimeout(function() {
+                        // Clean up pasted elements to avoid huge unsplittable blocks
+                        const $editable = $('.note-editor:visible .note-editable');
+                        $editable.find('div:not(.page-sheet, .page-sheet-badge, .invoice-ilap-header)').each(function() {
+                            $(this).replaceWith($('<p>').html($(this).html()));
+                        });
+                        triggerAutoSplitPreviewPages();
+                    }, 100);
+                }
+            }
+        });
+        
+        $renderArea.siblings('.note-editor').find('.note-editable').css({
+            'background-color': '#e9ecef',
+            'padding': '25px 15px',
+            'display': 'flex',
+            'flex-direction': 'column',
+            'align-items': 'center',
+            'overflow-y': 'auto'
+        });
+        $renderArea.siblings('.note-editor').css({'border': 'none', 'background': 'transparent'});
+    }
 
+    const $editable = $renderArea.siblings('.note-editor').find('.note-editable');
+    $editable.html(html);
+
+    if (imageUrl) {
+        const img = new Image();
+        img.onload = function() {
+            currentPreviewDynamicHeight = (this.naturalWidth && this.naturalHeight) 
+                ? Math.round(750 * (this.naturalHeight / this.naturalWidth)) 
+                : 1050;
+            $editable.children('.page-sheet').each(function(idx) {
+                applyPreviewPageSheetStyles($(this), idx + 1, imageUrl, currentPreviewDynamicHeight, padData);
+            });
+            triggerAutoSplitPreviewPages();
+        };
+        img.src = imageUrl;
+    } else {
+        currentPreviewDynamicHeight = 1050;
+        $editable.children('.page-sheet').each(function(idx) {
+            applyPreviewPageSheetStyles($(this), idx + 1, '', currentPreviewDynamicHeight, padData);
+        });
+        triggerAutoSplitPreviewPages();
+    }
+    
     const $isCustomizedInput = $renderArea.closest('form').find('input[name="is_customized"]');
     if ($isCustomizedInput.length) {
         $isCustomizedInput.val('0');
     }
 
-    function syncCustomContent() {
+    const $form = $renderArea.closest('form');
+    $form.off('submit.summernoteSync').on('submit.summernoteSync', function() {
         let fullHtml = '';
-        $renderArea.find('.content-preview').each(function(i) {
+        $editable.children('.page-sheet').each(function(i) {
             if (i > 0) fullHtml += '<div style="page-break-before: always;"></div>';
-            fullHtml += $(this).html();
+            let $clone = $(this).clone();
+            $clone.find('.page-sheet-badge').remove();
+            $clone.find('.invoice-ilap-header').remove(); // Don't save the hardcoded header into the DB
+            $clone.find('.invoice-ilap-footer').remove(); // Don't save the hardcoded footer into the DB
+            fullHtml += $clone.html();
         });
         $('#' + inputFieldId).val(fullHtml);
-    }
-
-    syncCustomContent();
-    $renderArea.find('.content-preview').on('input blur keyup', function() {
-        if ($isCustomizedInput.length) {
-            $isCustomizedInput.val('1');
-        }
-        syncCustomContent();
     });
 }
 
@@ -2623,41 +2936,7 @@ $(document).ready(function() {
     initTableSearchAndPagination('searchLetterInput', 'studentLettersTable', 'lettersPagination', 'lettersTableInfo', 'letterPerPageSelect', 10);
     initTableSearchAndPagination('searchInvoiceInput', 'studentInvoicesTable', 'invoicesPagination', 'invoicesTableInfo', 'invoicePerPageSelect', 10);
 
-    // Summernote Initialization
-    $('#modal_custom_content').summernote({
-        height: 380,
-        placeholder: '',
-        toolbar: [
-            ['style', ['bold', 'italic', 'underline', 'clear']],
-            ['font', ['fontsize']],
-            ['color', ['color']],
-            ['para', ['ul', 'ol', 'paragraph']],
-            ['insert', ['table', 'hr']],
-            ['view', ['codeview']],
-        ]
-    });
 
-    $('#modal_invoice_custom_content').summernote({
-        height: 380,
-        placeholder: '',
-        toolbar: [
-            ['style', ['bold', 'italic', 'underline', 'clear']],
-            ['font', ['fontsize']],
-            ['color', ['color']],
-            ['para', ['ul', 'ol', 'paragraph']],
-            ['insert', ['table', 'hr']],
-            ['view', ['codeview']],
-        ]
-    });
-
-    $('form').on('submit', function() {
-        if ($('#modal_custom_content').length && $('#modal_custom_content').data('summernote')) {
-            $('#modal_custom_content').val($('#modal_custom_content').summernote('code'));
-        }
-        if ($('#modal_invoice_custom_content').length && $('#modal_invoice_custom_content').data('summernote')) {
-            $('#modal_invoice_custom_content').val($('#modal_invoice_custom_content').summernote('code'));
-        }
-    });
 
     function getCurrencySymbolJS(code) {
         const symbols = {

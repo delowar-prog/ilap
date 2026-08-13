@@ -64,6 +64,30 @@
             padding-right: {{ $rightMargin }}px;
             margin-top: 0px;
             background: transparent;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .content p {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        .content ul,
+        .content ol {
+            margin-bottom: 1rem;
+            padding-left: 20px;
+        }
+        .content table {
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            width: 100%;
+        }
+        .content td,
+        .content th {
+            border: 1px solid #ddd;
+            padding: 4px 8px;
         }
         .meta-info {
             margin-bottom: 20px;

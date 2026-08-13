@@ -136,7 +136,7 @@ class StudentInvoiceController extends Controller
         $selectedItemsTotal = 0.0;
         $selectedItemsPaid  = 0.0;
 
-        $selectedItemsTableHtml  = '<table style="width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; font-size: 13px;" border="1" cellpadding="8">';
+        $selectedItemsTableHtml  = '<table class="invoice-selected-items-table" style="width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 15px; font-size: 13px;" border="1" cellpadding="8">';
         $selectedItemsTableHtml .= '<tr style="background-color: #003366; color: #ffffff;">';
         $selectedItemsTableHtml .= '<th style="text-align: left;">#</th>';
         $selectedItemsTableHtml .= '<th style="text-align: left;">Description</th>';
@@ -469,7 +469,7 @@ class StudentInvoiceController extends Controller
                 $content = str_replace('{{payment_receipt_table}}', $selectedItemsTableHtml, $content);
             }
             // If template body has neither selected_items_table nor financial_summary_table, auto-append the table
-            if (!str_contains($content, '{{selected_items_table}}') && !str_contains($content, $selectedItemsTableHtml)) {
+            if (!str_contains($content, '{{selected_items_table}}') && !str_contains($content, 'invoice-selected-items-table')) {
                 $content .= '<div style="margin-top: 15px; margin-bottom: 15px;"><h4 style="color: #003366; margin-bottom: 8px;">Selected Fee Breakdown</h4>' . $selectedItemsTableHtml . '</div>';
             }
         }
